@@ -295,10 +295,22 @@
   let helmetLevel=0; // 0=none, 1=silver shield, 2=golden shield (one more -> fireball)
 
   // fireball ultimate (triggered at helmetLevel 3)
-  let fireballStart=0, fireballDuration=2200, fireballStartHeight=0;
+  let fireballStart=0, fireballDuration=4200, fireballStartHeight=0;
 
   // friend encounter (high-five then fly off together)
-  let friendX=0, friendY=0, friendPhaseStart=0, friendAscendStartHeight=0;
+  // 3 friend variants, each a different color granting a different height bonus
+  const FRIEND_VARIANTS = [
+    { name:'민트', body:'#8FE3F0', wing:'#6FCBE0', ascend:20, w:3.2 },
+    { name:'복숭아', body:'#FFD9C7', wing:'#FFB199', ascend:30, w:1.6 },
+    { name:'골드', body:'#FFEEB0', wing:'#FFD166', ascend:50, w:0.6 }
+  ];
+  function pickFriendVariant(){
+    const total = FRIEND_VARIANTS.reduce((s,v)=>s+v.w,0);
+    let r = Math.random()*total;
+    for(let i=0;i<FRIEND_VARIANTS.length;i++){ if(r<FRIEND_VARIANTS[i].w) return i; r-=FRIEND_VARIANTS[i].w; }
+    return 0;
+  }
+  let friendX=0, friendY=0, friendPhaseStart=0, friendAscendStartHeight=0, friendVariant=0;
   let hfFriendStartX=0, hfFriendStartY=0;
 
   // big "shout" text popup (호야!, 짝! etc.)
@@ -375,13 +387,13 @@
     sfxFall();
   }
 
-  // ---- fireball ultimate: 3rd stacked helmet -> "호야!" -> invincible +50m auto-ascent ----
+  // ---- fireball ultimate: 3rd stacked helmet -> "호야!" -> invincible +100m auto-ascent ----
   function triggerFireball(now){
     charState = 'fireball';
     helmetLevel = 0; // the 3 stacked charges are spent powering the ultimate
     fireballStart = now;
     fireballStartHeight = height;
-    fireballDuration = 2200;
+    fireballDuration = 4200;
     triggerShout('호야!', '#FFD93D', 1000);
     triggerFlash('#FFD93D', 350);
     shakeUntil = now+500; shakeMag = 14;
@@ -396,10 +408,11 @@
     sfxFireball();
   }
 
-  // ---- friend encounter: touch the falling friend -> high-five -> fly up +20m together ----
+  // ---- friend encounter: touch the falling friend -> high-five -> fly up together (20/30/50m by variant) ----
   function encounterFriend(o){
     hfFriendStartX = o.x; hfFriendStartY = o.y;
     friendX = o.x; friendY = o.y;
+    friendVariant = o.variant||0;
     friendPhaseStart = performance.now();
     charState = 'friend_highfive';
   }
@@ -490,7 +503,8 @@
     obstacles.push({
       type, x, baseX:x, y:-r-10, r, vy, age:0,
       amp: r*1.7, freq: 2+Math.random()*1.6, phase: Math.random()*Math.PI*2,
-      rot:0, spin:(Math.random()<0.5?-1:1)*randRange(0.5,1.4)
+      rot:0, spin:(Math.random()<0.5?-1:1)*randRange(0.5,1.4),
+      variant: type==='friend' ? pickFriendVariant() : 0
     });
   }
 
@@ -576,7 +590,7 @@
     }
     if(landings === 10 && !obstacleUnlocked.friend){
       obstacleUnlocked.friend = true;
-      unlockToastText = '🐧 친구 등장! 만나면 하이파이브!'; unlockToastUntil = performance.now()+2400;
+      unlockToastText = '🐧 친구 등장! 색깔마다 다른 보너스(+20/30/50m)!'; unlockToastUntil = performance.now()+2600;
       sfxUnlock();
     }
     if(landings === 12 && !obstacleUnlocked.lightning){
@@ -663,7 +677,7 @@
       } else if(charState==='fireball'){
         const t = Math.min(1,(now-fireballStart)/fireballDuration);
         const eased = 1-Math.pow(1-t,3);
-        height = fireballStartHeight + 50*eased;
+        height = fireballStartHeight + 100*eased;
         sessionBest = Math.max(sessionBest, height);
         const centerX = (pillarLeftX+pillarRightX)/2;
         charX += (centerX-charX)*Math.min(1,dt*4);
@@ -691,17 +705,18 @@
         charScale = 1 + Math.sin(t*Math.PI)*0.1;
         if(t>=1){
           spawnParticles(charX, charY, '#FFD93D', 12, [60,180], 0.5);
-          triggerShout('짝!', '#4FC3F7', 700);
+          const fv0 = FRIEND_VARIANTS[friendVariant];
+          triggerShout('짝! +'+fv0.ascend+'m', fv0.wing, 700);
           sfxFriendGreet();
           charState = 'friend_ascend';
           friendAscendStartHeight = height;
           friendPhaseStart = now;
         }
       } else if(charState==='friend_ascend'){
-        const dur = 1700;
+        const dur = 1200 + FRIEND_VARIANTS[friendVariant].ascend*17;
         const t = Math.min(1,(now-friendPhaseStart)/dur);
         const eased = 1-Math.pow(1-t,2);
-        height = friendAscendStartHeight + 20*eased;
+        height = friendAscendStartHeight + FRIEND_VARIANTS[friendVariant].ascend*eased;
         sessionBest = Math.max(sessionBest, height);
         charY = restY + Math.sin(now/260)*4;
         charScale = 1;
@@ -1096,8 +1111,9 @@
     ctx.restore();
   }
 
-  // the mint-colored friend character (falls as a pickup, then rides along during the encounter)
-  function drawFriendCharacter(x,y){
+  // the friend character (falls as a pickup, then rides along during the encounter) - colors depend on variant
+  function drawFriendCharacter(x,y,variant){
+    const fv = FRIEND_VARIANTS[variant||0];
     ctx.save();
     ctx.translate(x,y);
     const r = charRadius*0.92;
@@ -1106,9 +1122,9 @@
     ctx.fillStyle = '#000';
     ctx.beginPath(); ctx.ellipse(0, r*1.15, r*0.9, r*0.28, 0,0,Math.PI*2); ctx.fill();
     ctx.restore();
-    ctx.fillStyle = '#6FCBE0';
+    ctx.fillStyle = fv.wing;
     ctx.beginPath(); ctx.ellipse(r*0.75, r*0.05, r*0.45, r*0.62, 0.5, 0, Math.PI*2); ctx.fill();
-    ctx.fillStyle = '#8FE3F0';
+    ctx.fillStyle = fv.body;
     ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.fill();
     ctx.fillStyle = 'rgba(255,150,150,0.5)';
     ctx.beginPath(); ctx.ellipse(-r*0.5, r*0.18, r*0.16, r*0.1, 0,0,Math.PI*2); ctx.fill();
@@ -1249,9 +1265,10 @@
       ctx.stroke();
     } else if(o.type==='friend'){
       const r = o.r*1.05;
-      ctx.fillStyle = '#6FCBE0';
+      const fv = FRIEND_VARIANTS[o.variant||0];
+      ctx.fillStyle = fv.wing;
       ctx.beginPath(); ctx.ellipse(r*0.7,r*0.05,r*0.42,r*0.58,0.5,0,Math.PI*2); ctx.fill();
-      ctx.fillStyle = '#8FE3F0';
+      ctx.fillStyle = fv.body;
       ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.fill();
       ctx.fillStyle = 'rgba(255,150,150,0.5)';
       ctx.beginPath(); ctx.ellipse(-r*0.5,r*0.18,r*0.15,r*0.09,0,0,Math.PI*2); ctx.fill();
@@ -1408,7 +1425,7 @@
     if(state!=='start'){
       drawRestRing(now);
       if(charState==='friend_highfive' || charState==='friend_ascend'){
-        drawFriendCharacter(friendX, friendY);
+        drawFriendCharacter(friendX, friendY, friendVariant);
       }
       drawCharacter(charX, charY, charScale, charRot, now);
       drawShout(now);
