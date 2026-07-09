@@ -137,6 +137,13 @@
   #btnLbLocal { left: 50%; transform: translateX(-108%); }
   #btnLbGlobal { left: 50%; transform: translateX(8%); }
   #btnLbLocal.lbTabActive, #btnLbGlobal.lbTabActive { background: rgba(255,140,60,0.9); }
+  #btnNickname {
+    top: 20%; left: 50%; transform: translateX(-50%);
+    width: auto; height: auto; border-radius: 14px;
+    padding: 5px 14px; font-size: 12px; font-family: 'Jua', sans-serif;
+    background: rgba(255,255,255,0.16);
+    display: none;
+  }
 </style>
 </head>
 <body>
@@ -197,6 +204,7 @@
         <button id="btnShare" class="uiBtn" type="button">🔗 도전장 보내기</button>
         <button id="btnLbLocal" class="uiBtn" type="button">내 기록</button>
         <button id="btnLbGlobal" class="uiBtn" type="button">전체 랭킹</button>
+        <button id="btnNickname" class="uiBtn" type="button">✏️ 닉네임 변경</button>
       </div>
     </div>
   </div>
@@ -268,6 +276,7 @@
   const btnShare = document.getElementById('btnShare');
   const btnLbLocal = document.getElementById('btnLbLocal');
   const btnLbGlobal = document.getElementById('btnLbGlobal');
+  const btnNickname = document.getElementById('btnNickname');
 
   // ---------- persistence (localStorage) ----------
   const LS_PREFIX = 'ttsSky_';
@@ -675,13 +684,32 @@
   let challengeBeatenShoutShown = false; // avoid re-firing the "beat it!" shout mid-run
 
   function ensureNickname(){
+    // only asks once: if the prompt is cancelled or left blank, we deliberately
+    // leave myNickname unset (rather than locking in "익명" forever) so the
+    // player gets asked again next time instead of being stuck anonymous
     if(!myNickname){
       let input = null;
-      try{ input = prompt('공유할 때 표시할 닉네임을 입력해주세요', ''); }catch(e){}
-      myNickname = (input||'').trim().slice(0,12) || '익명';
-      lsSet('nickname', myNickname);
+      try{ input = prompt('공유/랭킹에 표시할 닉네임을 입력해주세요', ''); }catch(e){}
+      const trimmed = (input||'').trim().slice(0,12);
+      if(trimmed){ myNickname = trimmed; lsSet('nickname', myNickname); }
     }
-    return myNickname;
+    syncUiButtons();
+    return myNickname || '익명';
+  }
+
+  function changeNickname(){
+    let input = null;
+    try{ input = prompt('새 닉네임을 입력해주세요', myNickname||''); }catch(e){}
+    if(input==null) return; // cancelled - keep the current nickname as-is
+    const trimmed = input.trim().slice(0,12);
+    myNickname = trimmed || '익명';
+    lsSet('nickname', myNickname);
+    syncUiButtons();
+    // already have a global score submitted under the old name - move it to the new one
+    if(globalBestSubmitted > 0 && window.__ttsCloud){
+      window.__ttsCloud.submitScore(clientId, myNickname, globalBestSubmitted);
+    }
+    if(leaderboardTab==='global'){ globalLoadState='idle'; loadGlobalLeaderboardIfNeeded(); }
   }
 
   function buildChallengeUrl(score){
@@ -694,10 +722,10 @@
 
   async function shareChallenge(score){
     ensureAudio();
-    ensureNickname();
+    const nick = ensureNickname();
     const roundedScore = Math.floor(score);
     const url = buildChallengeUrl(score);
-    const text = myNickname+'님이 [하늘에 닿고 싶어]에서 '+roundedScore+'m를 기록했어요! 나를 이길 수 있을까요? 🐤';
+    const text = nick+'님이 [하늘에 닿고 싶어]에서 '+roundedScore+'m를 기록했어요! 나를 이길 수 있을까요? 🐤';
     if(navigator.share){
       try{
         await navigator.share({ title:'하늘에 닿고 싶어 - 도전장', text, url });
@@ -873,6 +901,8 @@
     btnLbGlobal.style.display = showLeaderboard ? 'flex' : 'none';
     btnLbLocal.classList.toggle('lbTabActive', leaderboardTab==='local');
     btnLbGlobal.classList.toggle('lbTabActive', leaderboardTab==='global');
+    btnNickname.style.display = showLeaderboard ? 'flex' : 'none';
+    btnNickname.textContent = '✏️ ' + (myNickname || '닉네임 설정');
   }
 
   function enterFreefall(fromX, fromY){
@@ -2475,6 +2505,7 @@
     loadGlobalLeaderboardIfNeeded();
     syncUiButtons();
   });
+  btnNickname.addEventListener('click', function(e){ e.stopPropagation(); changeNickname(); });
   btnSkinPrev.addEventListener('click', function(e){ e.stopPropagation(); cycleSkin(-1); });
   btnSkinNext.addEventListener('click', function(e){ e.stopPropagation(); cycleSkin(1); });
   btnShare.addEventListener('click', function(e){
