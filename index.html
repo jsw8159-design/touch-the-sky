@@ -86,6 +86,40 @@
     min-height: 0;
   }
   canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+
+  /* ===== overlay UI buttons (mute / pause / skin picker / leaderboard) ===== */
+  #uiOverlay {
+    position: absolute; inset: 0;
+    pointer-events: none;
+    z-index: 5;
+  }
+  .uiBtn {
+    position: absolute;
+    pointer-events: auto;
+    display: flex; align-items: center; justify-content: center;
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(10,20,30,0.42);
+    color: #fff;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+  .uiBtn:active { background: rgba(10,20,30,0.62); }
+  #btnMute { left: 10px; bottom: 10px; }
+  #btnPause { right: 10px; bottom: 10px; display: none; }
+  #btnLeaderboard { left: 10px; top: 10px; font-size: 18px; display: none; }
+  #btnSkinPrev { left: 6%; top: 63%; display: none; }
+  #btnSkinNext { right: 6%; top: 63%; display: none; }
+  #btnLbClose {
+    left: 50%; bottom: 8%; transform: translateX(-50%);
+    width: auto; height: auto; border-radius: 20px;
+    padding: 10px 22px; font-size: 15px; font-family: 'Jua', sans-serif;
+    display: none;
+  }
 </style>
 </head>
 <body>
@@ -136,6 +170,14 @@
     </div>
     <div id="gameArea">
       <canvas id="gameCanvas"></canvas>
+      <div id="uiOverlay">
+        <button id="btnMute" class="uiBtn" type="button" aria-label="음소거">🔊</button>
+        <button id="btnPause" class="uiBtn" type="button" aria-label="일시정지">⏸</button>
+        <button id="btnLeaderboard" class="uiBtn" type="button" aria-label="리더보드">🏆</button>
+        <button id="btnSkinPrev" class="uiBtn" type="button" aria-label="이전 스킨">‹</button>
+        <button id="btnSkinNext" class="uiBtn" type="button" aria-label="다음 스킨">›</button>
+        <button id="btnLbClose" class="uiBtn" type="button">닫기</button>
+      </div>
     </div>
   </div>
 </div>
@@ -145,6 +187,39 @@
   const ctx = canvas.getContext('2d');
   const container = document.getElementById('gameContainer');
   const gameArea = document.getElementById('gameArea');
+  const btnMute = document.getElementById('btnMute');
+  const btnPause = document.getElementById('btnPause');
+  const btnLeaderboard = document.getElementById('btnLeaderboard');
+  const btnSkinPrev = document.getElementById('btnSkinPrev');
+  const btnSkinNext = document.getElementById('btnSkinNext');
+  const btnLbClose = document.getElementById('btnLbClose');
+
+  // ---------- persistence (localStorage) ----------
+  const LS_PREFIX = 'ttsSky_';
+  function lsGet(key, fallback){
+    try{
+      const v = localStorage.getItem(LS_PREFIX+key);
+      return v==null ? fallback : v;
+    }catch(e){ return fallback; }
+  }
+  function lsSet(key, value){
+    try{ localStorage.setItem(LS_PREFIX+key, value); }catch(e){}
+  }
+  function lsGetJSON(key, fallback){
+    try{
+      const v = localStorage.getItem(LS_PREFIX+key);
+      return v==null ? fallback : JSON.parse(v);
+    }catch(e){ return fallback; }
+  }
+  function lsSetJSON(key, value){
+    try{ localStorage.setItem(LS_PREFIX+key, JSON.stringify(value)); }catch(e){}
+  }
+
+  // ---------- haptic feedback ----------
+  function vibrate(pattern){
+    if(muted) return;
+    try{ if(navigator.vibrate) navigator.vibrate(pattern); }catch(e){}
+  }
 
   // ---------- ad banner rotator ----------
   // AD 아이템을 먹을 때마다 플레이스홀더 슬라이드를 다음 것으로 넘깁니다.
@@ -217,7 +292,7 @@
     loadVoiceClips();
   }
   function beep(freq,dur,type,vol,delay){
-    if(!actx) return;
+    if(!actx || muted) return;
     delay = delay||0; vol = vol==null?0.14:vol; type = type||'sine';
     const t0=actx.currentTime+delay;
     const osc=actx.createOscillator(), gain=actx.createGain();
@@ -237,7 +312,7 @@
   function sfxCombo(){ beep(760,0.06,'triangle',0.11); beep(1000,0.07,'triangle',0.1,0.06); beep(1300,0.08,'triangle',0.1,0.12); }
   function sfxFall(){ beep(300,0.12,'sine',0.1); beep(160,0.22,'sine',0.09,0.06); }
   function noiseBurst(dur,vol,delay,filterFreq){
-    if(!actx) return;
+    if(!actx || muted) return;
     delay = delay||0; vol = vol==null?0.2:vol; filterFreq = filterFreq||1200;
     const t0 = actx.currentTime+delay;
     const bufferSize = Math.max(1,Math.floor(actx.sampleRate*dur));
@@ -284,7 +359,7 @@
     return voicesList.find(v=>/en[-_]us/i.test(v.lang)) || voicesList.find(v=>/^en/i.test(v.lang)) || voicesList[0];
   }
   function speakLine(text, rate, pitch){
-    if(!voiceReady || !('speechSynthesis' in window)) return;
+    if(muted || !voiceReady || !('speechSynthesis' in window)) return;
     try{
       window.speechSynthesis.cancel(); // interrupt any line still playing so callouts stay snappy
       const u = new SpeechSynthesisUtterance(text);
@@ -320,7 +395,7 @@
     }
   }
   function playVoiceClip(id){
-    if(!actx || !voiceClipBuffers[id]) return false;
+    if(muted || !actx || !voiceClipBuffers[id]) return false;
     try{
       const src = actx.createBufferSource();
       src.buffer = voiceClipBuffers[id];
@@ -403,7 +478,7 @@
     bgmTimerId = setTimeout(bgmScheduler, 25);
   }
   function startBgm(){
-    if(!actx || bgmOn) return;
+    if(!actx || bgmOn || muted) return;
     ensureBgmGain();
     bgmGain.gain.cancelScheduledValues(actx.currentTime);
     bgmGain.gain.setValueAtTime(0, actx.currentTime);
@@ -425,11 +500,65 @@
   // ---------- game state ----------
   let state = 'start'; // start | playing | gameover
   let hp=3, hpMax=3;
-  let height=0, sessionBest=0, landings=0;
+  let height=0, landings=0;
+  // best height ever reached, persisted across visits via localStorage
+  let sessionBest = parseFloat(lsGet('bestHeight','0'))||0;
+  let isNewRecord = false;
+  let runStartBest = sessionBest; // snapshot at run start, since sessionBest updates mid-run
   let climbPerLanding = 3;
   // combo: consecutive successful landings without taking a hit. boosts height gained per landing.
   let combo=0, comboBest=0, comboMultiplier=1, comboPopAt=-999;
   function comboMultiplierFor(c){ return 1 + Math.min(c,10)*0.1; } // ramps to x2.0 at a 10-streak
+
+  // ---------- sound mute ----------
+  let muted = lsGet('muted','0')==='1';
+  function applyMuteUi(){
+    btnMute.textContent = muted ? '🔇' : '🔊';
+  }
+  function toggleMute(){
+    muted = !muted;
+    lsSet('muted', muted ? '1' : '0');
+    applyMuteUi();
+    if(muted){ stopBgm(); }
+    else if(state==='playing' && !paused){ startBgm(); }
+  }
+  applyMuteUi();
+
+  // ---------- local leaderboard (top 5, persisted) ----------
+  const LEADERBOARD_SIZE = 5;
+  let leaderboard = lsGetJSON('leaderboard', []);
+  let showLeaderboard = false;
+  function submitScore(h){
+    const entry = { h: Math.floor(h), t: Date.now() };
+    leaderboard.push(entry);
+    leaderboard.sort((a,b)=>b.h-a.h);
+    leaderboard = leaderboard.slice(0, LEADERBOARD_SIZE);
+    lsSetJSON('leaderboard', leaderboard);
+  }
+
+  // ---------- unlockable character skins ----------
+  const SKINS = [
+    { id:'classic', name:'클래식', body:'#FFC947', wing:'#F2A93B', unlockHeight:0 },
+    { id:'pink',    name:'핑크',   body:'#FF9EC4', wing:'#F26FA3', unlockHeight:30 },
+    { id:'sky',     name:'하늘',   body:'#7FD8F2', wing:'#4FB3D9', unlockHeight:80 },
+    { id:'violet',  name:'보라',   body:'#C9A3FF', wing:'#9B6FE0', unlockHeight:150 },
+    { id:'gold',    name:'골드',   body:'#FFE066', wing:'#E0B93D', unlockHeight:300 }
+  ];
+  function isSkinUnlocked(i){ return sessionBest >= SKINS[i].unlockHeight; }
+  let selectedSkinIndex = parseInt(lsGet('skinIndex','0'),10)||0;
+  if(selectedSkinIndex<0 || selectedSkinIndex>=SKINS.length || !isSkinUnlocked(selectedSkinIndex)) selectedSkinIndex = 0;
+  function currentSkin(){ return SKINS[selectedSkinIndex]; }
+  function cycleSkin(dir){
+    let i = selectedSkinIndex;
+    for(let n=0;n<SKINS.length;n++){
+      i = (i+dir+SKINS.length)%SKINS.length;
+      if(isSkinUnlocked(i)){ selectedSkinIndex = i; lsSet('skinIndex', String(i)); sfxEquip(); break; }
+    }
+  }
+
+  // ---------- pause ----------
+  let paused = false, pauseStartedAt = 0;
+
   let charSide = 'left';
   // charState: resting (safe, on a pillar) | jump1 (first hop, airborne) |
   // freefall (missed the window, falling under gravity, can still be rescued) |
@@ -502,6 +631,8 @@
   function resetGame(){
     hpMax = 3; hp = hpMax; height = 0; landings = 0;
     combo = 0; comboMultiplier = 1;
+    isNewRecord = false; paused = false;
+    runStartBest = sessionBest;
     obstacles = []; particles = [];
     obstacleUnlocked = {helmet:false, ad:false, leaf:false, boulder:false, lightning:false, friend:false, hpup:false};
     helmetLevel = 0;
@@ -522,14 +653,63 @@
     sfxStart();
     nextSpawnAt = performance.now()+1600;
     startBgm();
+    syncUiButtons();
   }
 
   function triggerGameOver(){
     state='gameover';
+    isNewRecord = height > runStartBest;
     sessionBest = Math.max(sessionBest, height);
+    lsSet('bestHeight', String(sessionBest));
+    submitScore(height);
     sfxGameOver();
+    vibrate([40,60,40,60,120]);
     shakeUntil = performance.now()+300; shakeMag = 10;
     stopBgm();
+    syncUiButtons();
+  }
+
+  // ---------- pause / resume ----------
+  // shifts every pending wall-clock deadline forward by the paused duration so
+  // nothing (idle timeout, jump animation, invincibility, obstacle spawn timer...)
+  // "fast-forwards" the instant the game resumes
+  function togglePause(){
+    if(state!=='playing') return;
+    const now = performance.now();
+    if(!paused){
+      paused = true;
+      pauseStartedAt = now;
+      stopBgm();
+    } else {
+      const pausedMs = now - pauseStartedAt;
+      restDeadline += pausedMs;
+      invincibleUntil += pausedMs;
+      blinkAt += pausedMs; blinkUntil += pausedMs;
+      deathAt += pausedMs;
+      landTime += pausedMs;
+      segStart += pausedMs;
+      nextSpawnAt += pausedMs;
+      shakeUntil += pausedMs;
+      unlockToastUntil += pausedMs;
+      shoutStart += pausedMs; shoutUntil += pausedMs;
+      flashStart += pausedMs; flashUntil += pausedMs;
+      comboPopAt += pausedMs;
+      fireballGrinStart += pausedMs; fireballStart += pausedMs;
+      friendPhaseStart += pausedMs;
+      paused = false;
+      if(!muted) startBgm();
+    }
+    syncUiButtons();
+  }
+
+  // ---------- UI button visibility ----------
+  function syncUiButtons(){
+    btnPause.style.display = (state==='playing' && !showLeaderboard) ? 'flex' : 'none';
+    btnPause.textContent = paused ? '▶' : '⏸';
+    btnLeaderboard.style.display = ((state==='start' || state==='gameover') && !showLeaderboard) ? 'flex' : 'none';
+    btnSkinPrev.style.display = (state==='start' && !showLeaderboard) ? 'flex' : 'none';
+    btnSkinNext.style.display = (state==='start' && !showLeaderboard) ? 'flex' : 'none';
+    btnLbClose.style.display = showLeaderboard ? 'flex' : 'none';
   }
 
   function enterFreefall(fromX, fromY){
@@ -699,6 +879,7 @@
     invincibleUntil = performance.now()+950;
     spawnParticles(o.x,o.y,'#FFD93D',10,[60,180],0.5);
     if(o.type==='lightning') sfxLightning(); else sfxHit();
+    vibrate(dmg>=2 ? [30,40,60] : 40);
     shakeUntil = performance.now()+180; shakeMag = dmg>=2 ? 10 : 6;
     if(hp<=0) triggerGameOver();
   }
@@ -744,13 +925,14 @@
     comboMultiplier = comboMultiplierFor(combo);
     comboPopAt = performance.now();
     height += climbPerLanding*comboMultiplier;
-    sessionBest = Math.max(sessionBest, height);
+    if(height > sessionBest){ sessionBest = height; lsSet('bestHeight', String(sessionBest)); }
     landTime = performance.now();
     spawnParticles(charX, restY+charRadius*0.6, '#C9A876', 6, [30,90], 0.4);
     sfxLand();
     if(combo>=5 && combo%5===0){
       triggerShout('🔥 '+combo+'연속 콤보!', '#FF9F1C', 800);
       sfxCombo();
+      vibrate([25,30,25,30,60]);
     }
     if(landings % 10 === 0){
       gapTarget = randRange(gapWidthMin, gapWidthMax);
@@ -1225,13 +1407,13 @@
     }
 
     // wing
-    ctx.fillStyle = '#F2A93B';
+    ctx.fillStyle = currentSkin().wing;
     ctx.beginPath();
     ctx.ellipse(-r*0.75, r*0.05, r*0.45, r*0.62, -0.5, 0, Math.PI*2);
     ctx.fill();
 
     // body
-    ctx.fillStyle = isFlashing ? '#FFFFFF' : '#FFC947';
+    ctx.fillStyle = isFlashing ? '#FFFFFF' : currentSkin().body;
     ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.fill();
 
     // blush
@@ -1890,6 +2072,10 @@
       ctx.fillText('하늘에', W/2, H*0.33);
       ctx.fillText('닿고 싶어', W/2, H*0.33+Math.round(W*0.13));
 
+      ctx.font = `${Math.round(W*0.032)}px 'Jua', sans-serif`;
+      ctx.fillStyle = '#FFD93D';
+      ctx.fillText('역대 최고 기록: '+Math.floor(sessionBest)+'m', W/2, H*0.435);
+
       ctx.font = `${Math.round(W*0.038)}px 'Jua', sans-serif`;
       ctx.fillStyle = 'rgba(255,255,255,0.9)';
       const lh = Math.round(W*0.052);
@@ -1902,7 +2088,12 @@
       ctx.fillStyle = '#FFD93D';
       ctx.fillText('탭 / 스페이스바로 시작', W/2, H*0.78+bob);
 
-      drawCharacter(W/2, H*0.66, 1, 0, now);
+      drawCharacter(W/2, H*0.655, 1, 0, now);
+
+      const unlockedCount = SKINS.reduce((n,_,i)=>n+(isSkinUnlocked(i)?1:0),0);
+      ctx.font = `${Math.round(W*0.032)}px 'Jua', sans-serif`;
+      ctx.fillStyle = 'rgba(255,255,255,0.85)';
+      ctx.fillText(currentSkin().name+' 스킨 ('+unlockedCount+'/'+SKINS.length+' 해금)', W/2, H*0.72);
     } else if(state==='gameover'){
       ctx.fillStyle = 'rgba(5,8,25,0.6)';
       ctx.fillRect(0,0,W,H);
@@ -1915,20 +2106,63 @@
       ctx.font = `${Math.round(W*0.06)}px 'Jua', sans-serif`;
       ctx.fillText('높이: '+Math.floor(height)+'m', W/2, H*0.48);
       ctx.font = `${Math.round(W*0.045)}px 'Jua', sans-serif`;
-      ctx.fillStyle = '#FFD93D';
-      ctx.fillText('최고 기록(이번 플레이): '+Math.floor(sessionBest)+'m', W/2, H*0.55);
+      ctx.fillStyle = isNewRecord ? '#7CFFB2' : '#FFD93D';
+      ctx.fillText(isNewRecord ? '🏆 신기록! '+Math.floor(sessionBest)+'m' : '역대 최고 기록: '+Math.floor(sessionBest)+'m', W/2, H*0.55);
 
       if(comboBest >= 2){
-        ctx.font = `${Math.round(W*0.04)}px 'Jua', sans-serif`;
+        ctx.font = `${Math.round(W*0.036)}px 'Jua', sans-serif`;
         ctx.fillStyle = '#FF9F1C';
-        ctx.fillText('최고 콤보: '+comboBest+'연속', W/2, H*0.61);
+        ctx.fillText('최고 콤보: '+comboBest+'연속', W/2, H*0.605);
       }
 
       const bob = Math.sin(now/350)*6;
       ctx.font = `${Math.round(W*0.052)}px 'Jua', sans-serif`;
       ctx.fillStyle = '#FFFFFF';
-      ctx.fillText('탭 / 스페이스바로 다시 시작', W/2, H*0.66+bob);
+      ctx.fillText('탭 / 스페이스바로 다시 시작', W/2, H*0.68+bob);
     }
+  }
+
+  // ---------- pause overlay ----------
+  function drawPauseOverlay(now){
+    ctx.save();
+    ctx.fillStyle = 'rgba(5,8,25,0.6)';
+    ctx.fillRect(0,0,W,H);
+    ctx.textAlign='center';
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = `${Math.round(W*0.09)}px 'Jua', sans-serif`;
+    ctx.fillText('일시정지', W/2, H*0.44);
+    const bob = Math.sin(now/350)*6;
+    ctx.font = `${Math.round(W*0.045)}px 'Jua', sans-serif`;
+    ctx.fillStyle = '#FFD93D';
+    ctx.fillText('탭하면 계속하기', W/2, H*0.52+bob);
+    ctx.restore();
+  }
+
+  // ---------- local leaderboard overlay ----------
+  function drawLeaderboard(now){
+    ctx.save();
+    ctx.fillStyle = 'rgba(4,6,20,0.94)';
+    ctx.fillRect(0,0,W,H);
+    ctx.textAlign='center';
+    ctx.fillStyle = '#FFD93D';
+    ctx.font = `${Math.round(W*0.08)}px 'Jua', sans-serif`;
+    ctx.fillText('🏆 TOP '+LEADERBOARD_SIZE, W/2, H*0.24);
+
+    ctx.font = `${Math.round(W*0.048)}px 'Jua', sans-serif`;
+    ctx.textAlign = 'center';
+    if(!leaderboard.length){
+      ctx.fillStyle = 'rgba(255,255,255,0.75)';
+      ctx.fillText('아직 기록이 없어요', W/2, H*0.4);
+    } else {
+      const rowH = H*0.072;
+      const medals = ['🥇','🥈','🥉'];
+      for(let i=0;i<leaderboard.length;i++){
+        const y = H*0.34 + i*rowH;
+        ctx.fillStyle = i<3 ? '#FFD93D' : 'rgba(255,255,255,0.85)';
+        ctx.fillText((medals[i]||(i+1)+'.')+' '+leaderboard[i].h+'m', W/2, y);
+      }
+    }
+    ctx.restore();
   }
 
   // ---------- main loop ----------
@@ -1964,14 +2198,18 @@
     let dt = (now-lastTime)/1000;
     lastTime = now;
     dt = Math.min(dt, 0.05);
-    update(dt, now);
+    if(!paused) update(dt, now);
     render(now);
+    if(paused) drawPauseOverlay(now);
+    if(showLeaderboard) drawLeaderboard(now);
     requestAnimationFrame(loop);
   }
 
   // ---------- input ----------
   function onPointerDown(e){
     e.preventDefault();
+    if(showLeaderboard){ showLeaderboard=false; syncUiButtons(); return; }
+    if(paused){ togglePause(); return; }
     tryJump();
   }
   canvas.addEventListener('pointerdown', onPointerDown);
@@ -1979,16 +2217,39 @@
   window.addEventListener('keydown', function(e){
     if(e.code==='Space' || e.key===' '){
       e.preventDefault();
+      if(showLeaderboard){ showLeaderboard=false; syncUiButtons(); return; }
+      if(paused){ togglePause(); return; }
       tryJump();
+    } else if(e.key==='p' || e.key==='P' || e.key==='Escape'){
+      if(state==='playing') togglePause();
+    } else if(e.key==='m' || e.key==='M'){
+      toggleMute();
     }
   });
   document.addEventListener('visibilitychange', function(){
     if(!document.hidden) lastTime = 0;
   });
 
+  // ---------- overlay UI button wiring ----------
+  btnMute.addEventListener('click', function(e){ e.stopPropagation(); ensureAudio(); toggleMute(); });
+  btnPause.addEventListener('click', function(e){ e.stopPropagation(); togglePause(); });
+  btnLeaderboard.addEventListener('click', function(e){
+    e.stopPropagation();
+    showLeaderboard = true;
+    syncUiButtons();
+  });
+  btnLbClose.addEventListener('click', function(e){
+    e.stopPropagation();
+    showLeaderboard = false;
+    syncUiButtons();
+  });
+  btnSkinPrev.addEventListener('click', function(e){ e.stopPropagation(); cycleSkin(-1); });
+  btnSkinNext.addEventListener('click', function(e){ e.stopPropagation(); cycleSkin(1); });
+
   // ---------- init ----------
   resize();
   resetGame();
+  syncUiButtons();
   requestAnimationFrame(loop);
 })();
 </script>
