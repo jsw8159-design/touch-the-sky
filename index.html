@@ -234,6 +234,7 @@
   function sfxGameOver(){ beep(420,0.16,'sine',0.12,0); beep(320,0.16,'sine',0.12,0.16); beep(220,0.28,'sine',0.12,0.32); }
   function sfxStart(){ beep(440,0.09,'triangle',0.1); beep(660,0.09,'triangle',0.1,0.08); beep(880,0.12,'triangle',0.1,0.16); }
   function sfxUnlock(){ beep(660,0.08,'square',0.08); beep(990,0.1,'square',0.08,0.09); }
+  function sfxCombo(){ beep(760,0.06,'triangle',0.11); beep(1000,0.07,'triangle',0.1,0.06); beep(1300,0.08,'triangle',0.1,0.12); }
   function sfxFall(){ beep(300,0.12,'sine',0.1); beep(160,0.22,'sine',0.09,0.06); }
   function noiseBurst(dur,vol,delay,filterFreq){
     if(!actx) return;
@@ -426,6 +427,9 @@
   let hp=3, hpMax=3;
   let height=0, sessionBest=0, landings=0;
   let climbPerLanding = 3;
+  // combo: consecutive successful landings without taking a hit. boosts height gained per landing.
+  let combo=0, comboBest=0, comboMultiplier=1, comboPopAt=-999;
+  function comboMultiplierFor(c){ return 1 + Math.min(c,10)*0.1; } // ramps to x2.0 at a 10-streak
   let charSide = 'left';
   // charState: resting (safe, on a pillar) | jump1 (first hop, airborne) |
   // freefall (missed the window, falling under gravity, can still be rescued) |
@@ -497,6 +501,7 @@
 
   function resetGame(){
     hpMax = 3; hp = hpMax; height = 0; landings = 0;
+    combo = 0; comboMultiplier = 1;
     obstacles = []; particles = [];
     obstacleUnlocked = {helmet:false, ad:false, leaf:false, boulder:false, lightning:false, friend:false, hpup:false};
     helmetLevel = 0;
@@ -690,6 +695,7 @@
   function hitObstacle(o, dmg){
     dmg = dmg||1;
     hp = Math.max(0,hp-dmg);
+    combo = 0; comboMultiplier = 1;
     invincibleUntil = performance.now()+950;
     spawnParticles(o.x,o.y,'#FFD93D',10,[60,180],0.5);
     if(o.type==='lightning') sfxLightning(); else sfxHit();
@@ -733,11 +739,19 @@
 
   function landCharacter(){
     landings++;
-    height += climbPerLanding;
+    combo++;
+    if(combo>comboBest) comboBest = combo;
+    comboMultiplier = comboMultiplierFor(combo);
+    comboPopAt = performance.now();
+    height += climbPerLanding*comboMultiplier;
     sessionBest = Math.max(sessionBest, height);
     landTime = performance.now();
     spawnParticles(charX, restY+charRadius*0.6, '#C9A876', 6, [30,90], 0.4);
     sfxLand();
+    if(combo>=5 && combo%5===0){
+      triggerShout('🔥 '+combo+'연속 콤보!', '#FF9F1C', 800);
+      sfxCombo();
+    }
     if(landings % 10 === 0){
       gapTarget = randRange(gapWidthMin, gapWidthMax);
     }
@@ -1826,6 +1840,30 @@
     ctx.fillStyle = '#FFFFFF';
     ctx.fillText(scoreText, W-18, 38);
 
+    // combo indicator (shown while a streak of 2+ clean landings is active)
+    if(combo >= 2){
+      const comboText = '🔥 콤보 x'+comboMultiplier.toFixed(1)+' ('+combo+')';
+      ctx.font = `${Math.round(W*0.038)}px 'Jua', sans-serif`;
+      const comboW = ctx.measureText(comboText).width;
+      const by = 38 + hs*1.7;
+      ctx.save();
+      ctx.fillStyle = 'rgba(10,20,30,0.28)';
+      roundRect(W-30-comboW, by-hs*0.85, comboW+20, hs*1.55, hs*0.75);
+      ctx.fill();
+      ctx.restore();
+
+      const popT = clamp((now-comboPopAt)/220,0,1);
+      const popScale = 1 + (1-popT)*0.22;
+      ctx.save();
+      ctx.translate(W-18, by);
+      ctx.scale(popScale,popScale);
+      ctx.fillStyle = 'rgba(0,0,0,0.35)';
+      ctx.fillText(comboText, 1, 1);
+      ctx.fillStyle = '#FFD166';
+      ctx.fillText(comboText, 0, 0);
+      ctx.restore();
+    }
+
     if(now < unlockToastUntil){
       ctx.textAlign='center';
       const alpha = clamp((unlockToastUntil-now)/2200,0,1);
@@ -1879,6 +1917,12 @@
       ctx.font = `${Math.round(W*0.045)}px 'Jua', sans-serif`;
       ctx.fillStyle = '#FFD93D';
       ctx.fillText('최고 기록(이번 플레이): '+Math.floor(sessionBest)+'m', W/2, H*0.55);
+
+      if(comboBest >= 2){
+        ctx.font = `${Math.round(W*0.04)}px 'Jua', sans-serif`;
+        ctx.fillStyle = '#FF9F1C';
+        ctx.fillText('최고 콤보: '+comboBest+'연속', W/2, H*0.61);
+      }
 
       const bob = Math.sin(now/350)*6;
       ctx.font = `${Math.round(W*0.052)}px 'Jua', sans-serif`;
