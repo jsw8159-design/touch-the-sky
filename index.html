@@ -128,6 +128,15 @@
     display: none;
   }
   #btnShare:active { background: rgba(255,140,60,1); }
+  #btnLbLocal, #btnLbGlobal {
+    top: 13%;
+    width: auto; height: auto; border-radius: 16px;
+    padding: 7px 16px; font-size: 13px; font-family: 'Jua', sans-serif;
+    display: none;
+  }
+  #btnLbLocal { left: 50%; transform: translateX(-108%); }
+  #btnLbGlobal { left: 50%; transform: translateX(8%); }
+  #btnLbLocal.lbTabActive, #btnLbGlobal.lbTabActive { background: rgba(255,140,60,0.9); }
 </style>
 </head>
 <body>
@@ -186,10 +195,64 @@
         <button id="btnSkinNext" class="uiBtn" type="button" aria-label="다음 스킨">›</button>
         <button id="btnLbClose" class="uiBtn" type="button">닫기</button>
         <button id="btnShare" class="uiBtn" type="button">🔗 도전장 보내기</button>
+        <button id="btnLbLocal" class="uiBtn" type="button">내 기록</button>
+        <button id="btnLbGlobal" class="uiBtn" type="button">전체 랭킹</button>
       </div>
     </div>
   </div>
 </div>
+<script type="module">
+  // ---------- global leaderboard backend (Firebase Firestore) ----------
+  // exposes window.__ttsCloud for the main game script (a plain, non-module IIFE)
+  // to call. Fails soft: if the CDN/network/Firestore is unreachable, every
+  // method below resolves to a falsy/null result instead of throwing, so the
+  // game degrades to local-only leaderboards rather than breaking.
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+  import {
+    getFirestore, collection, doc, setDoc, getDocs, query, orderBy, limit, serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAG7tHoduXzxc_VSNG0izbrIzCJJfnBeQk",
+    authDomain: "touch-the-sky-790fa.firebaseapp.com",
+    projectId: "touch-the-sky-790fa",
+    storageBucket: "touch-the-sky-790fa.firebasestorage.app",
+    messagingSenderId: "736779603701",
+    appId: "1:736779603701:web:0052e0c6984a918b143fbc"
+  };
+
+  let db = null;
+  try {
+    db = getFirestore(initializeApp(firebaseConfig));
+  } catch (e) { console.warn('[touch-the-sky] Firebase init failed', e); }
+
+  window.__ttsCloud = {
+    async submitScore(clientId, nickname, score) {
+      if (!db) return false;
+      try {
+        await setDoc(doc(db, 'scores', clientId), {
+          nickname: String(nickname || '익명').slice(0, 20),
+          score: Math.max(0, Math.floor(score)),
+          ts: serverTimestamp()
+        });
+        return true;
+      } catch (e) { console.warn('[touch-the-sky] submitScore failed', e); return false; }
+    },
+    async fetchTop(n) {
+      if (!db) return null;
+      try {
+        const q = query(collection(db, 'scores'), orderBy('score', 'desc'), limit(n || 10));
+        const snap = await getDocs(q);
+        const rows = [];
+        snap.forEach(d => {
+          const v = d.data() || {};
+          rows.push({ nickname: v.nickname || '익명', score: v.score || 0 });
+        });
+        return rows;
+      } catch (e) { console.warn('[touch-the-sky] fetchTop failed', e); return null; }
+    }
+  };
+</script>
 <script>
 (function(){
   const canvas = document.getElementById('gameCanvas');
@@ -203,6 +266,8 @@
   const btnSkinNext = document.getElementById('btnSkinNext');
   const btnLbClose = document.getElementById('btnLbClose');
   const btnShare = document.getElementById('btnShare');
+  const btnLbLocal = document.getElementById('btnLbLocal');
+  const btnLbGlobal = document.getElementById('btnLbGlobal');
 
   // ---------- persistence (localStorage) ----------
   const LS_PREFIX = 'ttsSky_';
@@ -546,6 +611,37 @@
     lsSetJSON('leaderboard', leaderboard);
   }
 
+  // ---------- global online leaderboard (Firestore via window.__ttsCloud) ----------
+  let clientId = lsGet('clientId', '');
+  if(!clientId){
+    clientId = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : (Date.now()+'-'+Math.random().toString(36).slice(2));
+    lsSet('clientId', clientId);
+  }
+  let globalBestSubmitted = parseFloat(lsGet('globalBestSubmitted','0'))||0;
+  let leaderboardTab = 'local'; // 'local' | 'global'
+  let globalLeaderboard = null;
+  let globalLoadState = 'idle'; // idle | loading | loaded | error
+
+  function submitGlobalScoreIfBest(score){
+    if(score <= globalBestSubmitted) return;
+    if(!window.__ttsCloud) return;
+    const nick = myNickname || '익명';
+    window.__ttsCloud.submitScore(clientId, nick, score).then(function(ok){
+      if(ok){ globalBestSubmitted = score; lsSet('globalBestSubmitted', String(score)); }
+    });
+  }
+
+  function loadGlobalLeaderboardIfNeeded(){
+    if(globalLoadState==='loading' || globalLoadState==='loaded') return;
+    if(!window.__ttsCloud){ globalLoadState='error'; return; }
+    globalLoadState = 'loading';
+    window.__ttsCloud.fetchTop(8).then(function(rows){
+      if(rows==null){ globalLoadState='error'; return; }
+      globalLeaderboard = rows;
+      globalLoadState = 'loaded';
+    }).catch(function(){ globalLoadState='error'; });
+  }
+
   // ---------- unlockable character skins ----------
   const SKINS = [
     { id:'classic', name:'클래식', body:'#FFC947', wing:'#F2A93B', unlockHeight:0 },
@@ -721,6 +817,7 @@
     sessionBest = Math.max(sessionBest, height);
     lsSet('bestHeight', String(sessionBest));
     submitScore(height);
+    submitGlobalScoreIfBest(height);
     sfxGameOver();
     vibrate([40,60,40,60,120]);
     shakeUntil = performance.now()+300; shakeMag = 10;
@@ -772,6 +869,10 @@
     btnShare.style.display = ((state==='start' || state==='gameover') && !showLeaderboard) ? 'flex' : 'none';
     btnShare.textContent = (state==='gameover' && challengeTarget!=null && height>challengeTarget)
       ? '🎉 승리 자랑하기' : '🔗 도전장 보내기';
+    btnLbLocal.style.display = showLeaderboard ? 'flex' : 'none';
+    btnLbGlobal.style.display = showLeaderboard ? 'flex' : 'none';
+    btnLbLocal.classList.toggle('lbTabActive', leaderboardTab==='local');
+    btnLbGlobal.classList.toggle('lbTabActive', leaderboardTab==='global');
   }
 
   function enterFreefall(fromX, fromY){
@@ -2236,21 +2337,46 @@
     ctx.fillRect(0,0,W,H);
     ctx.textAlign='center';
     ctx.fillStyle = '#FFD93D';
-    ctx.font = `${Math.round(W*0.08)}px 'Jua', sans-serif`;
-    ctx.fillText('🏆 TOP '+LEADERBOARD_SIZE, W/2, H*0.24);
+    ctx.font = `${Math.round(W*0.07)}px 'Jua', sans-serif`;
+    ctx.fillText(leaderboardTab==='global' ? '🌍 전체 랭킹' : '🏆 내 TOP '+LEADERBOARD_SIZE, W/2, H*0.26);
 
-    ctx.font = `${Math.round(W*0.048)}px 'Jua', sans-serif`;
+    ctx.font = `${Math.round(W*0.042)}px 'Jua', sans-serif`;
     ctx.textAlign = 'center';
-    if(!leaderboard.length){
-      ctx.fillStyle = 'rgba(255,255,255,0.75)';
-      ctx.fillText('아직 기록이 없어요', W/2, H*0.4);
-    } else {
-      const rowH = H*0.072;
-      const medals = ['🥇','🥈','🥉'];
-      for(let i=0;i<leaderboard.length;i++){
-        const y = H*0.34 + i*rowH;
-        ctx.fillStyle = i<3 ? '#FFD93D' : 'rgba(255,255,255,0.85)';
-        ctx.fillText((medals[i]||(i+1)+'.')+' '+leaderboard[i].h+'m', W/2, y);
+    const medals = ['🥇','🥈','🥉'];
+    const rowH = H*0.058;
+
+    if(leaderboardTab==='local'){
+      if(!leaderboard.length){
+        ctx.fillStyle = 'rgba(255,255,255,0.75)';
+        ctx.fillText('아직 기록이 없어요', W/2, H*0.4);
+      } else {
+        for(let i=0;i<leaderboard.length;i++){
+          const y = H*0.36 + i*rowH;
+          ctx.fillStyle = i<3 ? '#FFD93D' : 'rgba(255,255,255,0.85)';
+          ctx.fillText((medals[i]||(i+1)+'.')+' '+leaderboard[i].h+'m', W/2, y);
+        }
+      }
+    } else { // global
+      if(globalLoadState==='loading'){
+        ctx.fillStyle = 'rgba(255,255,255,0.75)';
+        ctx.fillText('불러오는 중...', W/2, H*0.4);
+      } else if(globalLoadState==='error'){
+        ctx.fillStyle = 'rgba(255,150,150,0.85)';
+        ctx.fillText('랭킹을 불러올 수 없어요', W/2, H*0.4);
+        ctx.font = `${Math.round(W*0.032)}px 'Jua', sans-serif`;
+        ctx.fillStyle = 'rgba(255,255,255,0.6)';
+        ctx.fillText('인터넷 연결을 확인해주세요', W/2, H*0.44);
+      } else if(!globalLeaderboard || !globalLeaderboard.length){
+        ctx.fillStyle = 'rgba(255,255,255,0.75)';
+        ctx.fillText('아직 등록된 기록이 없어요', W/2, H*0.4);
+      } else {
+        for(let i=0;i<globalLeaderboard.length;i++){
+          const row = globalLeaderboard[i];
+          const y = H*0.36 + i*rowH;
+          const isMe = row.nickname===myNickname && row.score===Math.floor(globalBestSubmitted);
+          ctx.fillStyle = i<3 ? '#FFD93D' : 'rgba(255,255,255,0.85)';
+          ctx.fillText((medals[i]||(i+1)+'.')+' '+row.nickname+' - '+row.score+'m'+(isMe?' (나)':''), W/2, y);
+        }
       }
     }
     ctx.restore();
@@ -2328,11 +2454,25 @@
   btnLeaderboard.addEventListener('click', function(e){
     e.stopPropagation();
     showLeaderboard = true;
+    leaderboardTab = 'local';
+    globalLoadState = 'idle'; // re-fetch fresh standings each time the board is opened
     syncUiButtons();
   });
   btnLbClose.addEventListener('click', function(e){
     e.stopPropagation();
     showLeaderboard = false;
+    syncUiButtons();
+  });
+  btnLbLocal.addEventListener('click', function(e){
+    e.stopPropagation();
+    leaderboardTab = 'local';
+    syncUiButtons();
+  });
+  btnLbGlobal.addEventListener('click', function(e){
+    e.stopPropagation();
+    ensureNickname();
+    leaderboardTab = 'global';
+    loadGlobalLeaderboardIfNeeded();
     syncUiButtons();
   });
   btnSkinPrev.addEventListener('click', function(e){ e.stopPropagation(); cycleSkin(-1); });
