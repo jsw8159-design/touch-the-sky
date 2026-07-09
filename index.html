@@ -120,6 +120,14 @@
     padding: 10px 22px; font-size: 15px; font-family: 'Jua', sans-serif;
     display: none;
   }
+  #btnShare {
+    left: 50%; bottom: 8%; transform: translateX(-50%);
+    width: auto; height: auto; border-radius: 20px;
+    padding: 10px 22px; font-size: 15px; font-family: 'Jua', sans-serif;
+    background: rgba(255,140,60,0.85);
+    display: none;
+  }
+  #btnShare:active { background: rgba(255,140,60,1); }
 </style>
 </head>
 <body>
@@ -177,6 +185,7 @@
         <button id="btnSkinPrev" class="uiBtn" type="button" aria-label="이전 스킨">‹</button>
         <button id="btnSkinNext" class="uiBtn" type="button" aria-label="다음 스킨">›</button>
         <button id="btnLbClose" class="uiBtn" type="button">닫기</button>
+        <button id="btnShare" class="uiBtn" type="button">🔗 도전장 보내기</button>
       </div>
     </div>
   </div>
@@ -193,6 +202,7 @@
   const btnSkinPrev = document.getElementById('btnSkinPrev');
   const btnSkinNext = document.getElementById('btnSkinNext');
   const btnLbClose = document.getElementById('btnLbClose');
+  const btnShare = document.getElementById('btnShare');
 
   // ---------- persistence (localStorage) ----------
   const LS_PREFIX = 'ttsSky_';
@@ -559,6 +569,54 @@
   // ---------- pause ----------
   let paused = false, pauseStartedAt = 0;
 
+  // ---------- friend challenge (no backend: score + nickname round-trip via the URL) ----------
+  let myNickname = lsGet('nickname', '');
+  const urlParams = new URLSearchParams(location.search);
+  let challengeTarget = urlParams.has('c') ? parseFloat(urlParams.get('c')) : null;
+  if(challengeTarget==null || isNaN(challengeTarget) || challengeTarget<0) challengeTarget = null;
+  let challengeFrom = urlParams.has('n') ? String(urlParams.get('n')).slice(0,16) : null;
+  if(challengeTarget!=null && !challengeFrom) challengeFrom = '친구';
+  let challengeBeatenShoutShown = false; // avoid re-firing the "beat it!" shout mid-run
+
+  function ensureNickname(){
+    if(!myNickname){
+      let input = null;
+      try{ input = prompt('공유할 때 표시할 닉네임을 입력해주세요', ''); }catch(e){}
+      myNickname = (input||'').trim().slice(0,12) || '익명';
+      lsSet('nickname', myNickname);
+    }
+    return myNickname;
+  }
+
+  function buildChallengeUrl(score){
+    const url = new URL(location.href);
+    url.hash = '';
+    url.searchParams.set('c', Math.floor(score));
+    url.searchParams.set('n', myNickname||'익명');
+    return url.toString();
+  }
+
+  async function shareChallenge(score){
+    ensureAudio();
+    ensureNickname();
+    const roundedScore = Math.floor(score);
+    const url = buildChallengeUrl(score);
+    const text = myNickname+'님이 [하늘에 닿고 싶어]에서 '+roundedScore+'m를 기록했어요! 나를 이길 수 있을까요? 🐤';
+    if(navigator.share){
+      try{
+        await navigator.share({ title:'하늘에 닿고 싶어 - 도전장', text, url });
+        return;
+      }catch(e){ /* user cancelled the native share sheet, or it's unsupported here - fall through */ }
+    }
+    try{
+      await navigator.clipboard.writeText(text+'\n'+url);
+      unlockToastText = '🔗 도전 링크가 복사됐어요!'; unlockToastUntil = performance.now()+2200;
+      sfxUnlock();
+    }catch(e){
+      try{ prompt('아래 내용을 복사해서 친구에게 보내주세요', text+'\n'+url); }catch(e2){}
+    }
+  }
+
   let charSide = 'left';
   // charState: resting (safe, on a pillar) | jump1 (first hop, airborne) |
   // freefall (missed the window, falling under gravity, can still be rescued) |
@@ -633,6 +691,7 @@
     combo = 0; comboMultiplier = 1;
     isNewRecord = false; paused = false;
     runStartBest = sessionBest;
+    challengeBeatenShoutShown = false;
     obstacles = []; particles = [];
     obstacleUnlocked = {helmet:false, ad:false, leaf:false, boulder:false, lightning:false, friend:false, hpup:false};
     helmetLevel = 0;
@@ -710,6 +769,9 @@
     btnSkinPrev.style.display = (state==='start' && !showLeaderboard) ? 'flex' : 'none';
     btnSkinNext.style.display = (state==='start' && !showLeaderboard) ? 'flex' : 'none';
     btnLbClose.style.display = showLeaderboard ? 'flex' : 'none';
+    btnShare.style.display = ((state==='start' || state==='gameover') && !showLeaderboard) ? 'flex' : 'none';
+    btnShare.textContent = (state==='gameover' && challengeTarget!=null && height>challengeTarget)
+      ? '🎉 승리 자랑하기' : '🔗 도전장 보내기';
   }
 
   function enterFreefall(fromX, fromY){
@@ -933,6 +995,12 @@
       triggerShout('🔥 '+combo+'연속 콤보!', '#FF9F1C', 800);
       sfxCombo();
       vibrate([25,30,25,30,60]);
+    }
+    if(challengeTarget!=null && !challengeBeatenShoutShown && height > challengeTarget){
+      challengeBeatenShoutShown = true;
+      triggerShout('⚔️ '+challengeFrom+' 추월!', '#7CFFB2', 1100);
+      sfxMaxHpUp();
+      vibrate([30,40,30,40,100]);
     }
     if(landings % 10 === 0){
       gapTarget = randRange(gapWidthMin, gapWidthMax);
@@ -2045,18 +2113,22 @@
       ctx.fillText(comboText, 0, 0);
       ctx.restore();
     }
+  }
 
-    if(now < unlockToastUntil){
-      ctx.textAlign='center';
-      const alpha = clamp((unlockToastUntil-now)/2200,0,1);
-      ctx.globalAlpha = Math.min(1, alpha*3);
-      ctx.font = `${Math.round(W*0.05)}px 'Jua', sans-serif`;
-      ctx.fillStyle = 'rgba(0,0,0,0.4)';
-      ctx.fillText(unlockToastText, W/2+1, H*0.22+1);
-      ctx.fillStyle = '#FFF3B0';
-      ctx.fillText(unlockToastText, W/2, H*0.22);
-      ctx.globalAlpha = 1;
-    }
+  // drawn regardless of state (start/playing/gameover) so toasts like the
+  // "link copied" confirmation are visible even outside active gameplay
+  function drawToast(now){
+    if(now >= unlockToastUntil) return;
+    ctx.save();
+    ctx.textAlign='center';
+    const alpha = clamp((unlockToastUntil-now)/2200,0,1);
+    ctx.globalAlpha = Math.min(1, alpha*3);
+    ctx.font = `${Math.round(W*0.05)}px 'Jua', sans-serif`;
+    ctx.fillStyle = 'rgba(0,0,0,0.4)';
+    ctx.fillText(unlockToastText, W/2+1, H*0.22+1);
+    ctx.fillStyle = '#FFF3B0';
+    ctx.fillText(unlockToastText, W/2, H*0.22);
+    ctx.restore();
   }
 
   function drawOverlay(now){
@@ -2073,8 +2145,13 @@
       ctx.fillText('닿고 싶어', W/2, H*0.33+Math.round(W*0.13));
 
       ctx.font = `${Math.round(W*0.032)}px 'Jua', sans-serif`;
-      ctx.fillStyle = '#FFD93D';
-      ctx.fillText('역대 최고 기록: '+Math.floor(sessionBest)+'m', W/2, H*0.435);
+      if(challengeTarget!=null){
+        ctx.fillStyle = '#FF6B81';
+        ctx.fillText('⚔️ '+challengeFrom+'님의 '+Math.floor(challengeTarget)+'m 에 도전!', W/2, H*0.435);
+      } else {
+        ctx.fillStyle = '#FFD93D';
+        ctx.fillText('역대 최고 기록: '+Math.floor(sessionBest)+'m', W/2, H*0.435);
+      }
 
       ctx.font = `${Math.round(W*0.038)}px 'Jua', sans-serif`;
       ctx.fillStyle = 'rgba(255,255,255,0.9)';
@@ -2109,16 +2186,30 @@
       ctx.fillStyle = isNewRecord ? '#7CFFB2' : '#FFD93D';
       ctx.fillText(isNewRecord ? '🏆 신기록! '+Math.floor(sessionBest)+'m' : '역대 최고 기록: '+Math.floor(sessionBest)+'m', W/2, H*0.55);
 
+      let extraY = H*0.605;
+      const extraStep = H*0.055;
+      if(challengeTarget!=null){
+        ctx.font = `${Math.round(W*0.036)}px 'Jua', sans-serif`;
+        if(height > challengeTarget){
+          ctx.fillStyle = '#7CFFB2';
+          ctx.fillText('⚔️ '+challengeFrom+'님을 이겼어요! (+'+Math.floor(height-challengeTarget)+'m)', W/2, extraY);
+        } else {
+          ctx.fillStyle = '#FF9F9F';
+          ctx.fillText('⚔️ '+challengeFrom+'님 기록에 '+Math.ceil(challengeTarget-height)+'m 부족해요', W/2, extraY);
+        }
+        extraY += extraStep;
+      }
       if(comboBest >= 2){
         ctx.font = `${Math.round(W*0.036)}px 'Jua', sans-serif`;
         ctx.fillStyle = '#FF9F1C';
-        ctx.fillText('최고 콤보: '+comboBest+'연속', W/2, H*0.605);
+        ctx.fillText('최고 콤보: '+comboBest+'연속', W/2, extraY);
+        extraY += extraStep;
       }
 
       const bob = Math.sin(now/350)*6;
       ctx.font = `${Math.round(W*0.052)}px 'Jua', sans-serif`;
       ctx.fillStyle = '#FFFFFF';
-      ctx.fillText('탭 / 스페이스바로 다시 시작', W/2, H*0.68+bob);
+      ctx.fillText('탭 / 스페이스바로 다시 시작', W/2, Math.max(extraY+H*0.03, H*0.68)+bob);
     }
   }
 
@@ -2191,6 +2282,7 @@
     ctx.restore();
     drawFlash(now);
     drawOverlay(now);
+    drawToast(now);
   }
 
   function loop(now){
@@ -2245,6 +2337,10 @@
   });
   btnSkinPrev.addEventListener('click', function(e){ e.stopPropagation(); cycleSkin(-1); });
   btnSkinNext.addEventListener('click', function(e){ e.stopPropagation(); cycleSkin(1); });
+  btnShare.addEventListener('click', function(e){
+    e.stopPropagation();
+    shareChallenge(state==='gameover' ? height : sessionBest);
+  });
 
   // ---------- init ----------
   resize();
