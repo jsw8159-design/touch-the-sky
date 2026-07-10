@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>오일 스캘퍼 - 크루드오일 단타 연습</title>
+<title>선물차트 공략법 - 멀티 타임프레임 트레이닝</title>
 <link rel="icon" href="data:,">
 <style>
 :root{
@@ -126,6 +126,19 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .actBtn.long{background:var(--long-grad);color:#fff;}
 .actBtn:disabled{opacity:.35;pointer-events:none;}
 
+/* ===== ZONE (공략법) SCREEN ===== */
+.zoneTopInfo{flex:0 0 auto;background:var(--panel);border-bottom:1px solid var(--border);padding:8px 10px;
+  display:flex;justify-content:space-between;font-size:11.5px;color:var(--text-dim);}
+.zoneTopInfo b{color:var(--text);font-weight:700;}
+.zoneLegend{flex:0 0 auto;display:flex;gap:16px;justify-content:center;padding:6px 10px;font-size:10.5px;color:var(--text-dim);background:var(--panel);border-bottom:1px solid var(--border);}
+.zoneLegend span{display:inline-flex;align-items:center;gap:5px;}
+.zoneDot{width:10px;height:10px;border-radius:3px;display:inline-block;}
+#zoneChartWrap{position:relative;flex:1;min-height:0;background:var(--bg);}
+#zoneCanvas{position:absolute;inset:0;width:100%;height:100%;}
+#zoneTipToast{position:absolute;top:8px;left:8px;right:8px;background:rgba(18,22,31,.92);border:1px solid var(--border);
+  border-radius:10px;padding:8px 10px;font-size:12px;line-height:1.4;color:var(--text);z-index:4;}
+#zoneStatusLine{text-align:center;font-size:12px;color:var(--text-dim);padding:2px 0 4px;}
+
 /* ===== MODALS/OVERLAYS ===== */
 .overlay{position:absolute;inset:0;background:rgba(6,8,13,.72);display:none;align-items:center;justify-content:center;
   z-index:20;padding:20px;backdrop-filter:blur(2px);}
@@ -168,20 +181,21 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
   <!-- HOME -->
   <div id="screenHome" class="screen active">
     <div class="homeWrap">
-      <div class="logo">MULTI-ASSET SCALPING TRAINER</div>
-      <div class="h1">오일 스캘퍼</div>
-      <div class="sub">원유·지수·금속 등 해외선물 차트를 보며<br>단타 매수·매도 타점을 훈련하는 시뮬레이터</div>
+      <div class="logo">FUTURES CHART STRATEGY</div>
+      <div class="h1">선물차트 공략법</div>
+      <div class="sub">매물대(횡보 구간)와 전고점·전저점,<br>두 가지 핵심 공략 포인트를 직접 찾아보는 트레이닝</div>
       <button class="symbolChip" id="homeSymbolChip">
         <span class="icon" id="homeSymbolIcon">🛢️</span>
         <span class="txt"><b id="homeSymbolName">WTI 원유</b><small>탭하여 종목 변경 · 종목 특징 보기</small></span>
         <span class="arrow">›</span>
       </button>
       <div class="miniStats">
-        <div class="miniStat"><div class="v" id="statUnlocked">1/10</div><div class="l">진행 스테이지</div></div>
+        <div class="miniStat"><div class="v" id="statUnlocked">1/10</div><div class="l">기본학습 진행</div></div>
         <div class="miniStat"><div class="v" id="statAvg">-</div><div class="l">평균 점수</div></div>
         <div class="miniStat"><div class="v" id="statRounds">0</div><div class="l">총 매매 횟수</div></div>
       </div>
-      <button class="bigBtn primary" id="btnCurriculum">📈 커리큘럼 학습</button>
+      <button class="bigBtn primary" id="btnZone">🎯 공략 포인트 찾기 (핵심 트레이닝)</button>
+      <button class="bigBtn secondary" id="btnCurriculum">📘 기본학습 자료 (캔들 패턴 10선)</button>
       <button class="bigBtn secondary" id="btnPractice">🔁 자유 연습 (전 패턴 랜덤)</button>
       <div class="homeRow">
         <button class="iconBtn" id="btnHelp">❓</button>
@@ -201,7 +215,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 
   <!-- STAGE SELECT -->
   <div id="screenStage" class="screen">
-    <div class="topbar"><button class="navBtn" id="stageBack">←</button><div class="ttl">커리큘럼 학습</div></div>
+    <div class="topbar"><button class="navBtn" id="stageBack">←</button><div class="ttl">기본학습 자료</div></div>
     <div class="instrumentTag" id="stageInstrumentTag">🛢️ WTI 원유로 학습 중</div>
     <div class="body">
       <div class="freeCard" id="stageFreeCard">
@@ -210,6 +224,30 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
       </div>
       <div style="height:12px;"></div>
       <div class="stageGrid" id="stageGrid"></div>
+    </div>
+  </div>
+
+  <!-- ZONE (공략 포인트 찾기) -->
+  <div id="screenZone" class="screen">
+    <div class="topbar"><button class="navBtn" id="zoneBack">←</button><div class="ttl">공략 포인트 찾기</div></div>
+    <div class="zoneTopInfo">
+      <span id="zoneLevelInfo">LEVEL 1/4 · 60분봉</span>
+      <span id="zoneInstrumentInfo">🛢️ WTI 원유</span>
+    </div>
+    <div class="zoneLegend">
+      <span><span class="zoneDot" style="background:var(--gold);"></span>매물대(A) · 횡보 구간</span>
+      <span><span class="zoneDot" style="background:#2178f0;"></span>전고점/전저점(B)</span>
+    </div>
+    <div id="zoneChartWrap">
+      <canvas id="zoneCanvas"></canvas>
+      <div id="zoneTipToast"></div>
+    </div>
+    <div class="gbottom">
+      <div id="zoneStatusLine">표시한 지점: 0 / 정답 4개</div>
+      <div class="modalBtnRow">
+        <button class="modalBtn secondary" id="zoneClear">지우기</button>
+        <button class="modalBtn" id="zoneSubmit">정답 확인</button>
+      </div>
     </div>
   </div>
 
@@ -338,6 +376,21 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
     </div>
   </div>
 
+  <!-- ZONE RESULT OVERLAY -->
+  <div class="overlay" id="ovZoneResult">
+    <div class="modal">
+      <h2 id="zrTitle">LEVEL 1 결과</h2>
+      <div class="gradeBadge" id="zrGrade">A</div>
+      <div class="resultMsg" id="zrMsg"></div>
+      <div class="scoreRows" id="zrRows"></div>
+      <div class="explainBox" id="zrExplain"></div>
+      <div class="modalBtnRow">
+        <button class="modalBtn secondary" id="zrRetry">다시하기</button>
+        <button class="modalBtn" id="zrNext">다음 레벨</button>
+      </div>
+    </div>
+  </div>
+
 </div></div>
 
 <script>
@@ -380,9 +433,9 @@ const sfx={
 const SKEY='oilScalperV1';
 function loadProg(){
   try{ const d=JSON.parse(localStorage.getItem(SKEY));
-    if(d && typeof d==='object') return Object.assign({unlocked:1,stageStars:{},stats:{rounds:0,totalScore:0,bestStreak:0},muted:false,instrumentId:'wti'}, d);
+    if(d && typeof d==='object') return Object.assign({unlocked:1,stageStars:{},stats:{rounds:0,totalScore:0,bestStreak:0},muted:false,instrumentId:'wti',zoneStars:{}}, d);
   }catch(e){}
-  return {unlocked:1,stageStars:{},stats:{rounds:0,totalScore:0,bestStreak:0},muted:false,instrumentId:'wti'};
+  return {unlocked:1,stageStars:{},stats:{rounds:0,totalScore:0,bestStreak:0},muted:false,instrumentId:'wti',zoneStars:{}};
 }
 function saveProg(){ localStorage.setItem(SKEY, JSON.stringify(PROG)); }
 let PROG=loadProg();
@@ -555,6 +608,72 @@ function buildScenario(patternId, instrumentId){
   };
 }
 
+/* ================= ZONE LEVELS (공략 포인트 찾기) =================
+   Same anchor/touches engine as PATTERNS, but shaped to contain:
+   - 2 "A" zones (매물대): flat congestion runs where price stalls when revisited
+   - 2 "B" zones (전고점/전저점): a swing extreme tested twice (touch pair) where price reverses
+================================================= */
+const ZONE_A_EXPLAIN='캔들이 좁은 가격대에 옆으로 뭉쳐 있는 구간이에요(매물대). 다시 접근하면 대기 물량 때문에 속도가 느려지거나 일시적으로 밀리는 경우가 많아요.';
+const ZONE_B_EXPLAIN='과거의 고점(전고점)이나 저점(전저점)은 이후 가격이 다시 그 자리에 왔을 때 저항이나 지지로 작용해서, 일시적으로 돌파해도 다시 밀리거나 추세 방향이 바뀌는 경우가 많아요.';
+const ZONE_LEVELS=[
+  { tf:60, volMult:0.6,
+    anchors:[{i:0,p:0},{i:5,p:-3.0},{i:9,p:-3.3},{i:12,p:-3.0},{i:17,p:-7.5},{i:21,p:-4.0},{i:23,p:-7.4},
+      {i:29,p:0.5},{i:33,p:0.4},{i:36,p:0.6},{i:41,p:5.5},{i:44,p:2.5},{i:46,p:5.4},{i:49,p:1.0}],
+    touches:[{i:17,price:-7.5,dir:'down'},{i:23,price:-7.4,dir:'down'},{i:41,price:5.5,dir:'up'},{i:46,price:5.4,dir:'up'}],
+    zoneDefs:[
+      {type:'A', hitIdx:[9], radiusIdx:5, radiusPricePct:0.10},
+      {type:'B', dir:'low', hitIdx:[17,23], radiusIdx:3, radiusPricePct:0.05},
+      {type:'A', hitIdx:[33], radiusIdx:5, radiusPricePct:0.10},
+      {type:'B', dir:'high', hitIdx:[41,46], radiusIdx:3, radiusPricePct:0.05},
+    ] },
+  { tf:30, volMult:0.8,
+    anchors:[{i:0,p:0},{i:4,p:2.5},{i:9,p:4.0},{i:12,p:3.8},{i:16,p:7.0},{i:19,p:4.5},{i:21,p:6.9},
+      {i:27,p:-1.0},{i:31,p:-1.2},{i:34,p:-1.0},{i:39,p:-5.5},{i:42,p:-2.5},{i:44,p:-5.4},{i:49,p:-0.5}],
+    touches:[{i:16,price:7.0,dir:'up'},{i:21,price:6.9,dir:'up'},{i:39,price:-5.5,dir:'down'},{i:44,price:-5.4,dir:'down'}],
+    zoneDefs:[
+      {type:'A', hitIdx:[9], radiusIdx:5, radiusPricePct:0.09},
+      {type:'B', dir:'high', hitIdx:[16,21], radiusIdx:3, radiusPricePct:0.05},
+      {type:'A', hitIdx:[31], radiusIdx:5, radiusPricePct:0.09},
+      {type:'B', dir:'low', hitIdx:[39,44], radiusIdx:3, radiusPricePct:0.05},
+    ] },
+  { tf:10, volMult:1.05,
+    anchors:[{i:0,p:0},{i:3,p:-2.0},{i:7,p:-2.4},{i:9,p:-2.2},{i:13,p:-5.0},{i:16,p:-2.8},{i:18,p:-4.9},
+      {i:23,p:1.5},{i:27,p:1.7},{i:30,p:1.6},{i:34,p:4.5},{i:37,p:2.2},{i:39,p:4.4},{i:43,p:0.8},{i:49,p:-0.3}],
+    touches:[{i:13,price:-5.0,dir:'down'},{i:18,price:-4.9,dir:'down'},{i:34,price:4.5,dir:'up'},{i:39,price:4.4,dir:'up'}],
+    zoneDefs:[
+      {type:'A', hitIdx:[7], radiusIdx:4, radiusPricePct:0.08},
+      {type:'B', dir:'low', hitIdx:[13,18], radiusIdx:3, radiusPricePct:0.045},
+      {type:'A', hitIdx:[27], radiusIdx:4, radiusPricePct:0.08},
+      {type:'B', dir:'high', hitIdx:[34,39], radiusIdx:3, radiusPricePct:0.045},
+    ] },
+  { tf:5, volMult:1.3,
+    anchors:[{i:0,p:0},{i:3,p:1.8},{i:6,p:2.1},{i:8,p:2.0},{i:12,p:4.2},{i:15,p:2.0},{i:17,p:4.1},
+      {i:22,p:-1.0},{i:26,p:-1.3},{i:29,p:-1.1},{i:33,p:-3.8},{i:36,p:-1.5},{i:38,p:-3.7},{i:43,p:0.2},{i:49,p:0.0}],
+    touches:[{i:12,price:4.2,dir:'up'},{i:17,price:4.1,dir:'up'},{i:33,price:-3.8,dir:'down'},{i:38,price:-3.7,dir:'down'}],
+    zoneDefs:[
+      {type:'A', hitIdx:[6], radiusIdx:4, radiusPricePct:0.075},
+      {type:'B', dir:'high', hitIdx:[12,17], radiusIdx:3, radiusPricePct:0.04},
+      {type:'A', hitIdx:[26], radiusIdx:4, radiusPricePct:0.075},
+      {type:'B', dir:'low', hitIdx:[33,38], radiusIdx:3, radiusPricePct:0.04},
+    ] },
+];
+function buildZoneScenario(level, instrumentId){
+  const cfg=ZONE_LEVELS[level-1];
+  const inst=INSTRUMENTS.find(x=>x.id===instrumentId) || INSTRUMENTS[0];
+  const base=rnd(inst.priceMin, inst.priceMax);
+  const candles=buildFromAnchors(cfg.anchors, {noise:0.32*cfg.volMult, wick:0.4*cfg.volMult});
+  applyTouches(candles, cfg.touches, base);
+  for(let i=0;i<candles.length;i++){ candles[i].o*=base; candles[i].h*=base; candles[i].l*=base; candles[i].c*=base; }
+  const zones=cfg.zoneDefs.map(zd=>({
+    type:zd.type,
+    label: zd.type==='A' ? '매물대' : (zd.dir==='low'?'전저점':'전고점'),
+    radiusIdx:zd.radiusIdx, radiusPricePct:zd.radiusPricePct,
+    hits:zd.hitIdx.map(idx=>({idx, price:candles[idx].c})),
+    found:false,
+  }));
+  return { candles, zones, instrument:inst, base, tf:cfg.tf };
+}
+
 /* ================= TRADE SIMULATION & SCORING ================= */
 function computeStops(candles, entryIndex, dir){
   const from=Math.max(0,entryIndex-8);
@@ -628,15 +747,16 @@ function resultText(scenario, playerDir, res){
 
 /* ================= RENDERER ================= */
 const canvas=$('#chartCanvas'); const ctx=canvas.getContext('2d');
-function fitCanvas(){
+function fitCanvasEl(cv,cx){
   const dpr=window.devicePixelRatio||1;
-  const rect=canvas.parentElement.getBoundingClientRect();
-  canvas.width=Math.max(1,Math.round(rect.width*dpr));
-  canvas.height=Math.max(1,Math.round(rect.height*dpr));
-  canvas.style.width=rect.width+'px'; canvas.style.height=rect.height+'px';
-  ctx.setTransform(dpr,0,0,dpr,0,0);
+  const rect=cv.parentElement.getBoundingClientRect();
+  cv.width=Math.max(1,Math.round(rect.width*dpr));
+  cv.height=Math.max(1,Math.round(rect.height*dpr));
+  cv.style.width=rect.width+'px'; cv.style.height=rect.height+'px';
+  cx.setTransform(dpr,0,0,dpr,0,0);
   return {w:rect.width,h:rect.height};
 }
+function fitCanvas(){ return fitCanvasEl(canvas,ctx); }
 function drawChart(scenario, revealCount, entryInfo){
   const {w:W,h:H}=fitCanvas();
   ctx.clearRect(0,0,W,H);
@@ -753,6 +873,88 @@ function drawChart(scenario, revealCount, entryInfo){
     ctx.fillStyle='#e6e9f0'; ctx.fillRect(W-pad.r,y(cp)-8,labelW,16);
     ctx.fillStyle='#0a0d14'; ctx.fillText(cpLabel, W-pad.r+3, y(cp));
   }
+}
+
+/* ================= ZONE CHART RENDERER ================= */
+const zoneCanvas=$('#zoneCanvas'); const zctx=zoneCanvas.getContext('2d');
+let ZONE_GEOM=null;
+function drawZoneChart(scenario, taps, revealed){
+  const {w:W,h:H}=fitCanvasEl(zoneCanvas,zctx);
+  zctx.clearRect(0,0,W,H);
+  zctx.fillStyle='#0a0d14'; zctx.fillRect(0,0,W,H);
+  const pad={l:6,r:68,t:10,b:8};
+  const plotW=W-pad.l-pad.r, plotH=H-pad.t-pad.b;
+  const candles=scenario.candles, n=candles.length;
+  const slot=plotW/n;
+  const candleW=Math.max(2,slot*0.6);
+  let lo=Infinity,hi=-Infinity;
+  candles.forEach(c=>{ lo=Math.min(lo,c.l); hi=Math.max(hi,c.h); });
+  const range=hi-lo||1; lo-=range*0.10; hi+=range*0.10;
+  const y=p=>pad.t+(hi-p)/(hi-lo)*plotH;
+  const x=i=>pad.l+i*slot+slot/2;
+  ZONE_GEOM={
+    toData:(px,py)=>({
+      idx: clamp(Math.round((px-pad.l)/slot - 0.5), 0, n-1),
+      price: hi-(py-pad.t)/plotH*(hi-lo),
+    })
+  };
+
+  zctx.strokeStyle='rgba(255,255,255,0.06)'; zctx.lineWidth=1;
+  zctx.font='10px -apple-system,sans-serif'; zctx.fillStyle='#5b6478'; zctx.textBaseline='middle';
+  for(let g=0; g<=5; g++){
+    const p=lo+(hi-lo)*g/5; const yy=y(p);
+    zctx.beginPath(); zctx.moveTo(pad.l,yy); zctx.lineTo(W-pad.r,yy); zctx.stroke();
+    zctx.fillText(formatPrice(p, scenario.instrument.decimals), W-pad.r+6, yy);
+  }
+
+  for(let i=0;i<n;i++){
+    const c=candles[i]; const up=c.c>=c.o;
+    const col = up ? '#f5384f' : '#2178f0';
+    const cx2=x(i);
+    zctx.strokeStyle=col; zctx.lineWidth=1;
+    zctx.beginPath(); zctx.moveTo(cx2,y(c.h)); zctx.lineTo(cx2,y(c.l)); zctx.stroke();
+    zctx.fillStyle=col;
+    const yOpen=y(c.o), yClose=y(c.c);
+    const bh=Math.max(1.4,Math.abs(yClose-yOpen));
+    zctx.fillRect(cx2-candleW/2, Math.min(yOpen,yClose), candleW, bh);
+  }
+
+  if(revealed){
+    scenario.zones.forEach(z=>{
+      const col = z.found ? 'rgba(31,191,117,0.85)' : 'rgba(240,185,11,0.85)';
+      if(z.type==='A'){
+        const hit=z.hits[0];
+        const x0=x(Math.max(0,hit.idx-z.radiusIdx)), x1=x(Math.min(n-1,hit.idx+z.radiusIdx));
+        const y0=y(hit.price*(1+z.radiusPricePct)), y1=y(hit.price*(1-z.radiusPricePct));
+        zctx.save(); zctx.setLineDash([4,3]); zctx.strokeStyle=col; zctx.lineWidth=1.5;
+        zctx.strokeRect(x0, y0, x1-x0, y1-y0);
+        zctx.restore();
+        zctx.fillStyle=col; zctx.font='10px sans-serif';
+        zctx.fillText(z.label, x0+4, y0-8);
+      } else {
+        z.hits.forEach(h=>{
+          const hx=x(h.idx), hy=y(h.price);
+          zctx.save(); zctx.setLineDash([3,3]); zctx.strokeStyle=col; zctx.lineWidth=1.5;
+          zctx.beginPath(); zctx.arc(hx,hy,14,0,Math.PI*2); zctx.stroke(); zctx.restore();
+        });
+        zctx.fillStyle=col; zctx.font='10px sans-serif';
+        zctx.fillText(z.label, x(z.hits[0].idx)-14, y(z.hits[0].price)-20);
+      }
+    });
+  }
+
+  taps.forEach(t=>{
+    const tx=x(t.idx), ty=y(t.price);
+    zctx.save();
+    zctx.strokeStyle = revealed ? (t.hit?'#1fbf75':'#f5384f') : '#e6e9f0';
+    zctx.lineWidth=2.2;
+    zctx.beginPath(); zctx.arc(tx,ty,12,0,Math.PI*2); zctx.stroke();
+    if(revealed && !t.hit){
+      zctx.beginPath(); zctx.moveTo(tx-5,ty-5); zctx.lineTo(tx+5,ty+5);
+      zctx.moveTo(tx+5,ty-5); zctx.lineTo(tx-5,ty+5); zctx.stroke();
+    }
+    zctx.restore();
+  });
 }
 
 /* ================= GAME STATE ================= */
@@ -906,6 +1108,93 @@ $('#cNextStage').onclick=()=>{
   startRound();
 };
 
+/* ================= ZONE GAME (공략 포인트 찾기) ================= */
+const ZG={ level:1, scenario:null, taps:[], submitted:false };
+function updateZoneStatus(){
+  const total=ZG.scenario ? ZG.scenario.zones.length : 0;
+  $('#zoneStatusLine').textContent='표시한 지점: '+ZG.taps.length+' / 정답 '+total+'개';
+}
+function startZoneLevel(level){
+  ZG.level=level; ZG.taps=[]; ZG.submitted=false;
+  ZG.scenario=buildZoneScenario(level, PROG.instrumentId);
+  const cfg=ZONE_LEVELS[level-1];
+  const inst=getInstrument();
+  $('#zoneLevelInfo').textContent='LEVEL '+level+'/4 · '+cfg.tf+'분봉';
+  $('#zoneInstrumentInfo').textContent=inst.icon+' '+inst.name;
+  $('#zoneTipToast').textContent=cfg.tf+'분봉으로 본 전체 흐름이에요. 매물대(횡보)나 전고점·전저점처럼 반응이 나올 자리에 동그라미를 찍어보세요. 정답은 '+ZG.scenario.zones.length+'개예요.';
+  updateZoneStatus();
+  drawZoneChart(ZG.scenario, ZG.taps, false);
+}
+zoneCanvas.addEventListener('click', (e)=>{
+  if(!ZG.scenario || ZG.submitted || !ZONE_GEOM) return;
+  const rect=zoneCanvas.getBoundingClientRect();
+  const {idx,price}=ZONE_GEOM.toData(e.clientX-rect.left, e.clientY-rect.top);
+  ZG.taps.push({idx,price,hit:null});
+  sfx.click();
+  updateZoneStatus();
+  drawZoneChart(ZG.scenario, ZG.taps, false);
+});
+$('#zoneClear').onclick=()=>{
+  if(!ZG.scenario || ZG.submitted) return;
+  sfx.click(); ZG.taps=[];
+  updateZoneStatus();
+  drawZoneChart(ZG.scenario, ZG.taps, false);
+};
+$('#zoneSubmit').onclick=()=>{
+  if(!ZG.scenario || ZG.submitted || ZG.taps.length===0) return;
+  gradeZoneLevel();
+};
+function gradeZoneLevel(){
+  const zones=ZG.scenario.zones;
+  zones.forEach(z=>z.found=false);
+  let claimed=0;
+  ZG.taps.forEach(t=>{
+    t.hit=false;
+    for(const z of zones){
+      if(z.found) continue;
+      const matched=z.hits.some(h=> Math.abs(t.idx-h.idx)<=z.radiusIdx && Math.abs(t.price-h.price)<=h.price*z.radiusPricePct );
+      if(matched){ z.found=true; t.hit=true; claimed++; break; }
+    }
+  });
+  const total=zones.length;
+  const wrongTaps=Math.max(0, ZG.taps.length-claimed);
+  const accuracy=Math.round(100*claimed/total);
+  const penalty=Math.min(30, wrongTaps*8);
+  const score=clamp(accuracy-penalty,0,100);
+  ZG.submitted=true;
+  drawZoneChart(ZG.scenario, ZG.taps, true);
+  const grade=gradeFromScore(score), stars=starsFromScore(score);
+  PROG.zoneStars[ZG.level]=Math.max(PROG.zoneStars[ZG.level]||0, stars);
+  saveProg();
+  sfx[score>=55?'win':'lose']();
+  showZoneResult(score, grade, claimed, total, wrongTaps);
+}
+function showZoneResult(score, grade, claimed, total, wrongTaps){
+  $('#zrTitle').textContent='LEVEL '+ZG.level+' · '+ZONE_LEVELS[ZG.level-1].tf+'분봉 결과';
+  $('#zrGrade').textContent=grade; $('#zrGrade').className='gradeBadge '+grade;
+  $('#zrMsg').textContent = claimed===total
+    ? '정답 '+total+'개를 모두 찾았어요! 완벽해요.'
+    : (claimed+'개 / '+total+'개 발견했어요. 놓친 자리를 아래에서 확인해보세요.');
+  const rows=[['총점', score+'점', score>=55?'pos':'neg'], ['발견한 지점', claimed+' / '+total+'개', claimed===total?'pos':'']];
+  if(wrongTaps>0) rows.push(['잘못 찍은 지점', wrongTaps+'개', 'neg']);
+  const zoneRows=ZG.scenario.zones.map((z,i)=>{
+    const icon=z.type==='A'?'🟨':'🟦';
+    return ['#'+(i+1)+' '+icon+' '+z.label, z.found?'발견':'놓침', z.found?'pos':'neg'];
+  });
+  $('#zrRows').innerHTML=rows.concat(zoneRows).map(r=>'<div class="scoreRow"><span>'+r[0]+'</span><b class="'+r[2]+'">'+r[1]+'</b></div>').join('');
+  $('#zrExplain').innerHTML='<b>매물대(A)</b>: '+ZONE_A_EXPLAIN+'<br><br><b>전고점/전저점(B)</b>: '+ZONE_B_EXPLAIN;
+  $('#zrNext').textContent = ZG.level<4 ? '다음 레벨 ('+ZONE_LEVELS[ZG.level].tf+'분봉)' : '훈련 완료';
+  $('#ovZoneResult').classList.add('show');
+}
+$('#zrRetry').onclick=()=>{ sfx.click(); $('#ovZoneResult').classList.remove('show'); startZoneLevel(ZG.level); };
+$('#zrNext').onclick=()=>{
+  sfx.click(); $('#ovZoneResult').classList.remove('show');
+  if(ZG.level<4){ startZoneLevel(ZG.level+1); }
+  else { sfx.star(); goHome(); }
+};
+$('#btnZone').onclick=()=>{ sfx.click(); showScreen('screenZone'); startZoneLevel(1); };
+$('#zoneBack').onclick=()=>{ sfx.click(); goHome(); };
+
 /* ================= ACTION BUTTONS ================= */
 $('#btnLong').onclick=()=>decide('long');
 $('#btnShort').onclick=()=>decide('short');
@@ -1032,7 +1321,7 @@ function refreshMuteBtn(){ $('#btnMute').textContent = muted ? '🔇' : '🔊'; 
 $('#btnMute').onclick=()=>{ muted=!muted; PROG.muted=muted; saveProg(); refreshMuteBtn(); sfx.click(); };
 $('#btnReset').onclick=()=>{
   if(confirm('모든 진행 상황(스테이지 잠금 해제, 별점, 기록)을 초기화할까요?')){
-    PROG={unlocked:1,stageStars:{},stats:{rounds:0,totalScore:0,bestStreak:0},muted:muted,instrumentId:PROG.instrumentId||'wti'};
+    PROG={unlocked:1,stageStars:{},stats:{rounds:0,totalScore:0,bestStreak:0},muted:muted,instrumentId:PROG.instrumentId||'wti',zoneStars:{}};
     saveProg(); refreshHomeStats(); refreshHomeSymbolChip();
   }
 };
