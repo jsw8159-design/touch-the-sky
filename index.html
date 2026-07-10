@@ -762,6 +762,7 @@
   let bgScrollOffset=0;
   let obstacleUnlocked = {helmet:false, ad:false, leaf:false, boulder:false, lightning:false, friend:false, hpup:false};
   let unlockToastText='', unlockToastUntil=0;
+  let lastAnnouncedZoneIdx = 0;
   let lastTime=0;
   let shakeUntil=0, shakeMag=0;
   let helmetLevel=0; // 0=none, 1=silver shield, 2=golden shield (one more -> fireball)
@@ -816,6 +817,7 @@
     isNewRecord = false; paused = false;
     runStartBest = sessionBest;
     challengeBeatenShoutShown = false;
+    lastAnnouncedZoneIdx = 0;
     obstacles = []; particles = [];
     obstacleUnlocked = {helmet:false, ad:false, leaf:false, boulder:false, lightning:false, friend:false, hpup:false};
     helmetLevel = 0;
@@ -1119,6 +1121,7 @@
     comboPopAt = performance.now();
     height += climbPerLanding*comboMultiplier;
     if(height > sessionBest){ sessionBest = height; lsSet('bestHeight', String(sessionBest)); }
+    checkZoneTransition();
     landTime = performance.now();
     spawnParticles(charX, restY+charRadius*0.6, '#C9A876', 6, [30,90], 0.4);
     sfxLand();
@@ -1415,25 +1418,49 @@
     ctx.closePath();
   }
 
-  // ---------- zones: every 500m the scenery/season changes ----------
-  // spring 0-500m, summer 500-1000m, autumn 1000-1500m, winter 1500-2000m, space 2000m+ (final, forever)
+  // ---------- zones: the scenery/season changes as you climb, then keeps going out through the solar system ----------
+  // spring 0-500m, summer 500-1000m, autumn 1000-1500m, winter 1500-2000m, earth orbit 2000-2500m,
+  // then every 1000m: moon, mars, jupiter, saturn, uranus, neptune, and finally deep space (forever)
   const ZONES = [
-    { key:'spring', label:'봄',   skyTop:'#8FD8FF', skyBot:'#EAFBE6', pillarA:'#FFC3E0', pillarB:'#FF95C2', railTint:'#FFEAF4', cloudColor:'rgba(255,255,255,0.85)' },
-    { key:'summer', label:'여름', skyTop:'#2FA8F0', skyBot:'#BFEFFF', pillarA:'#9BE8CF', pillarB:'#5FCBAE', railTint:'#EAFFFA', cloudColor:'rgba(255,255,255,0.85)' },
-    { key:'autumn', label:'가을', skyTop:'#F2A65A', skyBot:'#FFDFAE', pillarA:'#E0894A', pillarB:'#B85F2C', railTint:'#FFE9CC', cloudColor:'rgba(255,244,224,0.85)' },
-    { key:'winter', label:'겨울', skyTop:'#5C87BE', skyBot:'#EAF4FC', pillarA:'#E4F3FC', pillarB:'#AFCFEE', railTint:'#FFFFFF',  cloudColor:'rgba(255,255,255,0.92)' },
-    { key:'space',  label:'우주', skyTop:'#05061E', skyBot:'#241B45', pillarA:'#7A69B8', pillarB:'#463A73', railTint:'#CFC6FF', cloudColor:'rgba(190,180,255,0.35)' }
+    { key:'spring',  label:'봄',      len:500,  skyTop:'#8FD8FF', skyBot:'#EAFBE6', pillarA:'#FFC3E0', pillarB:'#FF95C2', railTint:'#FFEAF4', cloudColor:'rgba(255,255,255,0.85)',
+      decor:{ type:'sun', color:'#FFE9A8', size:0.1 } },
+    { key:'summer',  label:'여름',    len:500,  skyTop:'#2FA8F0', skyBot:'#BFEFFF', pillarA:'#9BE8CF', pillarB:'#5FCBAE', railTint:'#EAFFFA', cloudColor:'rgba(255,255,255,0.85)',
+      decor:{ type:'sun', color:'#FFF3B0', size:0.11 }, enterMsg:'☀️ 여름 하늘로!' },
+    { key:'autumn',  label:'가을',    len:500,  skyTop:'#F2A65A', skyBot:'#FFDFAE', pillarA:'#E0894A', pillarB:'#B85F2C', railTint:'#FFE9CC', cloudColor:'rgba(255,244,224,0.85)',
+      decor:{ type:'sun', color:'#FFCB7A', size:0.1 }, enterMsg:'🍂 가을 하늘로!' },
+    { key:'winter',  label:'겨울',    len:500,  skyTop:'#5C87BE', skyBot:'#EAF4FC', pillarA:'#E4F3FC', pillarB:'#AFCFEE', railTint:'#FFFFFF',  cloudColor:'rgba(255,255,255,0.92)',
+      decor:{ type:'sun', color:'#EAF6FF', size:0.09 }, enterMsg:'❄️ 겨울 하늘로!' },
+    { key:'orbit',   label:'지구 궤도', len:500, skyTop:'#05061E', skyBot:'#241B45', pillarA:'#7A69B8', pillarB:'#463A73', railTint:'#CFC6FF', cloudColor:'rgba(190,180,255,0.35)',
+      decor:{ type:'earth', color:'#4E9BE0', accent:'rgba(120,205,120,0.9)', size:0.13 }, enterMsg:'🌍 대기권 돌파! 지구 궤도 진입' },
+    { key:'moon',    label:'달',      len:1000, skyTop:'#08080F', skyBot:'#20212E', pillarA:'#C9C9CE', pillarB:'#8E8E96', railTint:'#F0F0F5', cloudColor:'rgba(200,200,205,0.18)',
+      decor:{ type:'moon', color:'#D8D8DE', accent:'rgba(160,160,170,0.6)', size:0.14 }, enterMsg:'🌕 달에 도착!' },
+    { key:'mars',    label:'화성',    len:1000, skyTop:'#33120A', skyBot:'#8A3B1E', pillarA:'#C1440E', pillarB:'#8B2E0A', railTint:'#FFD9C2', cloudColor:'rgba(230,140,90,0.28)',
+      decor:{ type:'planet', color:'#C1440E', size:0.13 }, enterMsg:'🔴 화성 진입!' },
+    { key:'jupiter', label:'목성',    len:1000, skyTop:'#241708', skyBot:'#6B4A28', pillarA:'#D8A25E', pillarB:'#A9743A', railTint:'#FFE9C7', cloudColor:'rgba(216,162,94,0.3)',
+      decor:{ type:'bands', color:'#D8A25E', bands:['#B5793D','#F2D9A8'], size:0.15 }, enterMsg:'🟠 목성 진입!' },
+    { key:'saturn',  label:'토성',    len:1000, skyTop:'#221C09', skyBot:'#5C4A26', pillarA:'#E9D9A8', pillarB:'#B99B5E', railTint:'#FFF6DD', cloudColor:'rgba(233,217,168,0.3)',
+      decor:{ type:'ring', color:'#E9D9A8', ringColor:'rgba(220,200,150,0.75)', size:0.12 }, enterMsg:'🪐 토성 진입!' },
+    { key:'uranus',  label:'천왕성',  len:1000, skyTop:'#07211F', skyBot:'#1E4A46', pillarA:'#8FD8E0', pillarB:'#4FA8B0', railTint:'#E3FBFC', cloudColor:'rgba(143,216,224,0.3)',
+      decor:{ type:'planet', color:'#8FD8E0', size:0.13 }, enterMsg:'🔵 천왕성 진입!' },
+    { key:'neptune', label:'해왕성',  len:1000, skyTop:'#050A28', skyBot:'#16266B', pillarA:'#4166F5', pillarB:'#2B44A8', railTint:'#DCE4FF', cloudColor:'rgba(65,102,245,0.32)',
+      decor:{ type:'planet', color:'#4166F5', size:0.13 }, enterMsg:'🔷 해왕성 진입!' },
+    { key:'beyond',  label:'태양계 밖', len:1000, skyTop:'#000004', skyBot:'#0A0018', pillarA:'#3A2A5C', pillarB:'#1F1638', railTint:'#B8A8E8', cloudColor:'rgba(160,100,220,0.35)',
+      decor:null, enterMsg:'🌌 태양계를 벗어났어요!' }
   ];
-  const ZONE_LEN = 500;
   const ZONE_TRANS = 70; // meters of crossfade blended into the next zone near each boundary
+  const ZONE_BOUNDS = (function(){
+    let acc = 0;
+    return ZONES.map(function(z){ const b = { start: acc, end: acc+z.len }; acc += z.len; return b; });
+  })();
   function zoneInfo(h){
     h = Math.max(0,h);
-    const idx = Math.min(ZONES.length-1, Math.floor(h/ZONE_LEN));
+    let idx = ZONES.length-1;
+    for(let i=0;i<ZONES.length;i++){ if(h < ZONE_BOUNDS[i].end){ idx = i; break; } }
     const nextIdx = Math.min(ZONES.length-1, idx+1);
-    const into = h - idx*ZONE_LEN;
+    const into = h - ZONE_BOUNDS[idx].start;
     let t = 0;
     if(idx < ZONES.length-1){
-      t = clamp((into-(ZONE_LEN-ZONE_TRANS))/ZONE_TRANS, 0, 1);
+      t = clamp((into-(ZONES[idx].len-ZONE_TRANS))/ZONE_TRANS, 0, 1);
     }
     return { idx, nextIdx, t, zone:ZONES[idx], nextZone:ZONES[nextIdx] };
   }
@@ -1441,6 +1468,18 @@
   function currentZoneIdx(h){
     const zi = zoneInfo(h==null?height:h);
     return zi.t>=0.5 ? zi.nextIdx : zi.idx;
+  }
+  // announces arriving at a new zone (skips zone 0, the starting spring sky)
+  function checkZoneTransition(){
+    const zi = currentZoneIdx(height);
+    if(zi !== lastAnnouncedZoneIdx){
+      lastAnnouncedZoneIdx = zi;
+      const z = ZONES[zi];
+      if(z.enterMsg){
+        unlockToastText = z.enterMsg; unlockToastUntil = performance.now()+2400;
+        sfxUnlock();
+      }
+    }
   }
 
   let starField = null;
@@ -1471,6 +1510,8 @@
     ctx.fillStyle = grad;
     ctx.fillRect(0,0,W,H);
 
+    drawCelestialDecor(zi, now);
+
     // stars only in (or fading into) the space zone
     const starAlpha = zi.idx>=4 ? 1 : (zi.idx===3 ? zi.t : 0);
     if(starAlpha>0.01){
@@ -1498,6 +1539,106 @@
       const x = c.xf*W;
       drawCloud(x,y,c.s*W*0.16,cloudColor);
     }
+    ctx.restore();
+
+    drawGroundSkyline();
+  }
+
+  // ---------- decorative celestial body (sun/earth/moon/planet) per zone, cross-fades at zone boundaries ----------
+  function drawCelestialDecor(zi, now){
+    const cx = W*0.74, cy = H*0.15;
+    const bob = Math.sin(now/2600)*H*0.006;
+    if(zi.zone.decor){
+      ctx.save(); ctx.globalAlpha = 1-zi.t;
+      drawDecorBody(zi.zone.decor, cx, cy+bob);
+      ctx.restore();
+    }
+    if(zi.t>0.002 && zi.nextZone!==zi.zone && zi.nextZone.decor){
+      ctx.save(); ctx.globalAlpha = zi.t;
+      drawDecorBody(zi.nextZone.decor, cx, cy+bob);
+      ctx.restore();
+    }
+  }
+  function drawDecorBody(decor, x, y){
+    const r = W*(decor.size||0.12);
+    if(decor.type==='sun'){
+      const glow = ctx.createRadialGradient(x,y,0,x,y,r*2.4);
+      glow.addColorStop(0,'rgba(255,232,170,0.55)'); glow.addColorStop(1,'rgba(255,232,170,0)');
+      ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(x,y,r*2.4,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle = decor.color;
+      ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
+      return;
+    }
+    if(decor.type==='earth'){
+      ctx.fillStyle = decor.color;
+      ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle = decor.accent;
+      ctx.beginPath(); ctx.ellipse(x-r*0.3,y-r*0.15,r*0.42,r*0.28,0.4,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(x+r*0.35,y+r*0.3,r*0.3,r*0.2,-0.3,0,Math.PI*2); ctx.fill();
+      return;
+    }
+    if(decor.type==='moon'){
+      ctx.fillStyle = decor.color;
+      ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle = decor.accent;
+      ctx.beginPath(); ctx.arc(x-r*0.32,y-r*0.28,r*0.22,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(x+r*0.28,y+r*0.1,r*0.14,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(x-r*0.05,y+r*0.38,r*0.16,0,Math.PI*2); ctx.fill();
+      return;
+    }
+    if(decor.type==='bands'){
+      ctx.save();
+      ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.clip();
+      ctx.fillStyle = decor.color;
+      ctx.fillRect(x-r,y-r,r*2,r*2);
+      const bandColors = decor.bands;
+      for(let i=-3;i<=3;i++){
+        ctx.fillStyle = bandColors[((i%bandColors.length)+bandColors.length)%bandColors.length];
+        ctx.fillRect(x-r, y+i*r*0.3-r*0.08, r*2, r*0.16);
+      }
+      ctx.restore();
+      return;
+    }
+    if(decor.type==='ring'){
+      ctx.save();
+      ctx.translate(x,y); ctx.rotate(-0.34);
+      ctx.strokeStyle = decor.ringColor; ctx.lineWidth = r*0.22;
+      ctx.beginPath(); ctx.ellipse(0,0,r*1.9,r*0.6,0,0,Math.PI*2); ctx.stroke();
+      ctx.restore();
+      ctx.fillStyle = decor.color;
+      ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
+      return;
+    }
+    // plain glowing planet (mars/uranus/neptune)
+    const glow = ctx.createRadialGradient(x,y,r*0.3,x,y,r*1.6);
+    glow.addColorStop(0, decor.color+'55'); glow.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(x,y,r*1.6,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle = decor.color;
+    ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
+  }
+
+  // ---------- ground/skyline: visible only for the first ~70m, then sinks away and fades ----------
+  function drawGroundSkyline(){
+    const FADE_H = 70;
+    if(height >= FADE_H) return;
+    const p = clamp(height/FADE_H, 0, 1);
+    const alpha = 1-p;
+    if(alpha<=0.01) return;
+    const groundY = H*(0.82 + p*0.55);
+    if(groundY - H*0.3 > H) return;
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    const buildings = [
+      {x:0.03,w:0.11,h:0.11},{x:0.15,w:0.08,h:0.17},{x:0.25,w:0.10,h:0.08},
+      {x:0.58,w:0.09,h:0.14},{x:0.69,w:0.12,h:0.09},{x:0.83,w:0.08,h:0.18},{x:0.93,w:0.06,h:0.07}
+    ];
+    ctx.fillStyle = 'rgba(58,48,68,0.55)';
+    for(const b of buildings){
+      const bw = b.w*W, bh = b.h*H*0.6;
+      ctx.fillRect(b.x*W, groundY-bh, bw, bh+H*0.06);
+    }
+    ctx.fillStyle = 'rgba(86,120,78,0.55)';
+    ctx.fillRect(0, groundY, W, H-groundY);
     ctx.restore();
   }
 
