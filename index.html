@@ -198,8 +198,8 @@
         <button id="btnMute" class="uiBtn" type="button" aria-label="음소거">🔊</button>
         <button id="btnPause" class="uiBtn" type="button" aria-label="일시정지">⏸</button>
         <button id="btnLeaderboard" class="uiBtn" type="button" aria-label="리더보드">🏆</button>
-        <button id="btnSkinPrev" class="uiBtn" type="button" aria-label="이전 스킨">‹</button>
-        <button id="btnSkinNext" class="uiBtn" type="button" aria-label="다음 스킨">›</button>
+        <button id="btnSkinPrev" class="uiBtn" type="button" aria-label="이전 캐릭터">‹</button>
+        <button id="btnSkinNext" class="uiBtn" type="button" aria-label="다음 캐릭터">›</button>
         <button id="btnLbClose" class="uiBtn" type="button">닫기</button>
         <button id="btnShare" class="uiBtn" type="button">🔗 도전장 보내기</button>
         <button id="btnLbLocal" class="uiBtn" type="button">내 기록</button>
@@ -396,6 +396,7 @@
   function sfxCombo(){ beep(760,0.06,'triangle',0.11); beep(1000,0.07,'triangle',0.1,0.06); beep(1300,0.08,'triangle',0.1,0.12); }
   function sfxTick(vol){ beep(1500,0.04,'square', vol||0.09); }
   function sfxHeartbeat(){ beep(85,0.1,'sine',0.16); beep(65,0.14,'sine',0.13,0.15); }
+  function sfxNinjaDash(){ noiseBurst(0.3,0.24,0,1600); beep(180,0.16,'sawtooth',0.14,0); beep(90,0.2,'square',0.1,0.05); }
   function sfxFall(){ beep(300,0.12,'sine',0.1); beep(160,0.22,'sine',0.09,0.06); }
   function noiseBurst(dur,vol,delay,filterFreq){
     if(!actx || muted) return;
@@ -655,11 +656,12 @@
 
   // ---------- unlockable character skins ----------
   const SKINS = [
-    { id:'classic', name:'클래식', body:'#FFC947', wing:'#F2A93B', unlockHeight:0 },
-    { id:'pink',    name:'핑크',   body:'#FF9EC4', wing:'#F26FA3', unlockHeight:30 },
-    { id:'sky',     name:'하늘',   body:'#7FD8F2', wing:'#4FB3D9', unlockHeight:80 },
-    { id:'violet',  name:'보라',   body:'#C9A3FF', wing:'#9B6FE0', unlockHeight:150 },
-    { id:'gold',    name:'골드',   body:'#FFE066', wing:'#E0B93D', unlockHeight:300 }
+    { id:'classic', name:'하늘이 (클래식)', character:'bird', body:'#FFC947', wing:'#F2A93B', unlockHeight:0 },
+    { id:'pink',    name:'하늘이 (핑크)',   character:'bird', body:'#FF9EC4', wing:'#F26FA3', unlockHeight:30 },
+    { id:'sky',     name:'하늘이 (하늘)',   character:'bird', body:'#7FD8F2', wing:'#4FB3D9', unlockHeight:80 },
+    { id:'violet',  name:'하늘이 (보라)',   character:'bird', body:'#C9A3FF', wing:'#9B6FE0', unlockHeight:150 },
+    { id:'gold',    name:'하늘이 (골드)',   character:'bird', body:'#FFE066', wing:'#E0B93D', unlockHeight:300 },
+    { id:'ninja',   name:'닌자', character:'ninja', body:'#3A3F52', wing:'#2A2E3D', mask:'#232838', headband:'#D64545', unlockHeight:0 }
   ];
   function isSkinUnlocked(i){ return sessionBest >= SKINS[i].unlockHeight; }
   let selectedSkinIndex = parseInt(lsGet('skinIndex','0'),10)||0;
@@ -946,19 +948,27 @@
     fireballStart = now;
     fireballStartHeight = height;
     fireballDuration = 4200;
-    triggerShout('Fire Ball!!', '#FFD93D', 1000);
-    playVoiceLine('fireball', 'Fire Ball!!', 1.1, 0.85);
-    triggerFlash('#FFD93D', 350);
+    const isNinja = currentSkin().character==='ninja';
+    if(isNinja){
+      triggerShout('그림자 질주!!', '#CFC6FF', 1000);
+      playVoiceLine('ninjadash', 'Ninja Dash!!', 1.15, 0.9);
+      triggerFlash('#2A2A3A', 300);
+      sfxNinjaDash();
+    } else {
+      triggerShout('Fire Ball!!', '#FFD93D', 1000);
+      playVoiceLine('fireball', 'Fire Ball!!', 1.1, 0.85);
+      triggerFlash('#FFD93D', 350);
+      sfxFireball();
+    }
     shakeUntil = now+500; shakeMag = 14;
     // satisfying screen-clear: everything currently falling bursts away
     // (clear in place, NOT reassign - this can run while update()'s obstacle
     // loop is mid-iteration via equipHelmet(), and reassigning `obstacles` to
     // a new array would leave that loop indexing into a stale/empty array)
     for(const o of obstacles){
-      spawnParticles(o.x, o.y, '#FF9F45', 6, [60,200], 0.5);
+      spawnParticles(o.x, o.y, isNinja?'#8F8FB0':'#FF9F45', 6, [60,200], 0.5);
     }
     obstacles.length = 0;
-    sfxFireball();
   }
 
   // ---- friend encounter: touch the falling friend -> high-five -> fly up together (20/30/50m by variant) ----
@@ -1281,8 +1291,9 @@
         charRot = Math.sin(now/60)*0.15;
         charScale = 1.08 + Math.sin(now/80)*0.05;
         if(Math.random()<0.6){
+          const ninjaTrail = currentSkin().character==='ninja';
           spawnParticles(charX+randRange(-charRadius*0.4,charRadius*0.4), charY+charRadius*0.7,
-            Math.random()<0.5?'#FF9F45':'#FFD93D', 1, [20,60], 0.35);
+            ninjaTrail ? (Math.random()<0.5?'#3A3F52':'#8F8FB0') : (Math.random()<0.5?'#FF9F45':'#FFD93D'), 1, [20,60], 0.35);
         }
         if(t>=1){
           charState = 'resting';
@@ -1726,6 +1737,7 @@
   }
 
   function drawCharacter(x,y,scale,rot,now){
+    if(currentSkin().character==='ninja'){ drawCharacterNinja(x,y,scale,rot,now); return; }
     const isFlashing = now < invincibleUntil && Math.floor(now/90)%2===0;
     const sinceLand = now-landTime;
     let squash = 1, squashY = 1;
@@ -1848,6 +1860,132 @@
     drawZoneOutfit(r, currentZoneIdx(height));
 
     // steel helmet (shield power-up, worn on head - color upgrades as it stacks)
+    if(helmetLevel>=1){
+      drawHelmetOnHead(r, helmetLevel, now);
+    }
+
+    ctx.restore();
+  }
+
+  // ---------- ninja character (selectable alternate to the default bird) ----------
+  // ultimate: "그림자 질주" (shadow dash) - orbiting shadow clones instead of a flame aura,
+  // triggered the same way as the bird's fireball (3 stacked helmets -> grin -> ultimate)
+  function drawNinjaShadowClones(r, now){
+    ctx.save();
+    const glow = ctx.createRadialGradient(0,0,r*0.3,0,0,r*1.7);
+    glow.addColorStop(0,'rgba(90,70,140,0.55)'); glow.addColorStop(1,'rgba(90,70,140,0)');
+    ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(0,0,r*1.7,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+    const count = 3;
+    for(let i=0;i<count;i++){
+      const ang = now/240 + i*(Math.PI*2/count);
+      const cx = Math.cos(ang)*r*1.55, cy = Math.sin(ang)*r*1.55*0.55;
+      ctx.save();
+      ctx.globalAlpha = 0.38;
+      ctx.translate(cx,cy);
+      ctx.scale(0.6,0.6);
+      ctx.fillStyle = '#20222E';
+      ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  function drawCharacterNinja(x,y,scale,rot,now){
+    const isFlashing = now < invincibleUntil && Math.floor(now/90)%2===0;
+    const sinceLand = now-landTime;
+    let squash = 1, squashY = 1;
+    if(sinceLand>=0 && sinceLand<260){
+      const p = sinceLand/260;
+      const wob = Math.sin(p*Math.PI)*(1-p);
+      squash = 1+wob*0.18; squashY = 1-wob*0.18;
+    }
+    ctx.save();
+    ctx.translate(x,y);
+    ctx.rotate(rot);
+    ctx.scale(scale*squash, scale*squashY);
+
+    const r = charRadius;
+    const skin = currentSkin();
+
+    // shadow
+    ctx.save();
+    ctx.globalAlpha = 0.18;
+    ctx.fillStyle = '#000';
+    ctx.beginPath(); ctx.ellipse(0, r*1.15, r*0.9, r*0.28, 0,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+
+    // ultimate: shadow-clone burst instead of the bird's flame aura
+    if(charState==='fireball'){
+      drawNinjaShadowClones(r, now);
+    }
+
+    // feet (only when resting on a pillar)
+    if(charState==='resting'){
+      ctx.fillStyle = '#1C1E29';
+      ctx.beginPath(); ctx.ellipse(-r*0.32, r*0.92, r*0.2, r*0.12, 0,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(r*0.32, r*0.92, r*0.2, r*0.12, 0,0,Math.PI*2); ctx.fill();
+    }
+
+    // headband ribbon (ninja's equivalent slot to the bird's wing)
+    const dir = charState!=='resting' ? travelDir : 0;
+    ctx.fillStyle = skin.headband;
+    ctx.save();
+    ctx.translate(-r*0.75 - dir*r*0.1, -r*0.15);
+    ctx.rotate(-dir*0.4);
+    ctx.beginPath();
+    ctx.moveTo(0,-r*0.12); ctx.lineTo(-r*0.55, r*0.05); ctx.lineTo(-r*0.1, r*0.28);
+    ctx.closePath(); ctx.fill();
+    ctx.restore();
+
+    // body (hood + gi, one blob matching the bird's proportions)
+    ctx.fillStyle = isFlashing ? '#FFFFFF' : skin.body;
+    ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.fill();
+
+    // eye-slit skin band across the middle of the hood
+    if(!isFlashing){
+      ctx.save();
+      ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.clip();
+      ctx.fillStyle = '#E8C9A0';
+      ctx.fillRect(-r, -r*0.24, r*2, r*0.26);
+      ctx.restore();
+    }
+
+    // sash / belt accent
+    ctx.fillStyle = skin.headband;
+    ctx.beginPath(); ctx.ellipse(0, r*0.62, r*0.72, r*0.16, 0,0,Math.PI*2); ctx.fill();
+
+    // eyes
+    const eyeY = -r*0.1;
+    const eyeDX = r*0.34;
+    if(charState==='fireball_grin'){
+      // confident squint during the ultimate wind-up
+      ctx.strokeStyle = '#232838'; ctx.lineWidth = r*0.08; ctx.lineCap='round';
+      ctx.beginPath(); ctx.arc(-eyeDX, eyeY+r*0.03, r*0.15, Math.PI*1.08, Math.PI*1.92); ctx.stroke();
+      ctx.beginPath(); ctx.arc(eyeDX, eyeY+r*0.03, r*0.15, Math.PI*1.08, Math.PI*1.92); ctx.stroke();
+    } else if(blinking){
+      ctx.strokeStyle = '#232838'; ctx.lineWidth = r*0.07; ctx.lineCap='round';
+      ctx.beginPath(); ctx.moveTo(-eyeDX-r*0.13,eyeY); ctx.lineTo(-eyeDX+r*0.13,eyeY); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(eyeDX-r*0.13,eyeY); ctx.lineTo(eyeDX+r*0.13,eyeY); ctx.stroke();
+    } else {
+      const lookDir = charState!=='resting' ? travelDir : 0;
+      ctx.fillStyle = '#232838';
+      ctx.beginPath(); ctx.ellipse(-eyeDX+lookDir*r*0.04, eyeY, r*0.15, r*0.17,0,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(eyeDX+lookDir*r*0.04, eyeY, r*0.15, r*0.17,0,0,Math.PI*2); ctx.fill();
+    }
+
+    // hand-seal during the ultimate wind-up (replaces the bird's grin/teeth)
+    if(charState==='fireball_grin'){
+      const gt = clamp((now-fireballGrinStart)/FIREBALL_GRIN_DURATION,0,1);
+      const bob = Math.sin(gt*Math.PI)*r*0.06;
+      ctx.fillStyle = '#E8C9A0';
+      ctx.beginPath(); ctx.arc(-r*0.15, r*0.42-bob, r*0.15,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(r*0.15, r*0.42-bob, r*0.15,0,Math.PI*2); ctx.fill();
+    }
+
+    // seasonal outfit accessory (matches the current background zone), shared with the bird
+    drawZoneOutfit(r, currentZoneIdx(height));
+
+    // steel helmet (shield power-up), shared with the bird
     if(helmetLevel>=1){
       drawHelmetOnHead(r, helmetLevel, now);
     }
@@ -2478,7 +2616,7 @@
       const unlockedCount = SKINS.reduce((n,_,i)=>n+(isSkinUnlocked(i)?1:0),0);
       ctx.font = `${Math.round(W*0.032)}px 'Jua', sans-serif`;
       ctx.fillStyle = 'rgba(255,255,255,0.85)';
-      ctx.fillText(currentSkin().name+' 스킨 ('+unlockedCount+'/'+SKINS.length+' 해금)', W/2, H*0.72);
+      ctx.fillText('캐릭터: '+currentSkin().name+' ('+unlockedCount+'/'+SKINS.length+')', W/2, H*0.72);
     } else if(state==='gameover'){
       ctx.fillStyle = 'rgba(5,8,25,0.6)';
       ctx.fillRect(0,0,W,H);
