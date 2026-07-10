@@ -394,6 +394,8 @@
   function sfxStart(){ beep(440,0.09,'triangle',0.1); beep(660,0.09,'triangle',0.1,0.08); beep(880,0.12,'triangle',0.1,0.16); }
   function sfxUnlock(){ beep(660,0.08,'square',0.08); beep(990,0.1,'square',0.08,0.09); }
   function sfxCombo(){ beep(760,0.06,'triangle',0.11); beep(1000,0.07,'triangle',0.1,0.06); beep(1300,0.08,'triangle',0.1,0.12); }
+  function sfxTick(vol){ beep(1500,0.04,'square', vol||0.09); }
+  function sfxHeartbeat(){ beep(85,0.1,'sine',0.16); beep(65,0.14,'sine',0.13,0.15); }
   function sfxFall(){ beep(300,0.12,'sine',0.1); beep(160,0.22,'sine',0.09,0.06); }
   function noiseBurst(dur,vol,delay,filterFreq){
     if(!actx || muted) return;
@@ -763,6 +765,8 @@
   let obstacleUnlocked = {helmet:false, ad:false, leaf:false, boulder:false, lightning:false, friend:false, hpup:false};
   let unlockToastText='', unlockToastUntil=0;
   let lastAnnouncedZoneIdx = 0;
+  let lastTickAt = 0;      // rest-timer urgency ticking
+  let lastHeartbeatAt = 0; // low-HP (1 heart) danger heartbeat
   let lastTime=0;
   let shakeUntil=0, shakeMag=0;
   let helmetLevel=0; // 0=none, 1=silver shield, 2=golden shield (one more -> fireball)
@@ -818,6 +822,7 @@
     runStartBest = sessionBest;
     challengeBeatenShoutShown = false;
     lastAnnouncedZoneIdx = 0;
+    lastTickAt = 0; lastHeartbeatAt = 0;
     obstacles = []; particles = [];
     obstacleUnlocked = {helmet:false, ad:false, leaf:false, boulder:false, lightning:false, friend:false, hpup:false};
     helmetLevel = 0;
@@ -882,6 +887,7 @@
       comboPopAt += pausedMs;
       fireballGrinStart += pausedMs; fireballStart += pausedMs;
       friendPhaseStart += pausedMs;
+      lastTickAt += pausedMs; lastHeartbeatAt += pausedMs;
       paused = false;
       if(!muted) startBgm();
     }
@@ -1188,6 +1194,12 @@
     if(blinking && now>blinkUntil){ blinking=false; blinkAt = now+randRange(1800,4200); }
 
     if(state==='playing'){
+      // low-HP danger cue: heartbeat sfx/vibrate + a pulsing red vignette (drawn in render())
+      if(hp===1 && now-lastHeartbeatAt>=700){
+        lastHeartbeatAt = now;
+        sfxHeartbeat();
+        vibrate(35);
+      }
       if(charState==='resting'){
         charX = charSide==='left' ? currentLeftX() : currentRightX();
         charY = restY + Math.sin(now/320)*2;
@@ -1196,6 +1208,16 @@
         if(remain < limit*0.2 && remain>0){
           const shake = 1-remain/(limit*0.2);
           charX += (Math.random()*2-1)*shake*3;
+        }
+        // urgency ticking as the rest timer runs low, speeding up toward the deadline
+        const restFrac = clamp(remain/limit, 0, 1);
+        if(restFrac<=0.28 && restFrac>0){
+          const tickInterval = lerp(420, 110, 1-restFrac/0.28);
+          if(now-lastTickAt>=tickInterval){
+            lastTickAt = now;
+            sfxTick(lerp(0.07,0.13,1-restFrac/0.28));
+            vibrate(15);
+          }
         }
         if(now > restDeadline){
           idleTimeoutFall(now);
@@ -1230,7 +1252,7 @@
           charX = charSide==='left' ? currentLeftX() : currentRightX();
           charY = restY; charRot = 0; charScale = 1;
           charState = 'resting';
-          restDeadline = now + restTimeLimit()*1000;
+          restDeadline = now + restTimeLimit()*1000; lastTickAt = 0;
           landCharacter();
         }
       } else if(charState==='dead'){
@@ -1266,7 +1288,7 @@
           charState = 'resting';
           charX = charSide==='left' ? currentLeftX() : currentRightX();
           charY = restY; charRot=0; charScale=1;
-          restDeadline = now + restTimeLimit()*1000;
+          restDeadline = now + restTimeLimit()*1000; lastTickAt = 0;
           landTime = now;
           spawnParticles(charX, restY+charRadius*0.6, '#C9A876', 8, [30,110], 0.45);
           sfxLand();
@@ -1312,7 +1334,7 @@
           charState = 'resting';
           charX = charSide==='left' ? currentLeftX() : currentRightX();
           charY = restY; charRot=0; charScale=1;
-          restDeadline = now + restTimeLimit()*1000;
+          restDeadline = now + restTimeLimit()*1000; lastTickAt = 0;
           landTime = now;
           spawnParticles(charX, restY+charRadius*0.6, '#C9A876', 6, [30,90], 0.4);
           sfxLand();
@@ -2011,6 +2033,20 @@
     ctx.restore();
   }
 
+  // pulsing red edge vignette while down to the last heart - paired with sfxHeartbeat/vibrate in update()
+  function drawDangerVignette(now){
+    if(state!=='playing' || hp!==1) return;
+    const pulse = 0.5+0.5*Math.sin(now/280);
+    const alpha = 0.16+0.22*pulse;
+    ctx.save();
+    const g = ctx.createRadialGradient(W/2,H/2,H*0.32, W/2,H/2,H*0.72);
+    g.addColorStop(0,'rgba(255,20,20,0)');
+    g.addColorStop(1,'rgba(255,20,20,'+alpha.toFixed(3)+')');
+    ctx.fillStyle = g;
+    ctx.fillRect(0,0,W,H);
+    ctx.restore();
+  }
+
   // ---------- seasonal obstacle skins: 'drop'/'leaf'/'boulder'/'lightning' reskin per zone ----------
   function drawObstacleDrop(r, zoneIdx){
     if(zoneIdx===0){ // spring: cherry blossom petal
@@ -2577,6 +2613,7 @@
     for(const o of obstacles) drawObstacle(o);
     if(state==='playing') drawHUD(now);
     ctx.restore();
+    drawDangerVignette(now);
     drawFlash(now);
     drawOverlay(now);
     drawToast(now);
