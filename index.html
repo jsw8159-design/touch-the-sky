@@ -144,6 +144,14 @@
     background: rgba(255,255,255,0.16);
     display: none;
   }
+  #btnAdUnlock {
+    right: 10px; top: 10px;
+    width: auto; height: auto; border-radius: 16px;
+    padding: 8px 14px; font-size: 12px; font-family: 'Jua', sans-serif;
+    background: rgba(255,90,140,0.85);
+    display: none;
+  }
+  #btnAdUnlock:active { background: rgba(255,90,140,1); }
 </style>
 </head>
 <body>
@@ -205,6 +213,7 @@
         <button id="btnLbLocal" class="uiBtn" type="button">내 기록</button>
         <button id="btnLbGlobal" class="uiBtn" type="button">전체 랭킹</button>
         <button id="btnNickname" class="uiBtn" type="button">✏️ 닉네임 변경</button>
+        <button id="btnAdUnlock" class="uiBtn" type="button">📺 캐릭터 해금</button>
       </div>
     </div>
   </div>
@@ -277,6 +286,7 @@
   const btnLbLocal = document.getElementById('btnLbLocal');
   const btnLbGlobal = document.getElementById('btnLbGlobal');
   const btnNickname = document.getElementById('btnNickname');
+  const btnAdUnlock = document.getElementById('btnAdUnlock');
 
   // ---------- persistence (localStorage) ----------
   const LS_PREFIX = 'ttsSky_';
@@ -705,7 +715,13 @@
     bird:    { shout:'Fire Ball!!',   shoutColor:'#FFD93D', voiceId:'fireball',   voiceText:'Fire Ball!!',   flash:'#FFD93D', sfx:function(){ sfxFireball(); },  particle:['#FF9F45','#FFD93D'] }
   };
   function currentUltimateFx(){ return ULTIMATE_FX[currentSkin().character] || ULTIMATE_FX.bird; }
-  function isSkinUnlocked(i){ return sessionBest >= SKINS[i].unlockHeight; }
+  // characters unlock either by reaching a height milestone, OR by watching a rewarded ad
+  let adUnlockedSkins = new Set(JSON.parse(lsGet('adUnlockedSkins','[]')));
+  function isSkinUnlocked(i){ return sessionBest >= SKINS[i].unlockHeight || adUnlockedSkins.has(i); }
+  function nextLockedSkinIndex(){
+    for(let i=0;i<SKINS.length;i++){ if(!isSkinUnlocked(i)) return i; }
+    return -1;
+  }
   let selectedSkinIndex = parseInt(lsGet('skinIndex','0'),10)||0;
   if(selectedSkinIndex<0 || selectedSkinIndex>=SKINS.length || !isSkinUnlocked(selectedSkinIndex)) selectedSkinIndex = 0;
   function currentSkin(){ return SKINS[selectedSkinIndex]; }
@@ -715,6 +731,35 @@
       i = (i+dir+SKINS.length)%SKINS.length;
       if(isSkinUnlocked(i)){ selectedSkinIndex = i; lsSet('skinIndex', String(i)); sfxEquip(); break; }
     }
+  }
+
+  // ---------- rewarded-ad character unlock (placeholder flow) ----------
+  // No real ad SDK is wired in yet - this just runs a short timer to simulate
+  // watching a rewarded video ad. To connect a real network, replace the
+  // setTimeout in startAdUnlockFlow() with that network's rewarded-ad call,
+  // e.g. RewardedAdSDK.show({ onComplete: () => grantAdUnlock(idx), onFail: () => { adUnlockActive=false; syncUiButtons(); } })
+  // - the rest of the unlock/UI plumbing (grantAdUnlock, overlay, toasts) needs no changes.
+  const AD_UNLOCK_WATCH_MS = 3000;
+  let adUnlockActive = false, adUnlockTargetIndex = -1, adUnlockStart = 0;
+  function startAdUnlockFlow(){
+    if(adUnlockActive) return;
+    const idx = nextLockedSkinIndex();
+    if(idx<0) return;
+    adUnlockTargetIndex = idx;
+    adUnlockActive = true;
+    adUnlockStart = performance.now();
+    syncUiButtons();
+    setTimeout(function(){ grantAdUnlock(idx); }, AD_UNLOCK_WATCH_MS);
+  }
+  function grantAdUnlock(idx){
+    adUnlockedSkins.add(idx);
+    lsSet('adUnlockedSkins', JSON.stringify(Array.from(adUnlockedSkins)));
+    adUnlockActive = false;
+    selectedSkinIndex = idx; lsSet('skinIndex', String(idx));
+    unlockToastText = '🎉 '+SKINS[idx].name+' 해금!'; unlockToastUntil = performance.now()+2400;
+    sfxMaxHpUp();
+    advanceAdBanner();
+    syncUiButtons();
   }
 
   // ---------- pause ----------
@@ -943,8 +988,9 @@
     btnPause.style.display = (state==='playing' && !showLeaderboard) ? 'flex' : 'none';
     btnPause.textContent = paused ? '▶' : '⏸';
     btnLeaderboard.style.display = ((state==='start' || state==='gameover') && !showLeaderboard) ? 'flex' : 'none';
-    btnSkinPrev.style.display = (state==='start' && !showLeaderboard) ? 'flex' : 'none';
-    btnSkinNext.style.display = (state==='start' && !showLeaderboard) ? 'flex' : 'none';
+    const skinPickerVisible = (state==='start' || state==='gameover') && !showLeaderboard && !adUnlockActive;
+    btnSkinPrev.style.display = skinPickerVisible ? 'flex' : 'none';
+    btnSkinNext.style.display = skinPickerVisible ? 'flex' : 'none';
     btnLbClose.style.display = showLeaderboard ? 'flex' : 'none';
     btnShare.style.display = ((state==='start' || state==='gameover') && !showLeaderboard) ? 'flex' : 'none';
     btnShare.textContent = (state==='gameover' && challengeTarget!=null && height>challengeTarget)
@@ -955,6 +1001,7 @@
     btnLbGlobal.classList.toggle('lbTabActive', leaderboardTab==='global');
     btnNickname.style.display = showLeaderboard ? 'flex' : 'none';
     btnNickname.textContent = '✏️ ' + (myNickname || '닉네임 설정');
+    btnAdUnlock.style.display = (skinPickerVisible && nextLockedSkinIndex()>=0) ? 'flex' : 'none';
   }
 
   function enterFreefall(fromX, fromY){
@@ -2958,9 +3005,15 @@
       }
 
       const bob = Math.sin(now/350)*6;
+      const restartY = Math.max(extraY+H*0.03, H*0.68);
       ctx.font = `${Math.round(W*0.052)}px 'Jua', sans-serif`;
       ctx.fillStyle = '#FFFFFF';
-      ctx.fillText('탭 / 스페이스바로 다시 시작', W/2, Math.max(extraY+H*0.03, H*0.68)+bob);
+      ctx.fillText('탭 / 스페이스바로 다시 시작', W/2, restartY+bob);
+
+      // lets players change character before restarting (the side arrows work here too)
+      ctx.font = `${Math.round(W*0.032)}px 'Jua', sans-serif`;
+      ctx.fillStyle = 'rgba(255,255,255,0.8)';
+      ctx.fillText('◀ '+currentSkin().name+' ▶', W/2, restartY+H*0.06);
     }
   }
 
@@ -2981,6 +3034,41 @@
   }
 
   // ---------- local leaderboard overlay ----------
+  // placeholder rewarded-ad "watching" screen - see startAdUnlockFlow() for where to swap in a real ad SDK
+  function drawAdUnlockOverlay(now){
+    const elapsed = now-adUnlockStart;
+    const p = clamp(elapsed/AD_UNLOCK_WATCH_MS, 0, 1);
+    const remainSec = Math.max(0, Math.ceil((AD_UNLOCK_WATCH_MS-elapsed)/1000));
+    ctx.save();
+    ctx.fillStyle = 'rgba(4,6,20,0.95)';
+    ctx.fillRect(0,0,W,H);
+    ctx.textAlign='center';
+    ctx.fillStyle = '#FF5A8C';
+    ctx.font = `${Math.round(W*0.07)}px 'Jua', sans-serif`;
+    ctx.fillText('📺 광고 시청 중...', W/2, H*0.34);
+
+    ctx.font = `${Math.round(W*0.045)}px 'Jua', sans-serif`;
+    ctx.fillStyle = '#FFFFFF';
+    const targetName = adUnlockTargetIndex>=0 ? SKINS[adUnlockTargetIndex].name : '';
+    ctx.fillText(targetName+' 캐릭터 해금까지', W/2, H*0.44);
+
+    // progress bar
+    const barW = W*0.6, barH = H*0.028, barX = W/2-barW/2, barY = H*0.5;
+    ctx.fillStyle = 'rgba(255,255,255,0.18)';
+    roundRect(barX, barY, barW, barH, barH/2); ctx.fill();
+    ctx.fillStyle = '#FF5A8C';
+    roundRect(barX, barY, barW*p, barH, barH/2); ctx.fill();
+
+    ctx.font = `${Math.round(W*0.09)}px 'Jua', sans-serif`;
+    ctx.fillStyle = '#FFD93D';
+    ctx.fillText(String(remainSec), W/2, H*0.62);
+
+    ctx.font = `${Math.round(W*0.032)}px 'Jua', sans-serif`;
+    ctx.fillStyle = 'rgba(255,255,255,0.6)';
+    ctx.fillText('(실제 광고 네트워크 연동 전 임시 화면입니다)', W/2, H*0.68);
+    ctx.restore();
+  }
+
   function drawLeaderboard(now){
     ctx.save();
     ctx.fillStyle = 'rgba(4,6,20,0.94)';
@@ -3071,12 +3159,14 @@
     render(now);
     if(paused) drawPauseOverlay(now);
     if(showLeaderboard) drawLeaderboard(now);
+    if(adUnlockActive) drawAdUnlockOverlay(now);
     requestAnimationFrame(loop);
   }
 
   // ---------- input ----------
   function onPointerDown(e){
     e.preventDefault();
+    if(adUnlockActive) return; // "watching an ad" can't be skipped by tapping through it
     if(showLeaderboard){ showLeaderboard=false; syncUiButtons(); return; }
     if(paused){ togglePause(); return; }
     tryJump();
@@ -3086,6 +3176,7 @@
   window.addEventListener('keydown', function(e){
     if(e.code==='Space' || e.key===' '){
       e.preventDefault();
+      if(adUnlockActive) return;
       if(showLeaderboard){ showLeaderboard=false; syncUiButtons(); return; }
       if(paused){ togglePause(); return; }
       tryJump();
@@ -3127,6 +3218,7 @@
     syncUiButtons();
   });
   btnNickname.addEventListener('click', function(e){ e.stopPropagation(); changeNickname(); });
+  btnAdUnlock.addEventListener('click', function(e){ e.stopPropagation(); startAdUnlockFlow(); });
   btnSkinPrev.addEventListener('click', function(e){ e.stopPropagation(); cycleSkin(-1); });
   btnSkinNext.addEventListener('click', function(e){ e.stopPropagation(); cycleSkin(1); });
   btnShare.addEventListener('click', function(e){
