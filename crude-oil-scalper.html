@@ -287,9 +287,9 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
     </div>
     <div class="gbottom">
       <div class="speedRow">
-        <button class="speedBtn active" data-spd="1">1x</button>
-        <button class="speedBtn" data-spd="2">2x</button>
+        <button class="speedBtn active" data-spd="0.3">0.3x</button>
         <button class="speedBtn" data-spd="0.5">0.5x</button>
+        <button class="speedBtn" data-spd="0.8">0.8x</button>
       </div>
       <div class="actionRow">
         <button class="actBtn short" id="tBtnShort">매도<span class="sm">SHORT</span></button>
@@ -319,9 +319,9 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
     </div>
     <div class="gbottom">
       <div class="speedRow">
-        <button class="speedBtn active" data-spd="1">1x</button>
-        <button class="speedBtn" data-spd="2">2x</button>
+        <button class="speedBtn active" data-spd="0.3">0.3x</button>
         <button class="speedBtn" data-spd="0.5">0.5x</button>
+        <button class="speedBtn" data-spd="0.8">0.8x</button>
       </div>
       <div class="actionRow">
         <button class="actBtn short" id="btnShort">매도<span class="sm">SHORT</span></button>
@@ -1261,7 +1261,7 @@ function drawTradeChart(revealZones){
 const G={
   stageId:1, round:1, roundsPerStage:3,
   scenario:null, revealCount:0, phase:'idle', playerDir:null, entryIndex:null,
-  timer:null, speed:1, balance:1000, sessionStars:[], streak:0,
+  timer:null, speed:0.3, balance:1000, sessionStars:[], streak:0,
 };
 const REVEAL_MS=500;
 
@@ -1483,7 +1483,7 @@ $('#zoneBack').onclick=()=>{ sfx.click(); goHome(); };
 
 /* ================= TRADE PRACTICE (실전 매매 훈련) ================= */
 const TRADE_REVEAL_MS=500;
-const TG={ level:1, source:'zone', scenario:null, revealCount:0, phase:'idle', speed:1,
+const TG={ level:1, source:'zone', scenario:null, revealCount:0, phase:'idle', speed:0.3,
   timer:null, position:0, avgEntry:null, realizedPnL:0, balance:1000, trades:[], maxContracts:2,
   entryCount:0, closeCount:0 };
 function currentTradePrice(){
