@@ -390,7 +390,34 @@
   function sfxJump(){ beep(520,0.09,'triangle',0.12); beep(760,0.07,'triangle',0.09,0.045); }
   function sfxLand(){ beep(210,0.09,'sine',0.10); }
   function sfxHit(){ beep(150,0.20,'sawtooth',0.15); beep(90,0.22,'square',0.08,0.03); }
-  function sfxGameOver(){ beep(420,0.16,'sine',0.12,0); beep(320,0.16,'sine',0.12,0.16); beep(220,0.28,'sine',0.12,0.32); }
+  // comedic "wah-wah-wah waaah" descending trombone slide + a cartoonish boing bounce at the end
+  function sfxGameOver(){
+    if(!actx || muted) return;
+    const t0 = actx.currentTime;
+    const notes = [[523,0.00,0.20],[466,0.22,0.20],[415,0.44,0.20],[293,0.66,0.52]];
+    for(const n of notes){
+      const freq=n[0], start=n[1], dur=n[2];
+      const osc=actx.createOscillator(), gain=actx.createGain();
+      osc.type='sawtooth';
+      osc.frequency.setValueAtTime(freq,t0+start);
+      osc.frequency.exponentialRampToValueAtTime(freq*0.82,t0+start+dur);
+      gain.gain.setValueAtTime(0,t0+start);
+      gain.gain.linearRampToValueAtTime(0.13,t0+start+0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001,t0+start+dur);
+      osc.connect(gain); gain.connect(actx.destination);
+      osc.start(t0+start); osc.stop(t0+start+dur+0.03);
+    }
+    const bo=actx.createOscillator(), bg=actx.createGain();
+    bo.type='sine';
+    bo.frequency.setValueAtTime(170,t0+1.18);
+    bo.frequency.exponentialRampToValueAtTime(480,t0+1.26);
+    bo.frequency.exponentialRampToValueAtTime(85,t0+1.42);
+    bg.gain.setValueAtTime(0,t0+1.18);
+    bg.gain.linearRampToValueAtTime(0.12,t0+1.20);
+    bg.gain.exponentialRampToValueAtTime(0.001,t0+1.42);
+    bo.connect(bg); bg.connect(actx.destination);
+    bo.start(t0+1.18); bo.stop(t0+1.45);
+  }
   function sfxStart(){ beep(440,0.09,'triangle',0.1); beep(660,0.09,'triangle',0.1,0.08); beep(880,0.12,'triangle',0.1,0.16); }
   function sfxUnlock(){ beep(660,0.08,'square',0.08); beep(990,0.1,'square',0.08,0.09); }
   function sfxCombo(){ beep(760,0.06,'triangle',0.11); beep(1000,0.07,'triangle',0.1,0.06); beep(1300,0.08,'triangle',0.1,0.12); }
@@ -2883,12 +2910,18 @@
       ctx.fillStyle = '#FFD93D';
       ctx.fillText('탭 / 스페이스바로 시작', W/2, H*0.78+bob);
 
+      // label above the character preview so the side arrows read as a character picker,
+      // not just generic navigation
+      ctx.font = `${Math.round(W*0.04)}px 'Jua', sans-serif`;
+      ctx.fillStyle = '#FFD93D';
+      ctx.fillText('◀ 캐릭터 선택 ▶', W/2, H*0.615);
+
       drawCharacter(W/2, H*0.655, 1, 0, now);
 
       const unlockedCount = SKINS.reduce((n,_,i)=>n+(isSkinUnlocked(i)?1:0),0);
-      ctx.font = `${Math.round(W*0.032)}px 'Jua', sans-serif`;
-      ctx.fillStyle = 'rgba(255,255,255,0.85)';
-      ctx.fillText('캐릭터: '+currentSkin().name+' ('+unlockedCount+'/'+SKINS.length+')', W/2, H*0.72);
+      ctx.font = `${Math.round(W*0.034)}px 'Jua', sans-serif`;
+      ctx.fillStyle = 'rgba(255,255,255,0.9)';
+      ctx.fillText(currentSkin().name+' ('+unlockedCount+'/'+SKINS.length+')', W/2, H*0.72);
     } else if(state==='gameover'){
       ctx.fillStyle = 'rgba(5,8,25,0.6)';
       ctx.fillRect(0,0,W,H);
