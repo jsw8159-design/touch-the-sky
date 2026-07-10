@@ -689,52 +689,147 @@ function buildScenario(patternId, instrumentId){
 const ZONE_A_EXPLAIN='캔들이 좁은 가격대에 옆으로 뭉쳐 있는 구간이에요(매물대). 다시 접근하면 대기 물량 때문에 속도가 느려지거나 일시적으로 밀리는 경우가 많아요.';
 const ZONE_B_EXPLAIN='과거의 고점(전고점)이나 저점(전저점)은 이후 가격이 다시 그 자리에 왔을 때 저항이나 지지로 작용해서, 일시적으로 돌파해도 다시 밀리거나 추세 방향이 바뀌는 경우가 많아요.';
 const ZONE_LEVELS=[
-  { tf:60, volMult:0.6,
-    anchors:[{i:0,p:0},{i:5,p:-3.0},{i:9,p:-3.3},{i:12,p:-3.0},{i:17,p:-7.5},{i:21,p:-4.0},{i:23,p:-7.4},
-      {i:29,p:0.5},{i:33,p:0.4},{i:36,p:0.6},{i:41,p:5.5},{i:44,p:2.5},{i:46,p:5.4},{i:49,p:1.0}],
-    touches:[{i:17,price:-7.5,dir:'down'},{i:23,price:-7.4,dir:'down'},{i:41,price:5.5,dir:'up'},{i:46,price:5.4,dir:'up'}],
-    zoneDefs:[
-      {type:'A', hitIdx:[9], radiusIdx:5, radiusPricePct:0.10},
-      {type:'B', dir:'low', hitIdx:[17,23], radiusIdx:3, radiusPricePct:0.05},
-      {type:'A', hitIdx:[33], radiusIdx:5, radiusPricePct:0.10},
-      {type:'B', dir:'high', hitIdx:[41,46], radiusIdx:3, radiusPricePct:0.05},
-    ] },
-  { tf:30, volMult:0.8,
-    anchors:[{i:0,p:0},{i:4,p:2.5},{i:9,p:4.0},{i:12,p:3.8},{i:16,p:7.0},{i:19,p:4.5},{i:21,p:6.9},
-      {i:27,p:-1.0},{i:31,p:-1.2},{i:34,p:-1.0},{i:39,p:-5.5},{i:42,p:-2.5},{i:44,p:-5.4},{i:49,p:-0.5}],
-    touches:[{i:16,price:7.0,dir:'up'},{i:21,price:6.9,dir:'up'},{i:39,price:-5.5,dir:'down'},{i:44,price:-5.4,dir:'down'}],
-    zoneDefs:[
-      {type:'A', hitIdx:[9], radiusIdx:5, radiusPricePct:0.09},
-      {type:'B', dir:'high', hitIdx:[16,21], radiusIdx:3, radiusPricePct:0.05},
-      {type:'A', hitIdx:[31], radiusIdx:5, radiusPricePct:0.09},
-      {type:'B', dir:'low', hitIdx:[39,44], radiusIdx:3, radiusPricePct:0.05},
-    ] },
-  { tf:10, volMult:1.05,
-    anchors:[{i:0,p:0},{i:3,p:-2.0},{i:7,p:-2.4},{i:9,p:-2.2},{i:13,p:-5.0},{i:16,p:-2.8},{i:18,p:-4.9},
-      {i:23,p:1.5},{i:27,p:1.7},{i:30,p:1.6},{i:34,p:4.5},{i:37,p:2.2},{i:39,p:4.4},{i:43,p:0.8},{i:49,p:-0.3}],
-    touches:[{i:13,price:-5.0,dir:'down'},{i:18,price:-4.9,dir:'down'},{i:34,price:4.5,dir:'up'},{i:39,price:4.4,dir:'up'}],
-    zoneDefs:[
-      {type:'A', hitIdx:[7], radiusIdx:4, radiusPricePct:0.08},
-      {type:'B', dir:'low', hitIdx:[13,18], radiusIdx:3, radiusPricePct:0.045},
-      {type:'A', hitIdx:[27], radiusIdx:4, radiusPricePct:0.08},
-      {type:'B', dir:'high', hitIdx:[34,39], radiusIdx:3, radiusPricePct:0.045},
-    ] },
-  { tf:5, volMult:1.3,
-    anchors:[{i:0,p:0},{i:3,p:1.8},{i:6,p:2.1},{i:8,p:2.0},{i:12,p:4.2},{i:15,p:2.0},{i:17,p:4.1},
-      {i:22,p:-1.0},{i:26,p:-1.3},{i:29,p:-1.1},{i:33,p:-3.8},{i:36,p:-1.5},{i:38,p:-3.7},{i:43,p:0.2},{i:49,p:0.0}],
-    touches:[{i:12,price:4.2,dir:'up'},{i:17,price:4.1,dir:'up'},{i:33,price:-3.8,dir:'down'},{i:38,price:-3.7,dir:'down'}],
-    zoneDefs:[
-      {type:'A', hitIdx:[6], radiusIdx:4, radiusPricePct:0.075},
-      {type:'B', dir:'high', hitIdx:[12,17], radiusIdx:3, radiusPricePct:0.04},
-      {type:'A', hitIdx:[26], radiusIdx:4, radiusPricePct:0.075},
-      {type:'B', dir:'low', hitIdx:[33,38], radiusIdx:3, radiusPricePct:0.04},
-    ] },
+  { tf:60, volMult:0.6, variants:[
+    { anchors:[{i:0,p:0},{i:5,p:-3.0},{i:9,p:-3.3},{i:12,p:-3.0},{i:17,p:-7.5},{i:21,p:-4.0},{i:23,p:-7.4},
+        {i:29,p:0.5},{i:33,p:0.4},{i:36,p:0.6},{i:41,p:5.5},{i:44,p:2.5},{i:46,p:5.4},{i:49,p:1.0}],
+      touches:[{i:17,price:-7.5,dir:'down'},{i:23,price:-7.4,dir:'down'},{i:41,price:5.5,dir:'up'},{i:46,price:5.4,dir:'up'}],
+      zoneDefs:[
+        {type:'A', hitIdx:[9], radiusIdx:5, radiusPricePct:0.10},
+        {type:'B', dir:'low', hitIdx:[17,23], radiusIdx:3, radiusPricePct:0.05},
+        {type:'A', hitIdx:[33], radiusIdx:5, radiusPricePct:0.10},
+        {type:'B', dir:'high', hitIdx:[41,46], radiusIdx:3, radiusPricePct:0.05},
+      ] },
+    { anchors:[{i:0,p:0},{i:5,p:3.0},{i:9,p:3.3},{i:12,p:3.0},{i:17,p:7.0},{i:21,p:4.0},{i:23,p:6.9},
+        {i:29,p:-0.5},{i:33,p:-0.4},{i:36,p:-0.6},{i:41,p:-5.0},{i:44,p:-2.5},{i:46,p:-4.9},{i:49,p:-1.0}],
+      touches:[{i:17,price:7.0,dir:'up'},{i:23,price:6.9,dir:'up'},{i:41,price:-5.0,dir:'down'},{i:46,price:-4.9,dir:'down'}],
+      zoneDefs:[
+        {type:'A', hitIdx:[9], radiusIdx:5, radiusPricePct:0.10},
+        {type:'B', dir:'high', hitIdx:[17,23], radiusIdx:3, radiusPricePct:0.05},
+        {type:'A', hitIdx:[33], radiusIdx:5, radiusPricePct:0.10},
+        {type:'B', dir:'low', hitIdx:[41,46], radiusIdx:3, radiusPricePct:0.05},
+      ] },
+    { anchors:[{i:0,p:0},{i:5,p:-2.5},{i:9,p:-2.8},{i:12,p:-2.6},{i:17,p:-6.0},{i:21,p:-3.0},{i:23,p:-5.9},
+        {i:29,p:0.0},{i:33,p:0.2},{i:36,p:0.0},{i:41,p:-2.8},{i:44,p:-0.5},{i:46,p:-2.7},{i:49,p:3.5}],
+      touches:[{i:17,price:-6.0,dir:'down'},{i:23,price:-5.9,dir:'down'},{i:41,price:-2.8,dir:'down'},{i:46,price:-2.7,dir:'down'}],
+      zoneDefs:[
+        {type:'A', hitIdx:[9], radiusIdx:5, radiusPricePct:0.10},
+        {type:'B', dir:'low', hitIdx:[17,23], radiusIdx:3, radiusPricePct:0.05},
+        {type:'A', hitIdx:[33], radiusIdx:5, radiusPricePct:0.10},
+        {type:'B', dir:'low', hitIdx:[41,46], radiusIdx:3, radiusPricePct:0.045},
+      ] },
+    { anchors:[{i:0,p:0},{i:5,p:2.5},{i:9,p:2.8},{i:12,p:2.6},{i:17,p:6.0},{i:21,p:3.2},{i:23,p:5.9},
+        {i:29,p:0.2},{i:33,p:0.0},{i:36,p:0.3},{i:41,p:2.7},{i:44,p:0.8},{i:46,p:2.6},{i:49,p:-3.2}],
+      touches:[{i:17,price:6.0,dir:'up'},{i:23,price:5.9,dir:'up'},{i:41,price:2.7,dir:'up'},{i:46,price:2.6,dir:'up'}],
+      zoneDefs:[
+        {type:'A', hitIdx:[9], radiusIdx:5, radiusPricePct:0.10},
+        {type:'B', dir:'high', hitIdx:[17,23], radiusIdx:3, radiusPricePct:0.05},
+        {type:'A', hitIdx:[33], radiusIdx:5, radiusPricePct:0.10},
+        {type:'B', dir:'high', hitIdx:[41,46], radiusIdx:3, radiusPricePct:0.045},
+      ] },
+  ] },
+  { tf:30, volMult:0.8, variants:[
+    { anchors:[{i:0,p:0},{i:4,p:2.5},{i:9,p:4.0},{i:12,p:3.8},{i:16,p:7.0},{i:19,p:4.5},{i:21,p:6.9},
+        {i:27,p:-1.0},{i:31,p:-1.2},{i:34,p:-1.0},{i:39,p:-5.5},{i:42,p:-2.5},{i:44,p:-5.4},{i:49,p:-0.5}],
+      touches:[{i:16,price:7.0,dir:'up'},{i:21,price:6.9,dir:'up'},{i:39,price:-5.5,dir:'down'},{i:44,price:-5.4,dir:'down'}],
+      zoneDefs:[
+        {type:'A', hitIdx:[9], radiusIdx:5, radiusPricePct:0.09},
+        {type:'B', dir:'high', hitIdx:[16,21], radiusIdx:3, radiusPricePct:0.05},
+        {type:'A', hitIdx:[31], radiusIdx:5, radiusPricePct:0.09},
+        {type:'B', dir:'low', hitIdx:[39,44], radiusIdx:3, radiusPricePct:0.05},
+      ] },
+    { anchors:[{i:0,p:0},{i:4,p:-2.0},{i:9,p:-3.2},{i:12,p:-3.0},{i:16,p:-5.5},{i:19,p:-3.5},{i:21,p:-5.4},
+        {i:27,p:0.8},{i:31,p:1.0},{i:34,p:0.8},{i:39,p:4.8},{i:42,p:2.0},{i:44,p:4.7},{i:49,p:0.4}],
+      touches:[{i:16,price:-5.5,dir:'down'},{i:21,price:-5.4,dir:'down'},{i:39,price:4.8,dir:'up'},{i:44,price:4.7,dir:'up'}],
+      zoneDefs:[
+        {type:'A', hitIdx:[9], radiusIdx:5, radiusPricePct:0.09},
+        {type:'B', dir:'low', hitIdx:[16,21], radiusIdx:3, radiusPricePct:0.05},
+        {type:'A', hitIdx:[31], radiusIdx:5, radiusPricePct:0.09},
+        {type:'B', dir:'high', hitIdx:[39,44], radiusIdx:3, radiusPricePct:0.05},
+      ] },
+    { anchors:[{i:0,p:0},{i:4,p:2.0},{i:9,p:3.5},{i:12,p:3.3},{i:16,p:6.5},{i:19,p:4.0},{i:21,p:6.4},
+        {i:27,p:1.0},{i:31,p:1.2},{i:34,p:1.0},{i:39,p:4.2},{i:42,p:2.2},{i:44,p:4.1},{i:49,p:-3.5}],
+      touches:[{i:16,price:6.5,dir:'up'},{i:21,price:6.4,dir:'up'},{i:39,price:4.2,dir:'up'},{i:44,price:4.1,dir:'up'}],
+      zoneDefs:[
+        {type:'A', hitIdx:[9], radiusIdx:5, radiusPricePct:0.09},
+        {type:'B', dir:'high', hitIdx:[16,21], radiusIdx:3, radiusPricePct:0.05},
+        {type:'A', hitIdx:[31], radiusIdx:5, radiusPricePct:0.09},
+        {type:'B', dir:'high', hitIdx:[39,44], radiusIdx:3, radiusPricePct:0.045},
+      ] },
+  ] },
+  { tf:10, volMult:1.05, variants:[
+    { anchors:[{i:0,p:0},{i:3,p:-2.0},{i:7,p:-2.4},{i:9,p:-2.2},{i:13,p:-5.0},{i:16,p:-2.8},{i:18,p:-4.9},
+        {i:23,p:1.5},{i:27,p:1.7},{i:30,p:1.6},{i:34,p:4.5},{i:37,p:2.2},{i:39,p:4.4},{i:43,p:0.8},{i:49,p:-0.3}],
+      touches:[{i:13,price:-5.0,dir:'down'},{i:18,price:-4.9,dir:'down'},{i:34,price:4.5,dir:'up'},{i:39,price:4.4,dir:'up'}],
+      zoneDefs:[
+        {type:'A', hitIdx:[7], radiusIdx:4, radiusPricePct:0.08},
+        {type:'B', dir:'low', hitIdx:[13,18], radiusIdx:3, radiusPricePct:0.045},
+        {type:'A', hitIdx:[27], radiusIdx:4, radiusPricePct:0.08},
+        {type:'B', dir:'high', hitIdx:[34,39], radiusIdx:3, radiusPricePct:0.045},
+      ] },
+    { anchors:[{i:0,p:0},{i:3,p:1.5},{i:7,p:2.2},{i:9,p:2.0},{i:13,p:4.5},{i:16,p:2.5},{i:18,p:4.4},
+        {i:23,p:-1.0},{i:27,p:-1.2},{i:30,p:-1.0},{i:34,p:-4.0},{i:37,p:-1.8},{i:39,p:-3.9},{i:43,p:-0.5},{i:49,p:0.6}],
+      touches:[{i:13,price:4.5,dir:'up'},{i:18,price:4.4,dir:'up'},{i:34,price:-4.0,dir:'down'},{i:39,price:-3.9,dir:'down'}],
+      zoneDefs:[
+        {type:'A', hitIdx:[7], radiusIdx:4, radiusPricePct:0.08},
+        {type:'B', dir:'high', hitIdx:[13,18], radiusIdx:3, radiusPricePct:0.045},
+        {type:'A', hitIdx:[27], radiusIdx:4, radiusPricePct:0.08},
+        {type:'B', dir:'low', hitIdx:[34,39], radiusIdx:3, radiusPricePct:0.045},
+      ] },
+    { anchors:[{i:0,p:0},{i:3,p:-1.8},{i:7,p:-2.4},{i:9,p:-2.2},{i:13,p:-5.2},{i:16,p:-3.0},{i:18,p:-5.1},
+        {i:23,p:-0.5},{i:27,p:-0.3},{i:30,p:-0.5},{i:34,p:-3.0},{i:37,p:-1.2},{i:39,p:-2.9},{i:43,p:1.0},{i:49,p:3.8}],
+      touches:[{i:13,price:-5.2,dir:'down'},{i:18,price:-5.1,dir:'down'},{i:34,price:-3.0,dir:'down'},{i:39,price:-2.9,dir:'down'}],
+      zoneDefs:[
+        {type:'A', hitIdx:[7], radiusIdx:4, radiusPricePct:0.08},
+        {type:'B', dir:'low', hitIdx:[13,18], radiusIdx:3, radiusPricePct:0.045},
+        {type:'A', hitIdx:[27], radiusIdx:4, radiusPricePct:0.08},
+        {type:'B', dir:'low', hitIdx:[34,39], radiusIdx:3, radiusPricePct:0.04},
+      ] },
+    { anchors:[{i:0,p:0},{i:3,p:1.8},{i:7,p:2.4},{i:9,p:2.2},{i:13,p:5.2},{i:16,p:3.0},{i:18,p:5.1},
+        {i:23,p:0.5},{i:27,p:0.3},{i:30,p:0.5},{i:34,p:3.0},{i:37,p:1.2},{i:39,p:2.9},{i:43,p:-1.0},{i:49,p:-3.8}],
+      touches:[{i:13,price:5.2,dir:'up'},{i:18,price:5.1,dir:'up'},{i:34,price:3.0,dir:'up'},{i:39,price:2.9,dir:'up'}],
+      zoneDefs:[
+        {type:'A', hitIdx:[7], radiusIdx:4, radiusPricePct:0.08},
+        {type:'B', dir:'high', hitIdx:[13,18], radiusIdx:3, radiusPricePct:0.045},
+        {type:'A', hitIdx:[27], radiusIdx:4, radiusPricePct:0.08},
+        {type:'B', dir:'high', hitIdx:[34,39], radiusIdx:3, radiusPricePct:0.04},
+      ] },
+  ] },
+  { tf:5, volMult:1.3, variants:[
+    { anchors:[{i:0,p:0},{i:3,p:1.8},{i:6,p:2.1},{i:8,p:2.0},{i:12,p:4.2},{i:15,p:2.0},{i:17,p:4.1},
+        {i:22,p:-1.0},{i:26,p:-1.3},{i:29,p:-1.1},{i:33,p:-3.8},{i:36,p:-1.5},{i:38,p:-3.7},{i:43,p:0.2},{i:49,p:0.0}],
+      touches:[{i:12,price:4.2,dir:'up'},{i:17,price:4.1,dir:'up'},{i:33,price:-3.8,dir:'down'},{i:38,price:-3.7,dir:'down'}],
+      zoneDefs:[
+        {type:'A', hitIdx:[6], radiusIdx:4, radiusPricePct:0.075},
+        {type:'B', dir:'high', hitIdx:[12,17], radiusIdx:3, radiusPricePct:0.04},
+        {type:'A', hitIdx:[26], radiusIdx:4, radiusPricePct:0.075},
+        {type:'B', dir:'low', hitIdx:[33,38], radiusIdx:3, radiusPricePct:0.04},
+      ] },
+    { anchors:[{i:0,p:0},{i:3,p:-1.5},{i:6,p:-2.0},{i:8,p:-1.9},{i:12,p:-4.0},{i:15,p:-2.0},{i:17,p:-3.9},
+        {i:22,p:1.0},{i:26,p:1.2},{i:29,p:1.1},{i:33,p:3.6},{i:36,p:1.4},{i:38,p:3.5},{i:43,p:-0.2},{i:49,p:0.0}],
+      touches:[{i:12,price:-4.0,dir:'down'},{i:17,price:-3.9,dir:'down'},{i:33,price:3.6,dir:'up'},{i:38,price:3.5,dir:'up'}],
+      zoneDefs:[
+        {type:'A', hitIdx:[6], radiusIdx:4, radiusPricePct:0.075},
+        {type:'B', dir:'low', hitIdx:[12,17], radiusIdx:3, radiusPricePct:0.04},
+        {type:'A', hitIdx:[26], radiusIdx:4, radiusPricePct:0.075},
+        {type:'B', dir:'high', hitIdx:[33,38], radiusIdx:3, radiusPricePct:0.04},
+      ] },
+    { anchors:[{i:0,p:0},{i:3,p:1.6},{i:6,p:2.0},{i:8,p:1.9},{i:12,p:4.0},{i:15,p:2.2},{i:17,p:3.9},
+        {i:22,p:0.5},{i:26,p:0.3},{i:29,p:0.5},{i:33,p:2.6},{i:36,p:1.0},{i:38,p:2.5},{i:43,p:-0.5},{i:49,p:-2.8}],
+      touches:[{i:12,price:4.0,dir:'up'},{i:17,price:3.9,dir:'up'},{i:33,price:2.6,dir:'up'},{i:38,price:2.5,dir:'up'}],
+      zoneDefs:[
+        {type:'A', hitIdx:[6], radiusIdx:4, radiusPricePct:0.075},
+        {type:'B', dir:'high', hitIdx:[12,17], radiusIdx:3, radiusPricePct:0.04},
+        {type:'A', hitIdx:[26], radiusIdx:4, radiusPricePct:0.075},
+        {type:'B', dir:'high', hitIdx:[33,38], radiusIdx:3, radiusPricePct:0.038},
+      ] },
+  ] },
 ];
 function buildZoneScenario(level, instrumentId){
-  const cfg=ZONE_LEVELS[level-1];
+  const tier=ZONE_LEVELS[level-1];
+  const cfg=tier.variants[Math.floor(Math.random()*tier.variants.length)];
   const inst=INSTRUMENTS.find(x=>x.id===instrumentId) || INSTRUMENTS[0];
   const base=rnd(inst.priceMin, inst.priceMax);
-  const candles=buildFromAnchors(cfg.anchors, {noise:0.32*cfg.volMult, wick:0.4*cfg.volMult});
+  const candles=buildFromAnchors(cfg.anchors, {noise:0.32*tier.volMult, wick:0.4*tier.volMult});
   applyTouches(candles, cfg.touches, base);
   for(let i=0;i<candles.length;i++){ candles[i].o*=base; candles[i].h*=base; candles[i].l*=base; candles[i].c*=base; }
   const zones=cfg.zoneDefs.map(zd=>({
@@ -744,7 +839,7 @@ function buildZoneScenario(level, instrumentId){
     hits:zd.hitIdx.map(idx=>({idx, price:candles[idx].c})),
     found:false,
   }));
-  return { candles, zones, instrument:inst, base, tf:cfg.tf };
+  return { candles, zones, instrument:inst, base, tf:tier.tf };
 }
 
 /* ================= TRADE SIMULATION & SCORING ================= */
@@ -1056,7 +1151,22 @@ function drawTradeChart(revealZones){
     tctx.fillText(formatPrice(p, scenario.instrument.decimals), W-pad.r+6, yy);
   }
 
-  if(revealZones){
+  if(scenario.ma5){
+    const rcMA=Math.min(TG.revealCount, n);
+    const drawMA=(arr,color)=>{
+      tctx.beginPath(); let started=false;
+      for(let i=0;i<rcMA;i++){
+        if(arr[i]==null) continue;
+        const px=x(i), py=y(arr[i]);
+        if(!started){ tctx.moveTo(px,py); started=true; } else tctx.lineTo(px,py);
+      }
+      tctx.strokeStyle=color; tctx.lineWidth=1.3; tctx.stroke();
+    };
+    drawMA(scenario.ma5,'rgba(255,159,64,0.85)');
+    drawMA(scenario.ma20,'rgba(170,120,255,0.85)');
+  }
+
+  if(revealZones && scenario.zones){
     scenario.zones.forEach(z=>{
       const col='rgba(240,185,11,0.75)';
       if(z.type==='A'){
@@ -1075,6 +1185,15 @@ function drawTradeChart(revealZones){
         tctx.fillStyle=col; tctx.font='10px sans-serif';
         tctx.fillText(z.label, x(z.hits[0].idx)-14, y(z.hits[0].price)-20);
       }
+    });
+  } else if(revealZones && scenario.levels){
+    scenario.levels.forEach(l=>{
+      const yy=y(l.price);
+      const col = l.type==='support' ? '#1fbf75' : l.type==='resistance' ? '#f5384f' : '#f0b90b';
+      tctx.save(); tctx.setLineDash([5,4]); tctx.strokeStyle=col; tctx.lineWidth=1.4;
+      tctx.beginPath(); tctx.moveTo(x(l.from), yy); tctx.lineTo(x(Math.min(l.to,n-1)), yy); tctx.stroke();
+      tctx.restore();
+      tctx.fillStyle=col; tctx.font='10px sans-serif'; tctx.fillText(l.label, x(l.from), yy-9);
     });
   }
 
@@ -1128,17 +1247,14 @@ function drawTradeChart(revealZones){
 
 /* ================= GAME STATE ================= */
 const G={
-  mode:'curriculum', stageId:1, round:1, roundsPerStage:3,
+  stageId:1, round:1, roundsPerStage:3,
   scenario:null, revealCount:0, phase:'idle', playerDir:null, entryIndex:null,
   timer:null, speed:1, balance:1000, sessionStars:[], streak:0,
-  practiceStats:{rounds:0,total:0,streak:0},
 };
 const REVEAL_MS=500;
 
 function startRound(){
-  const patternId = G.mode==='curriculum'
-    ? PATTERNS[G.stageId-1].id
-    : PATTERNS[Math.floor(Math.random()*Math.min(PROG.unlocked,PATTERNS.length))].id;
+  const patternId = PATTERNS[G.stageId-1].id;
   G.scenario=buildScenario(patternId, PROG.instrumentId);
   G.revealCount=1; G.phase='revealing'; G.playerDir=null; G.entryIndex=null; G.trade=null;
   setActionsEnabled(true);
@@ -1211,15 +1327,9 @@ function showPosToast(text,cls){
 }
 function updateTopBar(){
   const inst=getInstrument();
-  if(G.mode==='curriculum'){
-    $('#gStageTitle').textContent='STAGE '+G.stageId+' · '+PATTERNS[G.stageId-1].title;
-    $('#gStageSub').textContent=inst.icon+' '+inst.name+' · '+PATTERNS[G.stageId-1].tf;
-    $('#gRoundInfo').textContent='라운드 '+G.round+'/'+G.roundsPerStage;
-  } else {
-    $('#gStageTitle').textContent='자유 연습 모드';
-    $('#gStageSub').textContent=inst.icon+' '+inst.name+' · 랜덤 패턴';
-    $('#gRoundInfo').textContent='누적 '+G.practiceStats.rounds+'회';
-  }
+  $('#gStageTitle').textContent='STAGE '+G.stageId+' · '+PATTERNS[G.stageId-1].title;
+  $('#gStageSub').textContent=inst.icon+' '+inst.name+' · '+PATTERNS[G.stageId-1].tf;
+  $('#gRoundInfo').textContent='라운드 '+G.round+'/'+G.roundsPerStage;
   const balEl=$('#gBalance');
   balEl.textContent=fmt$(G.balance);
   balEl.className='tnum '+(G.balance>=1000?'up':'down');
@@ -1247,13 +1357,8 @@ $('#rNext').onclick=()=>{
   sfx.click();
   $('#ovResult').classList.remove('show');
   G.sessionStars.push(G.lastRes.stars);
-  if(G.mode==='curriculum'){
-    if(G.round>=G.roundsPerStage){ showStageClear(); return; }
-    G.round++;
-  } else {
-    G.practiceStats.rounds++;
-    G.practiceStats.total+=G.lastRes.res.score;
-  }
+  if(G.round>=G.roundsPerStage){ showStageClear(); return; }
+  G.round++;
   startRound();
 };
 function showStageClear(){
@@ -1366,7 +1471,7 @@ $('#zoneBack').onclick=()=>{ sfx.click(); goHome(); };
 
 /* ================= TRADE PRACTICE (실전 매매 훈련) ================= */
 const TRADE_REVEAL_MS=500;
-const TG={ level:1, scenario:null, revealCount:0, phase:'idle', speed:1,
+const TG={ level:1, source:'zone', scenario:null, revealCount:0, phase:'idle', speed:1,
   timer:null, position:0, avgEntry:null, realizedPnL:0, balance:1000, trades:[], maxContracts:2 };
 function currentTradePrice(){
   return TG.scenario.candles[Math.min(TG.revealCount,TG.scenario.candles.length)-1].c;
@@ -1374,21 +1479,34 @@ function currentTradePrice(){
 function showTPosToast(text,cls){
   const t=$('#tPosToast'); t.textContent=text; t.className='show '+cls;
 }
-function startTradeLevel(level){
-  TG.level=level;
-  TG.scenario=buildZoneScenario(level, PROG.instrumentId);
+function resetTradeState(){
   TG.revealCount=1; TG.phase='revealing'; TG.position=0; TG.avgEntry=null;
   TG.realizedPnL=0; TG.balance=1000; TG.trades=[];
-  const cfg=ZONE_LEVELS[level-1];
-  const inst=getInstrument();
-  $('#tLevelInfo').textContent='LEVEL '+level+'/4 · '+cfg.tf+'분봉';
-  $('#tInstrumentInfo').textContent=inst.icon+' '+inst.name;
-  $('#tTipToast').textContent='차트를 보면서 매수·매도 버튼으로 직접 진입/청산해보세요. 계약은 최대 2개까지 쌓을 수 있고, 반대 버튼을 누르면 즉시 청산돼요.';
   $('#tPosToast').classList.remove('show');
   updateTradeHUD();
   drawTradeChart(false);
   clearInterval(TG.timer);
   TG.timer=setInterval(tradeTick, TRADE_REVEAL_MS/TG.speed);
+}
+function startTradeLevel(level){
+  TG.source='zone'; TG.level=level;
+  TG.scenario=buildZoneScenario(level, PROG.instrumentId);
+  const cfg=ZONE_LEVELS[level-1];
+  const inst=getInstrument();
+  $('#tLevelInfo').textContent='LEVEL '+level+'/4 · '+cfg.tf+'분봉';
+  $('#tInstrumentInfo').textContent=inst.icon+' '+inst.name;
+  $('#tTipToast').textContent='차트를 보면서 매수·매도 버튼으로 직접 진입/청산해보세요. 계약은 최대 2개까지 쌓을 수 있고, 반대 버튼을 누르면 즉시 청산돼요.';
+  resetTradeState();
+}
+function startFreePractice(){
+  TG.source='practice'; TG.level=null;
+  const patternId=PATTERNS[Math.floor(Math.random()*Math.min(PROG.unlocked,PATTERNS.length))].id;
+  TG.scenario=buildScenario(patternId, PROG.instrumentId);
+  const inst=getInstrument();
+  $('#tLevelInfo').textContent='자유 연습 · '+TG.scenario.icon+' '+TG.scenario.title;
+  $('#tInstrumentInfo').textContent=inst.icon+' '+inst.name;
+  $('#tTipToast').textContent=TG.scenario.tip+' 매수·매도 버튼으로 직접 진입/청산해보세요. 계약은 최대 2개까지 쌓을 수 있어요.';
+  resetTradeState();
 }
 function tradeTick(){
   if(TG.phase!=='revealing') return;
@@ -1476,14 +1594,25 @@ function showTradeResult(forceClosed){
   const pnlPct = TG.realizedPnL/TG.scenario.base*100;
   const score=clamp(Math.round(50+pnlPct*12),0,100);
   const grade=gradeFromScore(score), stars=starsFromScore(score);
-  PROG.tradeStars[TG.level]=Math.max(PROG.tradeStars[TG.level]||0, stars);
+  if(TG.source==='practice'){
+    PROG.stats.rounds++; PROG.stats.totalScore+=score;
+  } else {
+    PROG.tradeStars[TG.level]=Math.max(PROG.tradeStars[TG.level]||0, stars);
+  }
   saveProg();
   sfx[score>=55?'win':'lose']();
-  $('#trTitle').textContent='LEVEL '+TG.level+' · '+ZONE_LEVELS[TG.level-1].tf+'분봉 결과';
+  if(TG.source==='practice'){
+    $('#trTitle').textContent='자유 연습 결과';
+    $('#trRetry').textContent='홈으로';
+    $('#trNext').textContent='다음 라운드';
+  } else {
+    $('#trTitle').textContent='LEVEL '+TG.level+' · '+ZONE_LEVELS[TG.level-1].tf+'분봉 결과';
+    $('#trRetry').textContent='다시하기';
+    $('#trNext').textContent = TG.level<4 ? '다음 레벨 ('+ZONE_LEVELS[TG.level].tf+'분봉)' : '훈련 완료';
+  }
   $('#trGrade').textContent=grade; $('#trGrade').className='gradeBadge '+grade;
   $('#trMsg').textContent = closes.length===0 ? '이번엔 거래를 하지 않았어요. 다음엔 매수/매도로 직접 진입해보세요.'
     : (forceClosed ? '레벨이 끝나 남은 포지션은 마지막 가격으로 자동 청산됐어요.' : '훈련이 끝났어요! 결과를 확인해보세요.');
-  const dec=TG.scenario.instrument.decimals;
   const rows=[
     ['총점', score+'점', score>=55?'pos':'neg'],
     ['총 손익', fmtSigned(TG.realizedPnL,2), TG.realizedPnL>=0?'pos':'neg'],
@@ -1491,8 +1620,9 @@ function showTradeResult(forceClosed){
   ];
   if(closes.length>0) rows.push(['승률', Math.round(wins/closes.length*100)+'%', (wins/closes.length)>=0.5?'pos':'neg']);
   $('#trRows').innerHTML=rows.map(r=>'<div class="scoreRow"><span>'+r[0]+'</span><b class="'+r[2]+'">'+r[1]+'</b></div>').join('');
-  $('#trExplain').innerHTML='이 차트에는 <b>매물대</b>와 <b>전고점·전저점</b>이 숨어 있었어요(위 차트의 노란 표시). 다음엔 그 자리를 활용해 더 좋은 타점에서 진입·청산해보세요.';
-  $('#trNext').textContent = TG.level<4 ? '다음 레벨 ('+ZONE_LEVELS[TG.level].tf+'분봉)' : '훈련 완료';
+  $('#trExplain').innerHTML = TG.source==='practice'
+    ? TG.scenario.explain
+    : '이 차트에는 <b>매물대</b>와 <b>전고점·전저점</b>이 숨어 있었어요(위 차트의 노란 표시). 다음엔 그 자리를 활용해 더 좋은 타점에서 진입·청산해보세요.';
   $('#ovTradeResult').classList.add('show');
 }
 $('#tBtnLong').onclick=()=>tradeAction('long');
@@ -1506,13 +1636,21 @@ document.querySelectorAll('#screenTrade .speedBtn').forEach(b=>{
 });
 $('#tradePause').onclick=()=>{ sfx.click(); clearInterval(TG.timer); $('#ovTradePause').classList.add('show'); };
 $('#tpResume').onclick=()=>{ sfx.click(); $('#ovTradePause').classList.remove('show'); if(TG.phase==='revealing') TG.timer=setInterval(tradeTick, TRADE_REVEAL_MS/TG.speed); };
-$('#tpRestart').onclick=()=>{ sfx.click(); $('#ovTradePause').classList.remove('show'); startTradeLevel(TG.level); };
+$('#tpRestart').onclick=()=>{
+  sfx.click(); $('#ovTradePause').classList.remove('show');
+  if(TG.source==='practice'){ startFreePractice(); } else { startTradeLevel(TG.level); }
+};
 $('#tpHome').onclick=()=>{ sfx.click(); $('#ovTradePause').classList.remove('show'); clearInterval(TG.timer); goHome(); };
 $('#tradeBack').onclick=()=>{ sfx.click(); clearInterval(TG.timer); goHome(); };
-$('#trRetry').onclick=()=>{ sfx.click(); $('#ovTradeResult').classList.remove('show'); startTradeLevel(TG.level); };
+$('#trRetry').onclick=()=>{
+  sfx.click(); $('#ovTradeResult').classList.remove('show');
+  if(TG.source==='practice'){ clearInterval(TG.timer); goHome(); } else { startTradeLevel(TG.level); }
+};
 $('#trNext').onclick=()=>{
   sfx.click(); $('#ovTradeResult').classList.remove('show');
-  if(TG.level<4){ startTradeLevel(TG.level+1); } else { sfx.star(); goHome(); }
+  if(TG.source==='practice'){ startFreePractice(); }
+  else if(TG.level<4){ startTradeLevel(TG.level+1); }
+  else { sfx.star(); goHome(); }
 };
 $('#btnTrade').onclick=()=>{ sfx.click(); showScreen('screenTrade'); startTradeLevel(1); };
 
@@ -1610,22 +1748,16 @@ function renderStageGrid(){
       const stageNum=parseInt(el.dataset.stage,10);
       if(stageNum>PROG.unlocked) return;
       sfx.click();
-      G.mode='curriculum'; G.stageId=stageNum; G.round=1; G.sessionStars=[]; G.streak=0; G.balance=1000;
+      G.stageId=stageNum; G.round=1; G.sessionStars=[]; G.streak=0; G.balance=1000;
       showScreen('screenGame');
       startRound();
     };
   });
 }
 $('#btnCurriculum').onclick=()=>{ sfx.click(); goToStageSelect(); };
-$('#btnPractice').onclick=()=>{ sfx.click();
-  G.mode='practice'; G.round=1; G.sessionStars=[]; G.streak=0; G.balance=1000; G.practiceStats={rounds:0,total:0,streak:0};
-  showScreen('screenGame'); startRound();
-};
-$('#stageFreeCard').onclick=()=>{
-  if(PROG.unlocked<1) return; sfx.click();
-  G.mode='practice'; G.round=1; G.sessionStars=[]; G.streak=0; G.balance=1000; G.practiceStats={rounds:0,total:0,streak:0};
-  showScreen('screenGame'); startRound();
-};
+function launchFreePractice(){ sfx.click(); showScreen('screenTrade'); startFreePractice(); }
+$('#btnPractice').onclick=launchFreePractice;
+$('#stageFreeCard').onclick=()=>{ if(PROG.unlocked<1) return; launchFreePractice(); };
 $('#stageBack').onclick=()=>{ sfx.click(); goHome(); };
 
 /* pause / help */
