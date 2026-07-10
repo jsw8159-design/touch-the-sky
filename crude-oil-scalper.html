@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>오일 스캘퍼 - 크루드오일 단타 연습</title>
+<link rel="icon" href="data:,">
+<style>
+:root{
+  --bg:#0a0d14; --panel:#12161f; --panel2:#1a2030; --border:#242b3d;
+  --text:#e6e9f0; --text-dim:#8791a8; --text-dim2:#5b6478;
+  --up:#f5384f; --down:#2178f0; --gold:#f0b90b; --green:#1fbf75;
+  --long-grad:linear-gradient(180deg,#ff5468,#e0203a);
+  --short-grad:linear-gradient(180deg,#3f93ff,#1560d8);
+  --wait-grad:linear-gradient(180deg,#3a4159,#262c3e);
+}
+*{-webkit-tap-highlight-color:transparent;box-sizing:border-box;}
+html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:var(--bg);
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',sans-serif;overscroll-behavior:none;color:var(--text);}
+#outer{width:100vw;height:100dvh;height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);}
+#app{position:relative;width:100%;height:100%;max-width:720px;max-height:1000px;margin:0 auto;
+  overflow:hidden;background:var(--bg);display:flex;flex-direction:column;box-shadow:0 0 60px rgba(0,0,0,.6);}
+.screen{position:absolute;inset:0;display:none;flex-direction:column;height:100%;}
+.screen.active{display:flex;}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit;}
+.tnum{font-variant-numeric:tabular-nums;}
+
+/* ===== HOME ===== */
+#screenHome{align-items:center;justify-content:center;padding:24px;gap:0;background:
+  radial-gradient(circle at 50% 0%, #16203a 0%, var(--bg) 60%);}
+.homeWrap{width:100%;max-width:420px;display:flex;flex-direction:column;align-items:center;gap:6px;}
+.logo{font-size:13px;letter-spacing:4px;color:var(--gold);font-weight:700;}
+.h1{font-size:30px;font-weight:800;margin:6px 0 2px;text-align:center;}
+.h1 b{color:var(--up);}
+.sub{font-size:13px;color:var(--text-dim);margin-bottom:26px;text-align:center;line-height:1.5;}
+.miniStats{display:flex;gap:10px;width:100%;margin-bottom:22px;}
+.miniStat{flex:1;background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:10px 8px;text-align:center;}
+.miniStat .v{font-size:18px;font-weight:800;color:var(--gold);}
+.miniStat .l{font-size:10.5px;color:var(--text-dim);margin-top:2px;}
+.bigBtn{width:100%;padding:16px;border-radius:14px;font-size:16px;font-weight:800;margin-bottom:12px;
+  display:flex;align-items:center;justify-content:center;gap:10px;transition:transform .1s;}
+.bigBtn:active{transform:scale(.97);}
+.bigBtn.primary{background:linear-gradient(180deg,#ff5468,#d81b38);color:#fff;box-shadow:0 6px 18px rgba(224,32,58,.35);}
+.bigBtn.secondary{background:var(--panel2);border:1px solid var(--border);color:var(--text);}
+.homeRow{display:flex;gap:10px;width:100%;}
+.iconBtn{width:44px;height:44px;border-radius:12px;background:var(--panel2);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;font-size:18px;flex:0 0 auto;}
+
+/* ===== STAGE SELECT ===== */
+.topbar{flex:0 0 auto;height:52px;display:flex;align-items:center;padding:0 10px;gap:8px;
+  background:var(--panel);border-bottom:1px solid var(--border);}
+.topbar .ttl{font-size:15px;font-weight:800;flex:1;text-align:center;padding-right:36px;}
+.navBtn{width:36px;height:36px;border-radius:10px;background:var(--panel2);display:flex;align-items:center;justify-content:center;font-size:16px;}
+#screenStage .body{flex:1;overflow-y:auto;padding:14px;}
+.stageGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.stageCard{position:relative;background:var(--panel);border:1px solid var(--border);border-radius:14px;
+  padding:14px 12px;min-height:118px;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;}
+.stageCard .num{font-size:11px;color:var(--text-dim);font-weight:700;}
+.stageCard .icon{font-size:26px;margin:2px 0;}
+.stageCard .name{font-size:13px;font-weight:700;line-height:1.3;}
+.stageCard .dir{font-size:10.5px;margin-top:4px;padding:2px 7px;border-radius:20px;display:inline-block;font-weight:700;width:fit-content;}
+.stageCard .dir.long{background:rgba(245,56,79,.16);color:var(--up);}
+.stageCard .dir.short{background:rgba(33,120,240,.16);color:var(--down);}
+.stageCard .dir.wait{background:rgba(240,185,11,.16);color:var(--gold);}
+.stageCard .stars{position:absolute;top:10px;right:10px;font-size:11px;color:var(--gold);letter-spacing:1px;}
+.stageCard.locked{opacity:.4;}
+.stageCard.locked::after{content:'🔒';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:22px;background:rgba(10,13,20,.55);}
+.stageCard:active:not(.locked){transform:scale(.97);}
+.freeCard{grid-column:1/-1;background:linear-gradient(135deg,#1a2033,#101522);border:1px solid var(--border);
+  border-radius:14px;padding:16px;display:flex;align-items:center;gap:12px;}
+.freeCard .icon{font-size:28px;}
+.freeCard .txt b{display:block;font-size:14px;}
+.freeCard .txt span{font-size:11.5px;color:var(--text-dim);}
+
+/* ===== GAME SCREEN ===== */
+#screenGame .gtop{flex:0 0 auto;background:var(--panel);border-bottom:1px solid var(--border);
+  padding:8px 10px;display:flex;flex-direction:column;gap:6px;}
+.gtopRow1{display:flex;align-items:center;gap:8px;}
+.gtopRow1 .stageTag{flex:1;font-size:13px;font-weight:800;text-align:center;}
+.gtopRow1 .stageTag small{display:block;font-size:10.5px;color:var(--text-dim);font-weight:500;margin-top:1px;}
+.gtopRow2{display:flex;justify-content:space-between;font-size:11px;color:var(--text-dim);padding:0 2px;}
+.gtopRow2 b{color:var(--text);font-weight:700;}
+.gtopRow2 .bal.up{color:var(--up);} .gtopRow2 .bal.down{color:var(--down);}
+#chartWrap{position:relative;flex:1;min-height:0;background:var(--bg);}
+#chartCanvas{position:absolute;inset:0;width:100%;height:100%;}
+#tipToast{position:absolute;top:8px;left:8px;right:8px;background:rgba(18,22,31,.92);border:1px solid var(--border);
+  border-radius:10px;padding:8px 10px;font-size:12px;line-height:1.4;color:var(--text);opacity:0;
+  transform:translateY(-6px);transition:opacity .3s,transform .3s;pointer-events:none;z-index:4;}
+#tipToast.show{opacity:1;transform:translateY(0);}
+#tipToast b{color:var(--gold);}
+#posToast{position:absolute;left:50%;top:10px;transform:translate(-50%,-8px);background:rgba(18,22,31,.95);
+  border:1px solid var(--border);border-radius:20px;padding:6px 14px;font-size:12px;font-weight:700;opacity:0;
+  transition:opacity .25s,transform .25s;pointer-events:none;z-index:4;white-space:nowrap;}
+#posToast.show{opacity:1;transform:translate(-50%,0);}
+#posToast.long{color:var(--up);} #posToast.short{color:var(--down);} #posToast.wait{color:var(--text-dim);}
+#screenGame .gbottom{flex:0 0 auto;padding:10px 10px calc(10px + env(safe-area-inset-bottom));background:var(--panel);
+  border-top:1px solid var(--border);display:flex;flex-direction:column;gap:8px;}
+.speedRow{display:flex;justify-content:center;gap:6px;}
+.speedBtn{font-size:10.5px;padding:3px 10px;border-radius:20px;background:var(--panel2);border:1px solid var(--border);color:var(--text-dim);}
+.speedBtn.active{background:var(--gold);color:#1a1400;border-color:var(--gold);font-weight:800;}
+.actionRow{display:flex;gap:8px;}
+.actBtn{flex:1;padding:15px 4px;border-radius:14px;font-size:15px;font-weight:800;display:flex;flex-direction:column;align-items:center;gap:2px;transition:transform .1s,opacity .2s;}
+.actBtn:active{transform:scale(.95);}
+.actBtn .sm{font-size:10px;font-weight:600;opacity:.85;}
+.actBtn.short{background:var(--short-grad);color:#fff;}
+.actBtn.wait{background:var(--wait-grad);color:var(--text);flex:0 0 74px;}
+.actBtn.long{background:var(--long-grad);color:#fff;}
+.actBtn:disabled{opacity:.35;pointer-events:none;}
+
+/* ===== MODALS/OVERLAYS ===== */
+.overlay{position:absolute;inset:0;background:rgba(6,8,13,.72);display:none;align-items:center;justify-content:center;
+  z-index:20;padding:20px;backdrop-filter:blur(2px);}
+.overlay.show{display:flex;}
+.modal{width:100%;max-width:360px;background:var(--panel);border:1px solid var(--border);border-radius:18px;
+  padding:20px;max-height:88%;overflow-y:auto;}
+.modal h2{margin:0 0 4px;font-size:18px;text-align:center;}
+.gradeBadge{width:76px;height:76px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:34px;font-weight:900;margin:6px auto 10px;border:3px solid; }
+.gradeBadge.S{color:var(--gold);border-color:var(--gold);background:rgba(240,185,11,.1);}
+.gradeBadge.A{color:var(--up);border-color:var(--up);background:rgba(245,56,79,.1);}
+.gradeBadge.B{color:var(--down);border-color:var(--down);background:rgba(33,120,240,.1);}
+.gradeBadge.C{color:var(--text-dim);border-color:var(--text-dim2);background:rgba(255,255,255,.04);}
+.gradeBadge.D{color:#6b7280;border-color:#3a4152;background:rgba(255,255,255,.03);}
+.resultMsg{text-align:center;font-size:13px;color:var(--text-dim);margin-bottom:14px;line-height:1.5;}
+.scoreRows{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;}
+.scoreRow{display:flex;justify-content:space-between;font-size:12.5px;padding:8px 10px;background:var(--panel2);border-radius:10px;}
+.scoreRow b{font-weight:800;}
+.scoreRow b.pos{color:var(--up);} .scoreRow b.neg{color:var(--down);}
+.explainBox{background:var(--panel2);border-left:3px solid var(--gold);border-radius:8px;padding:10px 12px;
+  font-size:12.5px;line-height:1.55;color:var(--text);margin-bottom:16px;}
+.explainBox b{color:var(--gold);}
+.modalBtn{width:100%;padding:13px;border-radius:12px;background:var(--long-grad);color:#fff;font-weight:800;font-size:15px;}
+.modalBtnRow{display:flex;gap:8px;}
+.modalBtnRow button{flex:1;}
+.modalBtn.secondary{background:var(--panel2);border:1px solid var(--border);color:var(--text);}
+.starsBig{text-align:center;font-size:30px;letter-spacing:6px;margin:10px 0 4px;color:#3a4152;}
+.starsBig .on{color:var(--gold);}
+.helpSec{margin-bottom:14px;}
+.helpSec h3{font-size:12.5px;color:var(--gold);margin:0 0 6px;}
+.helpSec p,.helpSec li{font-size:12px;color:var(--text-dim);line-height:1.6;}
+.helpSec ul{margin:0;padding-left:18px;}
+.legendDot{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle;}
+.closeX{position:absolute;top:14px;right:14px;font-size:18px;color:var(--text-dim);}
+</style>
+</head>
+<body>
+<div id="outer"><div id="app">
+
+  <!-- HOME -->
+  <div id="screenHome" class="screen active">
+    <div class="homeWrap">
+      <div class="logo">CRUDE OIL SCALPING TRAINER</div>
+      <div class="h1">오일 스캘퍼 <b>WTI</b></div>
+      <div class="sub">크루드오일 해외선물 차트를 보며<br>단타 매수·매도 타점을 훈련하는 시뮬레이터</div>
+      <div class="miniStats">
+        <div class="miniStat"><div class="v" id="statUnlocked">1/10</div><div class="l">진행 스테이지</div></div>
+        <div class="miniStat"><div class="v" id="statAvg">-</div><div class="l">평균 점수</div></div>
+        <div class="miniStat"><div class="v" id="statRounds">0</div><div class="l">총 매매 횟수</div></div>
+      </div>
+      <button class="bigBtn primary" id="btnCurriculum">📈 커리큘럼 학습</button>
+      <button class="bigBtn secondary" id="btnPractice">🔁 자유 연습 (전 패턴 랜덤)</button>
+      <div class="homeRow">
+        <button class="iconBtn" id="btnHelp">❓</button>
+        <button class="iconBtn" id="btnMute">🔊</button>
+        <button class="iconBtn" id="btnReset">🗑️</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STAGE SELECT -->
+  <div id="screenStage" class="screen">
+    <div class="topbar"><button class="navBtn" id="stageBack">←</button><div class="ttl">커리큘럼 학습</div></div>
+    <div class="body">
+      <div class="freeCard" id="stageFreeCard">
+        <div class="icon">🎯</div>
+        <div class="txt"><b>실전 모의 매매</b><span>배운 패턴을 랜덤 순서로 복습해보세요</span></div>
+      </div>
+      <div style="height:12px;"></div>
+      <div class="stageGrid" id="stageGrid"></div>
+    </div>
+  </div>
+
+  <!-- GAME -->
+  <div id="screenGame" class="screen">
+    <div class="gtop">
+      <div class="gtopRow1">
+        <button class="navBtn" id="gamePause">⏸</button>
+        <div class="stageTag"><span id="gStageTitle">-</span><small id="gStageSub">-</small></div>
+        <button class="navBtn" id="gameHelp">❓</button>
+      </div>
+      <div class="gtopRow2">
+        <span>잔고 <b class="tnum" id="gBalance">$1,000</b></span>
+        <span id="gRoundInfo">라운드 1/3</span>
+        <span>연속 <b class="tnum" id="gStreak">0</b></span>
+      </div>
+    </div>
+    <div id="chartWrap">
+      <canvas id="chartCanvas"></canvas>
+      <div id="tipToast"></div>
+      <div id="posToast"></div>
+    </div>
+    <div class="gbottom">
+      <div class="speedRow">
+        <button class="speedBtn active" data-spd="1">1x</button>
+        <button class="speedBtn" data-spd="2">2x</button>
+        <button class="speedBtn" data-spd="0.5">0.5x</button>
+      </div>
+      <div class="actionRow">
+        <button class="actBtn short" id="btnShort">매도<span class="sm">SHORT</span></button>
+        <button class="actBtn wait" id="btnWait">관망</button>
+        <button class="actBtn long" id="btnLong">매수<span class="sm">LONG</span></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULT OVERLAY -->
+  <div class="overlay" id="ovResult">
+    <div class="modal">
+      <h2>라운드 결과</h2>
+      <div class="gradeBadge" id="rGrade">A</div>
+      <div class="resultMsg" id="rMsg"></div>
+      <div class="scoreRows" id="rRows"></div>
+      <div class="explainBox" id="rExplain"></div>
+      <button class="modalBtn" id="rNext">다음</button>
+    </div>
+  </div>
+
+  <!-- STAGE CLEAR OVERLAY -->
+  <div class="overlay" id="ovClear">
+    <div class="modal" style="text-align:center;">
+      <h2 id="cTitle">스테이지 완료!</h2>
+      <div class="starsBig" id="cStars">★★★</div>
+      <div class="resultMsg" id="cMsg">3라운드를 모두 마쳤어요.</div>
+      <div class="modalBtnRow">
+        <button class="modalBtn secondary" id="cList">스테이지 목록</button>
+        <button class="modalBtn" id="cNextStage">다음 스테이지</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAUSE OVERLAY -->
+  <div class="overlay" id="ovPause">
+    <div class="modal" style="text-align:center;">
+      <h2>일시정지</h2>
+      <div style="height:8px;"></div>
+      <button class="modalBtn" id="pResume">계속하기</button>
+      <div style="height:8px;"></div>
+      <button class="modalBtn secondary" id="pRestart">라운드 다시하기</button>
+      <div style="height:8px;"></div>
+      <button class="modalBtn secondary" id="pHome">홈으로</button>
+    </div>
+  </div>
+
+  <!-- HELP OVERLAY -->
+  <div class="overlay" id="ovHelp">
+    <div class="modal">
+      <button class="closeX" id="helpClose">✕</button>
+      <h2>게임 가이드</h2>
+      <div style="height:6px;"></div>
+      <div class="helpSec">
+        <h3>기본 규칙</h3>
+        <p>차트가 실시간으로 그려집니다. 패턴을 보고 <b style="color:var(--up)">매수(롱)</b>, <b style="color:var(--down)">매도(숏)</b>, 또는 <b style="color:var(--gold)">관망</b> 중 하나를 선택해 타점을 맞춰보세요.</p>
+      </div>
+      <div class="helpSec">
+        <h3>캔들 색상</h3>
+        <p><span class="legendDot" style="background:var(--up);"></span>빨간 캔들(양봉) = 상승 &nbsp;&nbsp;<span class="legendDot" style="background:var(--down);"></span>파란 캔들(음봉) = 하락</p>
+      </div>
+      <div class="helpSec">
+        <h3>점수 계산</h3>
+        <ul>
+          <li><b>타이밍 점수</b>: 정답 진입 구간과 얼마나 가까운 캔들에서 진입했는지</li>
+          <li><b>손익 점수</b>: 진입 직후 자동 설정되는 손절가/목표가(위험 대비 2배 보상) 기준 실제 트레이드 결과(R배수)</li>
+          <li>방향을 반대로 예측하거나 함정 패턴에서 성급히 진입하면 감점됩니다</li>
+        </ul>
+      </div>
+      <div class="helpSec">
+        <h3>용어</h3>
+        <ul>
+          <li><b>R배수</b>: 감수한 리스크 대비 얻은 손익 비율 (+1R = 손절폭만큼 이익)</li>
+          <li><b>지지/저항선</b>: 가격이 반복적으로 멈추거나 반등하는 가격대</li>
+          <li><b>휩쏘(가짜 돌파)</b>: 돌파처럼 보였다가 되돌아오는 함정 움직임</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+</div></div>
+
+<script>
+(function(){
+"use strict";
+
+/* ================= UTIL ================= */
+const $=s=>document.querySelector(s);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const rnd=(a,b)=>a+Math.random()*(b-a);
+const fmt$=v=>(v<0?'-$':'$')+Math.abs(v).toFixed(2);
+const fmtSigned=(v,d=2)=>(v>=0?'+':'')+v.toFixed(d);
+
+/* ================= SOUND ================= */
+let actx=null, muted=false;
+function ensureAudio(){ if(!actx){ try{ actx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } }
+function beep(freq,dur,type='sine',gain=0.08,delay=0){
+  if(muted) return; ensureAudio(); if(!actx) return;
+  const t0=actx.currentTime+delay;
+  const o=actx.createOscillator(), g=actx.createGain();
+  o.type=type; o.frequency.setValueAtTime(freq,t0);
+  g.gain.setValueAtTime(0,t0);
+  g.gain.linearRampToValueAtTime(gain,t0+0.015);
+  g.gain.exponentialRampToValueAtTime(0.001,t0+dur);
+  o.connect(g); g.connect(actx.destination);
+  o.start(t0); o.stop(t0+dur+0.02);
+}
+const sfx={
+  click:()=>beep(520,0.07,'square',0.05),
+  enterLong:()=>{beep(440,0.09,'triangle',0.07);beep(660,0.1,'triangle',0.06,0.05);},
+  enterShort:()=>{beep(380,0.09,'sawtooth',0.06);beep(280,0.1,'sawtooth',0.05,0.05);},
+  wait:()=>beep(300,0.12,'sine',0.05),
+  win:()=>{beep(523,0.1,'triangle',0.08);beep(659,0.1,'triangle',0.08,0.09);beep(784,0.16,'triangle',0.08,0.18);},
+  lose:()=>{beep(220,0.18,'sawtooth',0.07);beep(160,0.22,'sawtooth',0.06,0.1);},
+  star:()=>beep(880,0.08,'sine',0.06),
+};
+
+/* ================= STORAGE ================= */
+const SKEY='oilScalperV1';
+function loadProg(){
+  try{ const d=JSON.parse(localStorage.getItem(SKEY));
+    if(d && typeof d==='object') return Object.assign({unlocked:1,stageStars:{},stats:{rounds:0,totalScore:0,bestStreak:0},muted:false}, d);
+  }catch(e){}
+  return {unlocked:1,stageStars:{},stats:{rounds:0,totalScore:0,bestStreak:0},muted:false};
+}
+function saveProg(){ localStorage.setItem(SKEY, JSON.stringify(PROG)); }
+let PROG=loadProg();
+muted=!!PROG.muted;
+
+/* ================= PATTERN CONFIGS =================
+   anchors: [{i, p}] index -> % change from randomized base price
+   touches: force a candle's wick/close to respect a support/resistance test
+   levels: dashed reference lines for the chart
+   direction: 'long' | 'short' | 'wait'  (the textbook-correct action)
+   idealEntryIndex: candle index representing the ideal decision point (or the "temptation" index for wait patterns)
+================================================= */
+const TOTAL=38;
+const PATTERNS=[
+  { id:'support_bounce', icon:'🛟', title:'지지선 반등', tf:'1분봉', direction:'long',
+    tip:'같은 가격대에서 두 번 저점을 지지하고 반등하는 자리를 노려보세요.',
+    explain:'가격이 <b>같은 지지선</b>에서 두 번 저점을 확인(쌍바닥 형태)한 뒤, 지지선을 강하게 지키며 반등하는 양봉이 나오면 <b>매수(롱)</b> 신호로 볼 수 있어요. 저점을 살짝 하회하는 정도는 눈속임(휩쏘)일 수 있으니 종가 회복을 확인하는 것이 중요해요.',
+    anchors:[{i:0,p:0},{i:9,p:-4.0},{i:14,p:-4.6},{i:19,p:-3.9},{i:23,p:-4.7},{i:27,p:-3.3},{i:38,p:0.6}],
+    touches:[{i:14,price:-4.6,dir:'down'},{i:23,price:-4.7,dir:'down'}],
+    levels:[{price:-4.6,type:'support',from:12,to:29,label:'지지선'}],
+    idealEntryIndex:27 },
+  { id:'resistance_breakout', icon:'🚀', title:'저항선 돌파', tf:'3분봉', direction:'long',
+    tip:'저항선을 두 번 두드리고 강하게 뚫는 돌파 캔들을 잡아보세요.',
+    explain:'가격이 <b>동일한 저항선</b>을 두 번 테스트한 뒤 거래량을 동반해 강하게 돌파하면, 그 돌파 캔들 종가 부근이 <b>매수(롱)</b> 타점이에요. 돌파 후 재차 지지되는지(눌림목) 확인하면 더 안전해요.',
+    anchors:[{i:0,p:0},{i:7,p:2.2},{i:11,p:2.9},{i:17,p:1.6},{i:21,p:2.85},{i:25,p:3.8},{i:38,p:7.6}],
+    touches:[{i:11,price:2.9,dir:'up'},{i:21,price:2.85,dir:'up'}],
+    levels:[{price:2.9,type:'resistance',from:9,to:26,label:'저항선'}],
+    idealEntryIndex:25 },
+  { id:'pullback_flag', icon:'🚩', title:'눌림목 매수', tf:'1분봉', direction:'long',
+    tip:'급등 후 잠깐 쉬어가는 눌림목에서, 다시 위로 뚫을 때가 기회예요.',
+    explain:'강한 상승(임펄스) 이후 가격이 좁은 박스권에서 <b>눌림목</b>을 만들며 쉬어가다가, 다시 박스 상단을 돌파할 때가 <b>매수(롱)</b> 타점이에요. 눌림목의 저점이 계속 높아지는지(고점/저점 우상향) 확인하세요.',
+    anchors:[{i:0,p:0},{i:9,p:4.4},{i:15,p:2.6},{i:21,p:3.0},{i:25,p:3.9},{i:38,p:8.2}],
+    levels:[{price:2.55,type:'support',from:13,to:24,label:'눌림목 지지'}],
+    idealEntryIndex:25 },
+  { id:'golden_cross', icon:'✨', title:'이동평균 골든크로스', tf:'5분봉', direction:'long',
+    tip:'단기 이평선(주황)이 장기 이평선(보라)을 아래에서 위로 뚫는 순간을 확인하세요.',
+    explain:'단기 이동평균선(5)이 장기 이동평균선(20)을 <b>아래에서 위로</b> 돌파하는 <b>골든크로스</b>는 추세 전환의 신호예요. 크로스 직후 눌림 없이 바로 진입하기보다, 크로스가 확정된 캔들의 종가 부근에서 <b>매수(롱)</b>하는 것이 안전해요.',
+    anchors:[{i:0,p:0},{i:10,p:-2.6},{i:16,p:-2.9},{i:22,p:-2.0},{i:26,p:-0.6},{i:38,p:3.6}],
+    levels:[],
+    idealEntryIndex:26 },
+  { id:'resistance_rejection', icon:'⛔', title:'저항 거부 숏', tf:'3분봉', direction:'short',
+    tip:'저항선에서 두 번 튕기고 무너지는 자리는 매도(숏) 기회예요.',
+    explain:'가격이 <b>동일한 저항선</b>에서 위꼬리를 남기며 두 번 거부당한 뒤, 지지선처럼 작용하던 라인을 하향 이탈하면 <b>매도(숏)</b> 타점이에요. 상단 꼬리가 반복된다는 것은 매수세가 힘이 빠지고 있다는 신호예요.',
+    anchors:[{i:0,p:0},{i:8,p:3.6},{i:12,p:4.3},{i:17,p:3.5},{i:22,p:4.2},{i:26,p:3.0},{i:38,p:-1.6}],
+    touches:[{i:12,price:4.3,dir:'up'},{i:22,price:4.2,dir:'up'}],
+    levels:[{price:4.3,type:'resistance',from:10,to:27,label:'저항선'}],
+    idealEntryIndex:26 },
+  { id:'dead_cross', icon:'💀', title:'이동평균 데드크로스', tf:'5분봉', direction:'short',
+    tip:'단기 이평선이 장기 이평선을 아래로 뚫는 데드크로스를 노려보세요.',
+    explain:'단기 이동평균선이 장기 이동평균선을 <b>위에서 아래로</b> 돌파하는 <b>데드크로스</b>는 하락 전환 신호예요. 크로스가 확정된 캔들 종가 부근이 <b>매도(숏)</b> 타점이에요.',
+    anchors:[{i:0,p:0},{i:10,p:2.8},{i:16,p:3.0},{i:22,p:2.1},{i:26,p:0.5},{i:38,p:-3.6}],
+    levels:[],
+    idealEntryIndex:26 },
+  { id:'double_bottom', icon:'🇼', title:'쌍바닥(더블바텀)', tf:'1분봉', direction:'long',
+    tip:'쌍바닥(W)을 만들고 목선을 돌파하는 자리가 매수 타점이에요.',
+    explain:'두 개의 저점이 비슷한 높이에서 형성되는 <b>쌍바닥(W)</b> 패턴이에요. 두 저점 사이의 고점(목선, 넥라인)을 상향 돌파하는 순간이 <b>매수(롱)</b> 타점이에요.',
+    anchors:[{i:0,p:0},{i:8,p:-4.0},{i:14,p:-2.0},{i:20,p:-4.2},{i:26,p:-1.8},{i:38,p:2.6}],
+    touches:[{i:8,price:-4.0,dir:'down'},{i:20,price:-4.2,dir:'down'}],
+    levels:[{price:-2.0,type:'neckline',from:12,to:27,label:'넥라인'}],
+    idealEntryIndex:26 },
+  { id:'head_shoulders', icon:'🗻', title:'헤드앤숄더 (역M)', tf:'3분봉', direction:'short',
+    tip:'머리어깨형 패턴의 목선이 무너지는 순간이 매도 타점이에요.',
+    explain:'왼쪽 어깨-머리(가장 높은 고점)-오른쪽 어깨 순서로 3개의 고점이 형성되는 <b>헤드앤숄더</b> 패턴이에요. 어깨를 잇는 지지선(넥라인)이 무너지면 <b>매도(숏)</b> 타점이에요.',
+    anchors:[{i:0,p:0},{i:6,p:3.8},{i:10,p:1.8},{i:16,p:6.5},{i:20,p:1.7},{i:26,p:4.6},{i:30,p:1.0},{i:38,p:-3.6}],
+    levels:[{price:1.75,type:'neckline',from:9,to:31,label:'넥라인'}],
+    idealEntryIndex:30 },
+  { id:'bull_trap', icon:'🪤', title:'거짓 돌파 (휩쏘)', tf:'1분봉', direction:'wait',
+    tip:'저항선을 살짝 뚫었다가 바로 무너지는 거짓 돌파를 조심하세요.',
+    explain:'저항선을 잠깐 돌파하는 듯 보이지만 거래량 없이 바로 되돌아오는 <b>거짓 돌파(휩쏘)</b>예요. 돌파 캔들 하나만 보고 따라 들어가면 함정에 걸려요. 종가가 저항선 위에서 <b>확실히 유지</b>되는지 한 캔들 더 지켜본 뒤 판단하는 것이 안전해요. 이런 자리는 <b>관망</b>이 정답인 경우가 많아요.',
+    anchors:[{i:0,p:0},{i:10,p:2.9},{i:14,p:3.1},{i:18,p:3.0},{i:22,p:3.9},{i:25,p:2.6},{i:30,p:0.8},{i:38,p:-1.6}],
+    levels:[{price:3.1,type:'resistance',from:9,to:24,label:'저항선'}],
+    idealEntryIndex:22 },
+  { id:'fomo_spike', icon:'🔥', title:'급등 추격매수 주의', tf:'1분봉', direction:'wait',
+    tip:'수직 급등 뒤 뒤늦게 따라 들어가는 추격매수는 손실 위험이 커요.',
+    explain:'가격이 짧은 시간에 수직으로 급등하는 <b>과열 구간</b>이에요. 이미 크게 오른 자리를 뒤늦게 추격 매수하면 고점에 물리기 쉬워요. 눌림목이 나오고 지지가 확인될 때까지 <b>관망</b>하는 것이 현명한 선택이에요.',
+    anchors:[{i:0,p:0},{i:8,p:0.6},{i:14,p:1.2},{i:18,p:2.5},{i:23,p:8.6},{i:27,p:5.0},{i:32,p:2.0},{i:38,p:1.3}],
+    levels:[],
+    idealEntryIndex:23 },
+];
+
+/* ================= SCENARIO GENERATOR ================= */
+function buildFromAnchors(anchors, opts){
+  opts=opts||{}; const noise=opts.noise!=null?opts.noise:0.55, wick=opts.wick!=null?opts.wick:0.55;
+  const total=anchors[anchors.length-1].i+1;
+  const base=new Array(total);
+  let ai=0;
+  for(let idx=0; idx<total; idx++){
+    while(ai<anchors.length-2 && idx>anchors[ai+1].i) ai++;
+    const a=anchors[ai], b=anchors[ai+1]||a;
+    const span=Math.max(1,b.i-a.i);
+    const t=clamp((idx-a.i)/span,0,1);
+    base[idx]=a.p+(b.p-a.p)*t;
+  }
+  const candles=[]; let n=0, prevClose=null;
+  for(let i=0;i<total;i++){
+    n=n*0.35+(Math.random()*2-1)*noise;
+    const close=base[i]*0 + (1+ (base[i]+n)/100 );
+    const open = i===0 ? (1+(base[0]+n*0.6)/100) : prevClose;
+    const c=close, o=open;
+    const body=Math.abs(c-o);
+    const wUp=body*rnd(0.15,wick)+0.0009;
+    const wDn=body*rnd(0.15,wick)+0.0009;
+    const high=Math.max(o,c)+wUp, low=Math.min(o,c)-wDn;
+    candles.push({o,h:high,l:low,c});
+    prevClose=c;
+  }
+  return candles;
+}
+function applyTouches(candles, touches, base){
+  if(!touches) return;
+  touches.forEach(t=>{
+    const i=t.i; if(i<0||i>=candles.length) return;
+    const lvl=1+t.price/100;
+    const cd=candles[i];
+    if(t.dir==='down'){ cd.l=Math.min(cd.l, lvl-rnd(0.0005,0.0015)); cd.c=Math.max(cd.c, lvl*1.0015); }
+    else { cd.h=Math.max(cd.h, lvl+rnd(0.0005,0.0015)); cd.c=Math.min(cd.c, lvl*0.9985); }
+    cd.h=Math.max(cd.h,cd.o,cd.c); cd.l=Math.min(cd.l,cd.o,cd.c);
+  });
+  for(let i=1;i<candles.length;i++){
+    candles[i].o=candles[i-1].c;
+    candles[i].h=Math.max(candles[i].h,candles[i].o,candles[i].c);
+    candles[i].l=Math.min(candles[i].l,candles[i].o,candles[i].c);
+  }
+}
+function computeMA(candles,len){
+  const out=new Array(candles.length).fill(null);
+  let sum=0;
+  for(let i=0;i<candles.length;i++){
+    sum+=candles[i].c;
+    if(i>=len) sum-=candles[i-len].c;
+    if(i>=len-1) out[i]=sum/len;
+  }
+  return out;
+}
+function buildScenario(patternId){
+  const cfg=PATTERNS.find(p=>p.id===patternId);
+  const base=rnd(64,84);
+  const candles=buildFromAnchors(cfg.anchors,{noise:0.5,wick:0.55});
+  applyTouches(candles, cfg.touches, base);
+  for(let i=0;i<candles.length;i++){
+    candles[i].o*=base; candles[i].h*=base; candles[i].l*=base; candles[i].c*=base;
+  }
+  const levels=(cfg.levels||[]).map(l=>({...l, price:base*(1+l.price/100)}));
+  return {
+    cfg, candles, levels, base,
+    direction:cfg.direction, idealEntryIndex:cfg.idealEntryIndex,
+    ma5:computeMA(candles,5), ma20:computeMA(candles,20),
+    title:cfg.title, tf:cfg.tf, tip:cfg.tip, explain:cfg.explain, icon:cfg.icon,
+  };
+}
+
+/* ================= TRADE SIMULATION & SCORING ================= */
+function computeStops(candles, entryIndex, dir){
+  const from=Math.max(0,entryIndex-8);
+  let lo=Infinity, hi=-Infinity;
+  for(let i=from;i<=entryIndex;i++){ lo=Math.min(lo,candles[i].l); hi=Math.max(hi,candles[i].h); }
+  const entry=candles[entryIndex].c;
+  if(dir==='long'){
+    let stop=Math.min(lo, entry*0.997);
+    if(entry-stop < entry*0.0025) stop=entry-entry*0.0025;
+    const risk=entry-stop;
+    return {stop, target:entry+risk*2, risk, entry};
+  } else {
+    let stop=Math.max(hi, entry*1.003);
+    if(stop-entry < entry*0.0025) stop=entry+entry*0.0025;
+    const risk=stop-entry;
+    return {stop, target:entry-risk*2, risk, entry};
+  }
+}
+function simulateTrade(candles, entryIndex, dir){
+  const st=computeStops(candles, entryIndex, dir);
+  for(let i=entryIndex+1;i<candles.length;i++){
+    const c=candles[i];
+    if(dir==='long'){
+      if(c.l<=st.stop) return {exitIndex:i, exitPrice:st.stop, R:-1, outcome:'stop', ...st};
+      if(c.h>=st.target) return {exitIndex:i, exitPrice:st.target, R:2, outcome:'target', ...st};
+    } else {
+      if(c.h>=st.stop) return {exitIndex:i, exitPrice:st.stop, R:-1, outcome:'stop', ...st};
+      if(c.l<=st.target) return {exitIndex:i, exitPrice:st.target, R:2, outcome:'target', ...st};
+    }
+  }
+  const last=candles[candles.length-1].c;
+  const R = dir==='long' ? (last-st.entry)/st.risk : (st.entry-last)/st.risk;
+  return {exitIndex:candles.length-1, exitPrice:last, R, outcome:'timeout', ...st};
+}
+function gradeFromScore(s){ if(s>=85)return'S'; if(s>=70)return'A'; if(s>=55)return'B'; if(s>=35)return'C'; return'D'; }
+function starsFromScore(s){ return s>=85?3:s>=60?2:s>=35?1:0; }
+
+function scoreRound(scenario, playerDir, entryIndex){
+  const ideal=scenario.direction;
+  if(playerDir==='wait'){
+    if(ideal==='wait') return {score:92, trade:null, timingScore:null, outcomeScore:null};
+    const ref=simulateTrade(scenario.candles, scenario.idealEntryIndex, ideal);
+    const missedBig = ref.R > 0.4;
+    return {score: missedBig?18:46, trade:null, timingScore:null, outcomeScore:null};
+  }
+  const trade=simulateTrade(scenario.candles, entryIndex, playerDir);
+  const outcomeScore=clamp(Math.round(50+trade.R*30),0,100);
+  let score, timingScore=null;
+  if(ideal!=='wait' && playerDir===ideal){
+    timingScore=clamp(Math.round(100-Math.abs(entryIndex-scenario.idealEntryIndex)*14),0,100);
+    score=Math.round(outcomeScore*0.6+timingScore*0.4);
+  } else {
+    score=outcomeScore;
+  }
+  return {score, trade, timingScore, outcomeScore};
+}
+function resultText(scenario, playerDir, res){
+  const ideal=scenario.direction;
+  if(playerDir==='wait'){
+    if(ideal==='wait') return '거짓 돌파(휩쏘)를 피하고 매매하지 않았어요. 훌륭한 판단이에요!';
+    return '이 자리는 좋은 진입 기회였는데 관망했어요. 패턴을 좀 더 빠르게 확인해보세요.';
+  }
+  if(ideal!=='wait' && playerDir!==ideal) return '패턴과 반대 방향으로 진입했어요. 추세와 신호를 다시 살펴보세요.';
+  if(ideal==='wait'){
+    return res.trade.outcome==='stop' ? '함정에 걸려 손절 당했어요. 성급한 진입은 위험해요.' : '위험한 자리에서 진입했지만 이번엔 큰 손실 없이 마무리됐어요. 다음엔 더 신중하게!';
+  }
+  if(res.trade.outcome==='target') return '목표가에 도달했어요! 좋은 타점이었어요.';
+  if(res.trade.outcome==='stop') return '손절가에 닿았어요. 진입 타이밍을 조금 더 다듬어보세요.';
+  return '패턴이 끝날 때까지 목표가/손절가에 닿지 않았어요.';
+}
+
+/* ================= RENDERER ================= */
+const canvas=$('#chartCanvas'); const ctx=canvas.getContext('2d');
+function fitCanvas(){
+  const dpr=window.devicePixelRatio||1;
+  const rect=canvas.parentElement.getBoundingClientRect();
+  canvas.width=Math.max(1,Math.round(rect.width*dpr));
+  canvas.height=Math.max(1,Math.round(rect.height*dpr));
+  canvas.style.width=rect.width+'px'; canvas.style.height=rect.height+'px';
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  return {w:rect.width,h:rect.height};
+}
+function drawChart(scenario, revealCount, entryInfo){
+  const {w:W,h:H}=fitCanvas();
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#0a0d14'; ctx.fillRect(0,0,W,H);
+  const pad={l:6,r:58,t:10,b:8};
+  const plotW=W-pad.l-pad.r, plotH=H-pad.t-pad.b;
+  const candles=scenario.candles, n=candles.length;
+  const slot=plotW/n;
+  const candleW=Math.max(2,slot*0.6);
+  let lo=Infinity,hi=-Infinity;
+  candles.forEach(c=>{ lo=Math.min(lo,c.l); hi=Math.max(hi,c.h); });
+  scenario.levels.forEach(l=>{ lo=Math.min(lo,l.price); hi=Math.max(hi,l.price); });
+  const range=hi-lo||1; lo-=range*0.09; hi+=range*0.09;
+  const y=p=>pad.t+(hi-p)/(hi-lo)*plotH;
+  const x=i=>pad.l+i*slot+slot/2;
+
+  // grid + price axis
+  ctx.strokeStyle='rgba(255,255,255,0.06)'; ctx.lineWidth=1;
+  ctx.font='10px -apple-system,sans-serif'; ctx.fillStyle='#5b6478'; ctx.textBaseline='middle';
+  const gridN=5;
+  for(let g=0; g<=gridN; g++){
+    const p=lo+(hi-lo)*g/gridN; const yy=y(p);
+    ctx.beginPath(); ctx.moveTo(pad.l,yy); ctx.lineTo(W-pad.r,yy); ctx.stroke();
+    ctx.fillText('$'+p.toFixed(2), W-pad.r+6, yy);
+  }
+
+  // level lines (support/resistance/neckline)
+  scenario.levels.forEach(l=>{
+    if(revealCount<=l.from) return;
+    const toIdx=Math.min(l.to, revealCount-1, n-1);
+    const yy=y(l.price);
+    ctx.save();
+    ctx.setLineDash([5,4]);
+    ctx.strokeStyle = l.type==='support' ? 'rgba(31,191,117,0.55)' : l.type==='resistance' ? 'rgba(245,56,79,0.5)' : 'rgba(240,185,11,0.55)';
+    ctx.lineWidth=1.4;
+    ctx.beginPath(); ctx.moveTo(x(l.from), yy); ctx.lineTo(x(toIdx), yy); ctx.stroke();
+    ctx.restore();
+    ctx.fillStyle = l.type==='support' ? '#1fbf75' : l.type==='resistance' ? '#f5384f' : '#f0b90b';
+    ctx.font='10px sans-serif';
+    ctx.fillText(l.label, x(l.from), yy-9);
+  });
+
+  // MA lines
+  function drawMA(arr,color){
+    ctx.beginPath(); let started=false;
+    for(let i=0;i<Math.min(revealCount,n);i++){
+      if(arr[i]==null) continue;
+      const px=x(i), py=y(arr[i]);
+      if(!started){ ctx.moveTo(px,py); started=true; } else ctx.lineTo(px,py);
+    }
+    ctx.strokeStyle=color; ctx.lineWidth=1.3; ctx.stroke();
+  }
+  drawMA(scenario.ma5,'rgba(255,159,64,0.85)');
+  drawMA(scenario.ma20,'rgba(170,120,255,0.85)');
+
+  // candles
+  const rc=Math.min(revealCount,n);
+  for(let i=0;i<rc;i++){
+    const c=candles[i]; const up=c.c>=c.o;
+    const col = up ? '#f5384f' : '#2178f0';
+    const cx=x(i);
+    ctx.strokeStyle=col; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(cx,y(c.h)); ctx.lineTo(cx,y(c.l)); ctx.stroke();
+    ctx.fillStyle=col;
+    const yOpen=y(c.o), yClose=y(c.c);
+    const bh=Math.max(1.4,Math.abs(yClose-yOpen));
+    ctx.fillRect(cx-candleW/2, Math.min(yOpen,yClose), candleW, bh);
+  }
+
+  // entry/exit markers
+  if(entryInfo && entryInfo.entryIndex!=null){
+    const ei=entryInfo.entryIndex;
+    const ep=candles[ei].c;
+    const col = entryInfo.dir==='long' ? '#f5384f' : '#2178f0';
+    ctx.save();
+    ctx.strokeStyle=col; ctx.fillStyle=col; ctx.lineWidth=1.6;
+    const ex=x(ei), ey=y(ep);
+    ctx.beginPath();
+    if(entryInfo.dir==='long'){ ctx.moveTo(ex,ey+13); ctx.lineTo(ex-6,ey+22); ctx.lineTo(ex+6,ey+22); }
+    else { ctx.moveTo(ex,ey-13); ctx.lineTo(ex-6,ey-22); ctx.lineTo(ex+6,ey-22); }
+    ctx.closePath(); ctx.fill();
+    ctx.restore();
+    if(entryInfo.trade){
+      ctx.save(); ctx.setLineDash([3,3]); ctx.lineWidth=1.2;
+      ctx.strokeStyle='rgba(31,191,117,0.7)';
+      ctx.beginPath(); ctx.moveTo(ex,y(entryInfo.trade.target)); ctx.lineTo(W-pad.r,y(entryInfo.trade.target)); ctx.stroke();
+      ctx.strokeStyle='rgba(245,56,79,0.6)';
+      ctx.beginPath(); ctx.moveTo(ex,y(entryInfo.trade.stop)); ctx.lineTo(W-pad.r,y(entryInfo.trade.stop)); ctx.stroke();
+      ctx.restore();
+      if(entryInfo.trade.exitIndex < rc){
+        const exx=x(entryInfo.trade.exitIndex), exy=y(entryInfo.trade.exitPrice);
+        ctx.fillStyle = entryInfo.trade.outcome==='target' ? '#1fbf75' : entryInfo.trade.outcome==='stop' ? '#f5384f' : '#f0b90b';
+        ctx.beginPath(); ctx.arc(exx,exy,5,0,Math.PI*2); ctx.fill();
+      }
+    }
+  }
+
+  // ideal marker during result reveal
+  if(entryInfo && entryInfo.showIdeal && scenario.idealEntryIndex<rc){
+    const ix=x(scenario.idealEntryIndex), iy=y(candles[scenario.idealEntryIndex].c);
+    ctx.fillStyle='#f0b90b'; ctx.font='14px sans-serif'; ctx.textAlign='center';
+    ctx.fillText('★', ix, iy - (scenario.direction==='short'?24:-24));
+    ctx.textAlign='left';
+  }
+
+  // current price line
+  if(rc>0){
+    const cp=candles[rc-1].c;
+    ctx.save(); ctx.setLineDash([2,3]); ctx.strokeStyle='rgba(230,233,240,0.4)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(pad.l,y(cp)); ctx.lineTo(W-pad.r,y(cp)); ctx.stroke(); ctx.restore();
+    ctx.fillStyle='#e6e9f0'; ctx.fillRect(W-pad.r,y(cp)-8,pad.r-2,16);
+    ctx.fillStyle='#0a0d14'; ctx.font='10px sans-serif'; ctx.fillText('$'+cp.toFixed(2), W-pad.r+3, y(cp));
+  }
+}
+
+/* ================= GAME STATE ================= */
+const G={
+  mode:'curriculum', stageId:1, round:1, roundsPerStage:3,
+  scenario:null, revealCount:0, phase:'idle', playerDir:null, entryIndex:null,
+  timer:null, speed:1, balance:1000, sessionStars:[], streak:0,
+  practiceStats:{rounds:0,total:0,streak:0},
+};
+const REVEAL_MS=270;
+
+function startRound(){
+  const patternId = G.mode==='curriculum'
+    ? PATTERNS[G.stageId-1].id
+    : PATTERNS[Math.floor(Math.random()*Math.min(PROG.unlocked,PATTERNS.length))].id;
+  G.scenario=buildScenario(patternId);
+  G.revealCount=1; G.phase='revealing'; G.playerDir=null; G.entryIndex=null; G.trade=null;
+  setActionsEnabled(true);
+  updateTopBar();
+  drawChart(G.scenario, G.revealCount, null);
+  showTip(G.scenario.tip, G.scenario.icon+' '+G.scenario.title);
+  $('#posToast').classList.remove('show');
+  clearInterval(G.timer);
+  G.timer=setInterval(tick, REVEAL_MS/G.speed);
+}
+function tick(){
+  if(G.phase==='revealing'){
+    G.revealCount++;
+    if(G.revealCount>=G.scenario.candles.length){
+      drawChart(G.scenario, G.scenario.candles.length, null);
+      decide('wait');
+      return;
+    }
+    drawChart(G.scenario, G.revealCount, null);
+  } else if(G.phase==='holding'){
+    G.revealCount++;
+    const targetEnd = G.trade ? G.trade.exitIndex+1 : G.scenario.candles.length;
+    const cap=Math.min(targetEnd, G.scenario.candles.length);
+    drawChart(G.scenario, Math.min(G.revealCount,cap), {entryIndex:G.entryIndex, dir:G.playerDir, trade:G.trade});
+    if(G.revealCount>=cap){ finishRound(); }
+  }
+}
+function decide(dir){
+  if(G.phase!=='revealing') return;
+  setActionsEnabled(false);
+  G.playerDir=dir;
+  G.entryIndex=G.revealCount-1;
+  G.phase='holding';
+  if(dir==='wait'){
+    sfx.wait();
+    showPosToast('관망 선택', 'wait');
+    G.trade=null;
+  } else {
+    G.trade=simulateTrade(G.scenario.candles, G.entryIndex, dir);
+    if(dir==='long'){ sfx.enterLong(); showPosToast('매수(롱) 진입 @ $'+G.scenario.candles[G.entryIndex].c.toFixed(2),'long'); }
+    else { sfx.enterShort(); showPosToast('매도(숏) 진입 @ $'+G.scenario.candles[G.entryIndex].c.toFixed(2),'short'); }
+  }
+}
+function finishRound(){
+  clearInterval(G.timer);
+  G.phase='done';
+  const res=scoreRound(G.scenario, G.playerDir, G.entryIndex);
+  const grade=gradeFromScore(res.score);
+  const stars=starsFromScore(res.score);
+  sfx[res.score>=55?'win':'lose']();
+  const rMul = res.trade ? res.trade.R : 0;
+  G.balance += Math.round(rMul*50);
+  G.streak = res.score>=55 ? G.streak+1 : 0;
+  PROG.stats.rounds++; PROG.stats.totalScore+=res.score; PROG.stats.bestStreak=Math.max(PROG.stats.bestStreak,G.streak);
+  saveProg();
+  drawChart(G.scenario, G.scenario.candles.length, {entryIndex:G.entryIndex, dir:G.playerDir, trade:G.trade, showIdeal:true});
+  showResultModal(res, grade, stars, rMul);
+  G.lastRes={res,grade,stars};
+}
+function setActionsEnabled(v){
+  $('#btnLong').disabled=!v; $('#btnShort').disabled=!v; $('#btnWait').disabled=!v;
+}
+function showTip(text,label){
+  const t=$('#tipToast'); t.innerHTML='<b>'+label+'</b><br>'+text; t.classList.add('show');
+  clearTimeout(showTip._t); showTip._t=setTimeout(()=>t.classList.remove('show'), 3600);
+}
+function showPosToast(text,cls){
+  const t=$('#posToast'); t.textContent=text; t.className='show '+cls;
+}
+function updateTopBar(){
+  if(G.mode==='curriculum'){
+    $('#gStageTitle').textContent='STAGE '+G.stageId+' · '+PATTERNS[G.stageId-1].title;
+    $('#gStageSub').textContent='WTI 원유 · '+PATTERNS[G.stageId-1].tf;
+    $('#gRoundInfo').textContent='라운드 '+G.round+'/'+G.roundsPerStage;
+  } else {
+    $('#gStageTitle').textContent='자유 연습 모드';
+    $('#gStageSub').textContent='WTI 원유 · 랜덤 패턴';
+    $('#gRoundInfo').textContent='누적 '+G.practiceStats.rounds+'회';
+  }
+  const balEl=$('#gBalance');
+  balEl.textContent=fmt$(G.balance);
+  balEl.className='tnum '+(G.balance>=1000?'up':'down');
+  $('#gStreak').textContent=G.streak;
+}
+
+/* ================= RESULT / MODALS ================= */
+function showResultModal(res,grade,stars,rMul){
+  $('#rGrade').textContent=grade; $('#rGrade').className='gradeBadge '+grade;
+  $('#rMsg').textContent=resultText(G.scenario, G.playerDir, res);
+  const rows=[];
+  rows.push(['총점', res.score+'점', res.score>=55?'pos':'neg']);
+  if(res.timingScore!=null) rows.push(['타이밍 점수', res.timingScore+'점','']);
+  if(res.outcomeScore!=null) rows.push(['손익 점수', res.outcomeScore+'점','']);
+  if(res.trade){
+    rows.push(['결과', res.trade.outcome==='target'?'목표가 도달':res.trade.outcome==='stop'?'손절':'시간 종료', res.trade.R>=0?'pos':'neg']);
+    rows.push(['손익(R배수)', fmtSigned(res.trade.R,2)+'R', res.trade.R>=0?'pos':'neg']);
+  }
+  rows.push(['모의 손익', fmtSigned(rMul*50,0)+'$', rMul>=0?'pos':'neg']);
+  $('#rRows').innerHTML=rows.map(r=>'<div class="scoreRow"><span>'+r[0]+'</span><b class="'+r[2]+'">'+r[1]+'</b></div>').join('');
+  $('#rExplain').innerHTML=G.scenario.explain;
+  $('#ovResult').classList.add('show');
+}
+$('#rNext').onclick=()=>{
+  sfx.click();
+  $('#ovResult').classList.remove('show');
+  G.sessionStars.push(G.lastRes.stars);
+  if(G.mode==='curriculum'){
+    if(G.round>=G.roundsPerStage){ showStageClear(); return; }
+    G.round++;
+  } else {
+    G.practiceStats.rounds++;
+    G.practiceStats.total+=G.lastRes.res.score;
+  }
+  startRound();
+};
+function showStageClear(){
+  const total=G.sessionStars.reduce((a,b)=>a+b,0);
+  const stageStars=Math.max(0,Math.round(total/G.roundsPerStage));
+  const prevBest=PROG.stageStars[G.stageId]||0;
+  PROG.stageStars[G.stageId]=Math.max(prevBest,stageStars);
+  PROG.unlocked=Math.max(PROG.unlocked, Math.min(PATTERNS.length, G.stageId+1));
+  saveProg();
+  sfx.star();
+  $('#cTitle').textContent='STAGE '+G.stageId+' 완료!';
+  $('#cStars').innerHTML=[1,2,3].map(i=>'<span class="'+(i<=stageStars?'on':'')+'">★</span>').join('');
+  $('#cMsg').textContent=PATTERNS[G.stageId-1].title+' 패턴, 3라운드를 모두 마쳤어요.';
+  $('#cNextStage').style.display = G.stageId<PATTERNS.length ? 'block' : 'none';
+  $('#ovClear').classList.add('show');
+}
+$('#cList').onclick=()=>{ sfx.click(); $('#ovClear').classList.remove('show'); clearInterval(G.timer); goToStageSelect(); };
+$('#cNextStage').onclick=()=>{
+  sfx.click(); $('#ovClear').classList.remove('show');
+  G.stageId=Math.min(PATTERNS.length,G.stageId+1); G.round=1; G.sessionStars=[]; G.streak=0; G.balance=1000;
+  startRound();
+};
+
+/* ================= ACTION BUTTONS ================= */
+$('#btnLong').onclick=()=>decide('long');
+$('#btnShort').onclick=()=>decide('short');
+$('#btnWait').onclick=()=>decide('wait');
+document.querySelectorAll('.speedBtn').forEach(b=>{
+  b.onclick=()=>{
+    document.querySelectorAll('.speedBtn').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active'); G.speed=parseFloat(b.dataset.spd);
+    if(G.timer){ clearInterval(G.timer); G.timer=setInterval(tick, REVEAL_MS/G.speed); }
+  };
+});
+
+/* ================= SCREEN NAV ================= */
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  $('#'+id).classList.add('active');
+}
+function goHome(){
+  clearInterval(G.timer);
+  refreshHomeStats();
+  showScreen('screenHome');
+}
+function refreshHomeStats(){
+  $('#statUnlocked').textContent=PROG.unlocked+'/'+PATTERNS.length;
+  $('#statRounds').textContent=PROG.stats.rounds;
+  $('#statAvg').textContent = PROG.stats.rounds>0 ? Math.round(PROG.stats.totalScore/PROG.stats.rounds) : '-';
+}
+function goToStageSelect(){
+  renderStageGrid();
+  showScreen('screenStage');
+}
+function renderStageGrid(){
+  const grid=$('#stageGrid');
+  grid.innerHTML=PATTERNS.map((p,idx)=>{
+    const stageNum=idx+1;
+    const locked = stageNum>PROG.unlocked;
+    const stars=PROG.stageStars[stageNum]||0;
+    const dirLabel = p.direction==='long'?'매수(롱)':p.direction==='short'?'매도(숏)':'관망 판단';
+    const dirCls = p.direction==='long'?'long':p.direction==='short'?'short':'wait';
+    return '<div class="stageCard'+(locked?' locked':'')+'" data-stage="'+stageNum+'">'+
+      '<div class="stars">'+(stars>0?'★'.repeat(stars)+'<span style="color:#3a4152">'+'★'.repeat(3-stars)+'</span>':'')+'</div>'+
+      '<div class="num">STAGE '+stageNum+'</div>'+
+      '<div class="icon">'+p.icon+'</div>'+
+      '<div class="name">'+p.title+'</div>'+
+      '<div class="dir '+dirCls+'">'+dirLabel+'</div>'+
+      '</div>';
+  }).join('');
+  grid.querySelectorAll('.stageCard').forEach(el=>{
+    el.onclick=()=>{
+      const stageNum=parseInt(el.dataset.stage,10);
+      if(stageNum>PROG.unlocked) return;
+      sfx.click();
+      G.mode='curriculum'; G.stageId=stageNum; G.round=1; G.sessionStars=[]; G.streak=0; G.balance=1000;
+      showScreen('screenGame');
+      startRound();
+    };
+  });
+}
+$('#btnCurriculum').onclick=()=>{ sfx.click(); goToStageSelect(); };
+$('#btnPractice').onclick=()=>{ sfx.click();
+  G.mode='practice'; G.round=1; G.sessionStars=[]; G.streak=0; G.balance=1000; G.practiceStats={rounds:0,total:0,streak:0};
+  showScreen('screenGame'); startRound();
+};
+$('#stageFreeCard').onclick=()=>{
+  if(PROG.unlocked<1) return; sfx.click();
+  G.mode='practice'; G.round=1; G.sessionStars=[]; G.streak=0; G.balance=1000; G.practiceStats={rounds:0,total:0,streak:0};
+  showScreen('screenGame'); startRound();
+};
+$('#stageBack').onclick=()=>{ sfx.click(); goHome(); };
+
+/* pause / help */
+$('#gamePause').onclick=()=>{ sfx.click(); clearInterval(G.timer); $('#ovPause').classList.add('show'); };
+$('#pResume').onclick=()=>{ sfx.click(); $('#ovPause').classList.remove('show'); if(G.phase!=='done') G.timer=setInterval(tick, REVEAL_MS/G.speed); };
+$('#pRestart').onclick=()=>{ sfx.click(); $('#ovPause').classList.remove('show'); startRound(); };
+$('#pHome').onclick=()=>{ sfx.click(); $('#ovPause').classList.remove('show'); clearInterval(G.timer); goHome(); };
+$('#gameHelp').onclick=()=>{ sfx.click(); clearInterval(G.timer); $('#ovHelp').classList.add('show'); };
+$('#helpClose').onclick=()=>{ sfx.click(); $('#ovHelp').classList.remove('show'); if(G.phase!=='done' && $('#screenGame').classList.contains('active')) G.timer=setInterval(tick, REVEAL_MS/G.speed); };
+$('#btnHelp').onclick=()=>{ sfx.click(); $('#ovHelp').classList.add('show'); };
+
+/* mute / reset */
+function refreshMuteBtn(){ $('#btnMute').textContent = muted ? '🔇' : '🔊'; }
+$('#btnMute').onclick=()=>{ muted=!muted; PROG.muted=muted; saveProg(); refreshMuteBtn(); sfx.click(); };
+$('#btnReset').onclick=()=>{
+  if(confirm('모든 진행 상황(스테이지 잠금 해제, 별점, 기록)을 초기화할까요?')){
+    PROG={unlocked:1,stageStars:{},stats:{rounds:0,totalScore:0,bestStreak:0},muted:muted};
+    saveProg(); refreshHomeStats();
+  }
+};
+
+window.addEventListener('resize', ()=>{
+  if(G.scenario && $('#screenGame').classList.contains('active')){
+    drawChart(G.scenario, G.revealCount, G.phase==='done'||G.phase==='holding' ? {entryIndex:G.entryIndex, dir:G.playerDir, trade:G.trade, showIdeal:G.phase==='done'} : null);
+  }
+});
+
+refreshMuteBtn();
+refreshHomeStats();
+})();
+</script>
+</body>
+</html>
