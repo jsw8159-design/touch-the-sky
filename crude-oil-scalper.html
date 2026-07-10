@@ -101,6 +101,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .gtopRow2{display:flex;justify-content:space-between;font-size:11px;color:var(--text-dim);padding:0 2px;}
 .gtopRow2 b{color:var(--text);font-weight:700;}
 .gtopRow2 .bal.up{color:var(--up);} .gtopRow2 .bal.down{color:var(--down);}
+.gtopRow3{text-align:center;font-size:11px;color:var(--gold);font-weight:700;padding:3px 2px 0;}
 #chartWrap{position:relative;flex:1;min-height:0;background:var(--bg);}
 #chartCanvas{position:absolute;inset:0;width:100%;height:100%;}
 #tipToast{position:absolute;top:8px;left:8px;right:8px;background:rgba(18,22,31,.92);border:1px solid var(--border);
@@ -209,7 +210,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
       <button class="bigBtn primary" id="btnZone">🎯 공략 포인트 찾기 (핵심 트레이닝)</button>
       <button class="bigBtn accent" id="btnTrade">💰 실전 매수·매도 훈련 (계약 2개)</button>
       <button class="bigBtn secondary" id="btnCurriculum">📘 기본학습 자료 (캔들 패턴 10선)</button>
-      <button class="bigBtn secondary" id="btnPractice">🔁 자유 연습 (전 패턴 랜덤)</button>
+      <button class="bigBtn secondary" id="btnPractice">🔁 기본학습 훈련 (전 패턴 랜덤)</button>
       <div class="homeRow">
         <button class="iconBtn" id="btnHelp">❓</button>
         <button class="iconBtn" id="btnMute">🔊</button>
@@ -274,9 +275,10 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
       </div>
       <div class="gtopRow2">
         <span>손익 <b class="tnum" id="tBalance">+0.00</b></span>
-        <span id="tPosition">없음 (잔여 2계약)</span>
+        <span id="tPosition">포지션 없음</span>
         <span>평가 <b class="tnum" id="tFloating">-</b></span>
       </div>
+      <div class="gtopRow3" id="tContractInfo">사용가능 2계약 · 잔여 2계약</div>
     </div>
     <div id="tradeChartWrap">
       <canvas id="tradeCanvas"></canvas>
@@ -1213,19 +1215,29 @@ function drawTradeChart(revealZones){
   TG.trades.forEach(t=>{
     if(t.idx>=rc) return;
     const tx=x(t.idx), ty=y(t.price);
-    const isEntry = t.type==='entry'||t.type==='add';
+    const isEntry = t.type==='entry';
     const col = t.dir==='long' ? '#f5384f':'#2178f0';
+    let labelY;
     tctx.save(); tctx.fillStyle=col; tctx.strokeStyle=col; tctx.lineWidth=1.6;
     if(isEntry){
       tctx.beginPath();
-      if(t.dir==='long'){ tctx.moveTo(tx,ty+12); tctx.lineTo(tx-6,ty+21); tctx.lineTo(tx+6,ty+21); }
-      else { tctx.moveTo(tx,ty-12); tctx.lineTo(tx-6,ty-21); tctx.lineTo(tx+6,ty-21); }
+      if(t.dir==='long'){ tctx.moveTo(tx,ty+12); tctx.lineTo(tx-6,ty+21); tctx.lineTo(tx+6,ty+21); labelY=ty+32; }
+      else { tctx.moveTo(tx,ty-12); tctx.lineTo(tx-6,ty-21); tctx.lineTo(tx+6,ty-21); labelY=ty-25; }
       tctx.closePath(); tctx.fill();
     } else {
       tctx.fillStyle = t.pnl>=0 ? '#1fbf75' : '#f5384f';
       tctx.beginPath(); tctx.arc(tx,ty,5,0,Math.PI*2); tctx.fill();
+      labelY = t.dir==='long' ? ty-11 : ty+20;
     }
     tctx.restore();
+    if(t.label){
+      tctx.save();
+      tctx.font='9px -apple-system,sans-serif'; tctx.textAlign='center';
+      tctx.fillStyle= isEntry ? col : (t.pnl>=0?'#1fbf75':'#f5384f');
+      tctx.fillText(t.label, tx, labelY);
+      tctx.textAlign='left';
+      tctx.restore();
+    }
   });
 
   if(TG.position!==0 && TG.avgEntry!=null){
@@ -1472,7 +1484,8 @@ $('#zoneBack').onclick=()=>{ sfx.click(); goHome(); };
 /* ================= TRADE PRACTICE (실전 매매 훈련) ================= */
 const TRADE_REVEAL_MS=500;
 const TG={ level:1, source:'zone', scenario:null, revealCount:0, phase:'idle', speed:1,
-  timer:null, position:0, avgEntry:null, realizedPnL:0, balance:1000, trades:[], maxContracts:2 };
+  timer:null, position:0, avgEntry:null, realizedPnL:0, balance:1000, trades:[], maxContracts:2,
+  entryCount:0, closeCount:0 };
 function currentTradePrice(){
   return TG.scenario.candles[Math.min(TG.revealCount,TG.scenario.candles.length)-1].c;
 }
@@ -1481,7 +1494,7 @@ function showTPosToast(text,cls){
 }
 function resetTradeState(){
   TG.revealCount=1; TG.phase='revealing'; TG.position=0; TG.avgEntry=null;
-  TG.realizedPnL=0; TG.balance=1000; TG.trades=[];
+  TG.realizedPnL=0; TG.balance=1000; TG.trades=[]; TG.entryCount=0; TG.closeCount=0;
   $('#tPosToast').classList.remove('show');
   updateTradeHUD();
   drawTradeChart(false);
@@ -1503,7 +1516,7 @@ function startFreePractice(){
   const patternId=PATTERNS[Math.floor(Math.random()*Math.min(PROG.unlocked,PATTERNS.length))].id;
   TG.scenario=buildScenario(patternId, PROG.instrumentId);
   const inst=getInstrument();
-  $('#tLevelInfo').textContent='자유 연습 · '+TG.scenario.icon+' '+TG.scenario.title;
+  $('#tLevelInfo').textContent='기본학습 훈련 · '+TG.scenario.icon+' '+TG.scenario.title;
   $('#tInstrumentInfo').textContent=inst.icon+' '+inst.name;
   $('#tTipToast').textContent=TG.scenario.tip+' 매수·매도 버튼으로 직접 진입/청산해보세요. 계약은 최대 2개까지 쌓을 수 있어요.';
   resetTradeState();
@@ -1525,32 +1538,31 @@ function tradeAction(dir){
   const price=currentTradePrice();
   const dec=TG.scenario.instrument.decimals;
   const sign = dir==='long' ? 1 : -1;
-  if(TG.position===0){
-    TG.position=sign; TG.avgEntry=price;
-    TG.trades.push({type:'entry', dir, price, idx:TG.revealCount-1});
-    sfx[dir==='long'?'enterLong':'enterShort']();
-    showTPosToast((dir==='long'?'매수':'매도')+' 1계약 진입 @ '+formatPrice(price,dec), dir==='long'?'long':'short');
-  } else if(Math.sign(TG.position)===sign){
+  if(TG.position===0 || Math.sign(TG.position)===sign){
     if(Math.abs(TG.position)>=TG.maxContracts){
       sfx.click();
       showTPosToast('계약 한도(2계약)를 모두 사용했어요','wait');
       return;
     }
     const oldQty=Math.abs(TG.position);
-    TG.avgEntry=(TG.avgEntry*oldQty+price)/(oldQty+1);
+    TG.avgEntry = oldQty===0 ? price : (TG.avgEntry*oldQty+price)/(oldQty+1);
     TG.position+=sign;
-    TG.trades.push({type:'add', dir, price, idx:TG.revealCount-1});
+    TG.entryCount=Math.abs(TG.position);
+    const label='진입'+TG.entryCount;
+    TG.trades.push({type:'entry', dir, price, idx:TG.revealCount-1, label});
     sfx[dir==='long'?'enterLong':'enterShort']();
-    showTPosToast((dir==='long'?'매수':'매도')+' 추가 진입 (총 '+Math.abs(TG.position)+'계약) @ '+formatPrice(price,dec), dir==='long'?'long':'short');
+    showTPosToast((dir==='long'?'매수':'매도')+' '+label+' @ '+formatPrice(price,dec), dir==='long'?'long':'short');
   } else {
-    const qty=Math.abs(TG.position);
     const posSign=Math.sign(TG.position);
-    const pnl=(posSign>0 ? (price-TG.avgEntry) : (TG.avgEntry-price))*qty;
+    const pnl=(posSign>0 ? (price-TG.avgEntry) : (TG.avgEntry-price))*1;
     TG.realizedPnL+=pnl; TG.balance+=pnl;
-    TG.trades.push({type:'close', dir:posSign>0?'long':'short', price, qty, pnl, idx:TG.revealCount-1});
+    TG.closeCount=(TG.closeCount||0)+1;
+    const label='청산'+TG.closeCount;
+    TG.trades.push({type:'close', dir:posSign>0?'long':'short', price, qty:1, pnl, idx:TG.revealCount-1, label});
     sfx[pnl>=0?'win':'lose']();
-    showTPosToast(qty+'계약 청산 '+fmtSigned(pnl,dec>1?2:dec)+' ('+formatPrice(price,dec)+')','wait');
-    TG.position=0; TG.avgEntry=null;
+    showTPosToast(label+' (1계약) '+fmtSigned(pnl,dec>1?2:dec)+' ('+formatPrice(price,dec)+')','wait');
+    TG.position-=posSign;
+    if(TG.position===0){ TG.avgEntry=null; TG.entryCount=0; TG.closeCount=0; }
   }
   updateTradeHUD();
   drawTradeChart(false);
@@ -1566,11 +1578,13 @@ function updateTradeHUD(){
   const pnlSoFar=TG.balance-1000;
   $('#tBalance').textContent=fmtSigned(pnlSoFar,2);
   $('#tBalance').className='tnum '+(pnlSoFar>=0?'up':'down');
-  $('#tPosition').textContent = TG.position===0 ? '없음 (잔여 '+TG.maxContracts+'계약)'
+  $('#tPosition').textContent = TG.position===0 ? '포지션 없음'
     : (TG.position>0?'매수 ':'매도 ')+Math.abs(TG.position)+'계약 @ '+formatPrice(TG.avgEntry,dec);
   const fEl=$('#tFloating');
   fEl.textContent = TG.position===0 ? '-' : fmtSigned(floating,2);
   fEl.className='tnum '+(floating>=0?'up':'down');
+  const used=Math.abs(TG.position);
+  $('#tContractInfo').textContent='사용가능 '+TG.maxContracts+'계약 · 잔여 '+(TG.maxContracts-used)+'계약'+(used>0?' (사용중 '+used+'계약)':'');
 }
 function finishTradeLevel(){
   clearInterval(TG.timer);
@@ -1581,8 +1595,8 @@ function finishTradeLevel(){
     const qty=Math.abs(TG.position), posSign=Math.sign(TG.position);
     const pnl=(posSign>0?(price-TG.avgEntry):(TG.avgEntry-price))*qty;
     TG.realizedPnL+=pnl; TG.balance+=pnl;
-    TG.trades.push({type:'close', dir:posSign>0?'long':'short', price, qty, pnl, idx:TG.revealCount-1, forced:true});
-    TG.position=0; TG.avgEntry=null; forceClosed=true;
+    TG.trades.push({type:'close', dir:posSign>0?'long':'short', price, qty, pnl, idx:TG.revealCount-1, forced:true, label:'자동청산'});
+    TG.position=0; TG.avgEntry=null; TG.entryCount=0; TG.closeCount=0; forceClosed=true;
   }
   updateTradeHUD();
   drawTradeChart(true);
@@ -1602,7 +1616,7 @@ function showTradeResult(forceClosed){
   saveProg();
   sfx[score>=55?'win':'lose']();
   if(TG.source==='practice'){
-    $('#trTitle').textContent='자유 연습 결과';
+    $('#trTitle').textContent='기본학습 훈련 결과';
     $('#trRetry').textContent='홈으로';
     $('#trNext').textContent='다음 라운드';
   } else {
