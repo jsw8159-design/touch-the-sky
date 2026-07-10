@@ -1812,29 +1812,29 @@
   // spring 0-500m, summer 500-1000m, autumn 1000-1500m, winter 1500-2000m, earth orbit 2000-2500m,
   // then every 1000m: moon, mars, jupiter, saturn, uranus, neptune, and finally deep space (forever)
   const ZONES = [
-    { key:'spring',  label:'봄',      len:500,  skyTop:'#8FD8FF', skyBot:'#EAFBE6', pillarA:'#FFC3E0', pillarB:'#FF95C2', railTint:'#FFEAF4', cloudColor:'rgba(255,255,255,0.85)',
+    { key:'spring',  label:'봄',      len:500,  skyTop:'#8FD8FF', skyBot:'#EAFBE6', pillarA:'#FFC3E0', pillarB:'#FF95C2', railTint:'#FFEAF4', cloudColor:'rgba(255,255,255,0.85)', texture:'blocks',
       decor:{ type:'sun', color:'#FFE9A8', size:0.1 } },
-    { key:'summer',  label:'여름',    len:500,  skyTop:'#2FA8F0', skyBot:'#BFEFFF', pillarA:'#9BE8CF', pillarB:'#5FCBAE', railTint:'#EAFFFA', cloudColor:'rgba(255,255,255,0.85)',
+    { key:'summer',  label:'여름',    len:500,  skyTop:'#2FA8F0', skyBot:'#BFEFFF', pillarA:'#9BE8CF', pillarB:'#5FCBAE', railTint:'#EAFFFA', cloudColor:'rgba(255,255,255,0.85)', texture:'diagonal',
       decor:{ type:'sun', color:'#FFF3B0', size:0.11 }, enterMsg:'☀️ 여름 하늘로!' },
-    { key:'autumn',  label:'가을',    len:500,  skyTop:'#F2A65A', skyBot:'#FFDFAE', pillarA:'#E0894A', pillarB:'#B85F2C', railTint:'#FFE9CC', cloudColor:'rgba(255,244,224,0.85)',
+    { key:'autumn',  label:'가을',    len:500,  skyTop:'#F2A65A', skyBot:'#FFDFAE', pillarA:'#E0894A', pillarB:'#B85F2C', railTint:'#FFE9CC', cloudColor:'rgba(255,244,224,0.85)', texture:'crystal',
       decor:{ type:'sun', color:'#FFCB7A', size:0.1 }, enterMsg:'🍂 가을 하늘로!' },
-    { key:'winter',  label:'겨울',    len:500,  skyTop:'#5C87BE', skyBot:'#EAF4FC', pillarA:'#E4F3FC', pillarB:'#AFCFEE', railTint:'#FFFFFF',  cloudColor:'rgba(255,255,255,0.92)',
+    { key:'winter',  label:'겨울',    len:500,  skyTop:'#5C87BE', skyBot:'#EAF4FC', pillarA:'#E4F3FC', pillarB:'#AFCFEE', railTint:'#FFFFFF',  cloudColor:'rgba(255,255,255,0.92)', texture:'streak',
       decor:{ type:'sun', color:'#EAF6FF', size:0.09 }, enterMsg:'❄️ 겨울 하늘로!' },
-    { key:'orbit',   label:'지구 궤도', len:500, skyTop:'#05061E', skyBot:'#241B45', pillarA:'#7A69B8', pillarB:'#463A73', railTint:'#CFC6FF', cloudColor:'rgba(190,180,255,0.35)',
+    { key:'orbit',   label:'지구 궤도', len:500, skyTop:'#05061E', skyBot:'#241B45', pillarA:'#7A69B8', pillarB:'#463A73', railTint:'#CFC6FF', cloudColor:'rgba(190,180,255,0.35)', texture:'panel',
       decor:{ type:'earth', color:'#4E9BE0', accent:'rgba(120,205,120,0.9)', size:0.13 }, enterMsg:'🌍 대기권 돌파! 지구 궤도 진입' },
-    { key:'moon',    label:'달',      len:1000, skyTop:'#08080F', skyBot:'#20212E', pillarA:'#C9C9CE', pillarB:'#8E8E96', railTint:'#F0F0F5', cloudColor:'rgba(200,200,205,0.18)',
+    { key:'moon',    label:'달',      len:1000, skyTop:'#08080F', skyBot:'#20212E', pillarA:'#C9C9CE', pillarB:'#8E8E96', railTint:'#F0F0F5', cloudColor:'rgba(200,200,205,0.18)', texture:'crater',
       decor:{ type:'moon', color:'#D8D8DE', accent:'rgba(160,160,170,0.6)', size:0.14 }, enterMsg:'🌕 달에 도착!' },
-    { key:'mars',    label:'화성',    len:1000, skyTop:'#33120A', skyBot:'#8A3B1E', pillarA:'#C1440E', pillarB:'#8B2E0A', railTint:'#FFD9C2', cloudColor:'rgba(230,140,90,0.28)',
+    { key:'mars',    label:'화성',    len:1000, skyTop:'#33120A', skyBot:'#8A3B1E', pillarA:'#C1440E', pillarB:'#8B2E0A', railTint:'#FFD9C2', cloudColor:'rgba(230,140,90,0.28)', texture:'crack',
       decor:{ type:'planet', color:'#C1440E', size:0.13 }, enterMsg:'🔴 화성 진입!' },
-    { key:'jupiter', label:'목성',    len:1000, skyTop:'#241708', skyBot:'#6B4A28', pillarA:'#D8A25E', pillarB:'#A9743A', railTint:'#FFE9C7', cloudColor:'rgba(216,162,94,0.3)',
+    { key:'jupiter', label:'목성',    len:1000, skyTop:'#241708', skyBot:'#6B4A28', pillarA:'#D8A25E', pillarB:'#A9743A', railTint:'#FFE9C7', cloudColor:'rgba(216,162,94,0.3)', texture:'bands',
       decor:{ type:'bands', color:'#D8A25E', bands:['#B5793D','#F2D9A8'], size:0.15 }, enterMsg:'🟠 목성 진입!' },
-    { key:'saturn',  label:'토성',    len:1000, skyTop:'#221C09', skyBot:'#5C4A26', pillarA:'#E9D9A8', pillarB:'#B99B5E', railTint:'#FFF6DD', cloudColor:'rgba(233,217,168,0.3)',
+    { key:'saturn',  label:'토성',    len:1000, skyTop:'#221C09', skyBot:'#5C4A26', pillarA:'#E9D9A8', pillarB:'#B99B5E', railTint:'#FFF6DD', cloudColor:'rgba(233,217,168,0.3)', texture:'grain',
       decor:{ type:'ring', color:'#E9D9A8', ringColor:'rgba(220,200,150,0.75)', size:0.12 }, enterMsg:'🪐 토성 진입!' },
-    { key:'uranus',  label:'천왕성',  len:1000, skyTop:'#07211F', skyBot:'#1E4A46', pillarA:'#8FD8E0', pillarB:'#4FA8B0', railTint:'#E3FBFC', cloudColor:'rgba(143,216,224,0.3)',
+    { key:'uranus',  label:'천왕성',  len:1000, skyTop:'#07211F', skyBot:'#1E4A46', pillarA:'#8FD8E0', pillarB:'#4FA8B0', railTint:'#E3FBFC', cloudColor:'rgba(143,216,224,0.3)', texture:'crystal',
       decor:{ type:'planet', color:'#8FD8E0', size:0.13 }, enterMsg:'🔵 천왕성 진입!' },
-    { key:'neptune', label:'해왕성',  len:1000, skyTop:'#050A28', skyBot:'#16266B', pillarA:'#4166F5', pillarB:'#2B44A8', railTint:'#DCE4FF', cloudColor:'rgba(65,102,245,0.32)',
+    { key:'neptune', label:'해왕성',  len:1000, skyTop:'#050A28', skyBot:'#16266B', pillarA:'#4166F5', pillarB:'#2B44A8', railTint:'#DCE4FF', cloudColor:'rgba(65,102,245,0.32)', texture:'streak',
       decor:{ type:'planet', color:'#4166F5', size:0.13 }, enterMsg:'🔷 해왕성 진입!' },
-    { key:'beyond',  label:'태양계 밖', len:1000, skyTop:'#000004', skyBot:'#0A0018', pillarA:'#3A2A5C', pillarB:'#1F1638', railTint:'#B8A8E8', cloudColor:'rgba(160,100,220,0.35)',
+    { key:'beyond',  label:'태양계 밖', len:1000, skyTop:'#000004', skyBot:'#0A0018', pillarA:'#3A2A5C', pillarB:'#1F1638', railTint:'#B8A8E8', cloudColor:'rgba(160,100,220,0.35)', texture:'energy',
       decor:null, enterMsg:'🌌 태양계를 벗어났어요!' }
   ];
   const ZONE_TRANS = 70; // meters of crossfade blended into the next zone near each boundary
@@ -1890,6 +1890,48 @@
     }
     return cloudField;
   }
+  // deepest parallax layer: dim, tiny, very-slow-scrolling stars for depth once in space
+  let starFieldFar = null;
+  function ensureFarStars(){
+    if(starFieldFar) return starFieldFar;
+    starFieldFar = [];
+    for(let i=0;i<70;i++){
+      starFieldFar.push({ xf: Math.random(), yf: Math.random(), r: randRange(0.4,1.1), ph: Math.random()*Math.PI*2, spd: randRange(0.4,1.0) });
+    }
+    return starFieldFar;
+  }
+  // distant mountain silhouettes: slow parallax layer for the ground-based zones
+  let mountainField = null;
+  function ensureMountains(){
+    if(mountainField) return mountainField;
+    mountainField = [];
+    for(let i=0;i<5;i++){
+      mountainField.push({ xf: i/5 + Math.random()*0.08, yf: 0.68+Math.random()*0.18, w: randRange(0.3,0.44), h: randRange(0.13,0.24) });
+    }
+    return mountainField;
+  }
+  function drawMountainLayer(zi, now){
+    // visible through the ground/season zones, fades away while crossing into orbit
+    const alpha = zi.idx<=3 ? 1 : (zi.idx===4 ? 1-zi.t : 0);
+    if(alpha<=0.01) return;
+    const col = lerpColorHex(zi.zone.pillarB, zi.nextZone.pillarB, zi.t);
+    const mts = ensureMountains();
+    ctx.save();
+    ctx.globalAlpha = alpha*0.32;
+    ctx.fillStyle = col;
+    for(const m of mts){
+      const h = m.h*H;
+      const y = ((m.yf*H) + bgScrollOffset*0.12) % (H+h*2) - h;
+      const x = m.xf*W, w = m.w*W;
+      ctx.beginPath();
+      ctx.moveTo(x-w/2, y+h);
+      ctx.lineTo(x, y);
+      ctx.lineTo(x+w/2, y+h);
+      ctx.closePath();
+      ctx.fill();
+    }
+    ctx.restore();
+  }
 
   function drawBackground(now){
     const zi = zoneInfo(height);
@@ -1902,7 +1944,23 @@
 
     drawCelestialDecor(zi, now);
 
-    // stars only in (or fading into) the space zone
+    // far/deep star layer: dimmer, smaller, scrolls slowest (depth cue behind the near stars)
+    const farStarAlpha = zi.idx>=4 ? 0.7 : (zi.idx===3 ? zi.t*0.7 : 0);
+    if(farStarAlpha>0.01){
+      const farStars = ensureFarStars();
+      ctx.save();
+      for(const s of farStars){
+        const y = ((s.yf*H) + bgScrollOffset*0.08*s.spd) % (H+20) - 10;
+        const x = s.xf*W;
+        const tw = 0.4+0.3*Math.sin(now/900*s.spd + s.ph);
+        ctx.globalAlpha = farStarAlpha*tw;
+        ctx.fillStyle = '#FFFFFF';
+        ctx.beginPath(); ctx.arc(x,y,s.r,0,Math.PI*2); ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    // near stars only in (or fading into) the space zone
     const starAlpha = zi.idx>=4 ? 1 : (zi.idx===3 ? zi.t : 0);
     if(starAlpha>0.01){
       const stars = ensureStars();
@@ -1917,6 +1975,9 @@
       }
       ctx.restore();
     }
+
+    // distant mountain silhouettes (mid-far parallax layer, ground zones only)
+    drawMountainLayer(zi, now);
 
     // clouds (nebulae once in space) fade out crossing into the space zone
     const cloudAlpha = zi.idx>=4 ? 0.5 : clamp(1-(zi.idx===3?zi.t:0), 0.08, 0.85);
@@ -2070,17 +2131,8 @@
     ctx.fillStyle = grad;
     ctx.fillRect(x0,0,w,H);
 
-    // scrolling stripe blocks
-    const blockH = 76;
-    const off = bgScrollOffset % blockH;
-    ctx.save();
-    ctx.globalAlpha = 0.18;
-    ctx.fillStyle = '#000';
-    for(let y=-blockH+off; y<H+blockH; y+=blockH){
-      roundRect(x0+w*0.12, y+8, w*0.76, blockH*0.45, 10);
-      ctx.fill();
-    }
-    ctx.restore();
+    const texKind = ZONES[currentZoneIdx(height)].texture || 'blocks';
+    drawPillarTexture(x0, w, texKind, performance.now());
 
     // inner glowing rail
     const railTint = lerpColorHex(zi.zone.railTint, zi.nextZone.railTint, zi.t);
@@ -2091,6 +2143,124 @@
     railGrad.addColorStop(1,'rgba(255,255,255,0)');
     ctx.fillStyle = railGrad;
     ctx.fillRect(railX-6,0,12,H);
+  }
+
+  // ---------- per-zone pillar surface texture/pattern (color alone no longer carries the zone identity) ----------
+  const pillarTexFields = {};
+  function pillarTexField(kind, count, tileH){
+    const cached = pillarTexFields[kind];
+    if(cached) return cached;
+    const pts = [];
+    for(let i=0;i<count;i++) pts.push({ xf: Math.random(), yf: Math.random()*tileH, r: randRange(0.4,1) });
+    const f = { pts, tileH };
+    pillarTexFields[kind] = f;
+    return f;
+  }
+  function drawPillarTexture(x0, w, kind, now){
+    ctx.save();
+    ctx.beginPath(); ctx.rect(x0,0,w,H); ctx.clip();
+    const off = bgScrollOffset;
+
+    if(kind==='blocks'){
+      const blockH = 76;
+      const o = off % blockH;
+      ctx.globalAlpha = 0.18; ctx.fillStyle = '#000';
+      for(let y=-blockH+o; y<H+blockH; y+=blockH){ roundRect(x0+w*0.12, y+8, w*0.76, blockH*0.45, 10); ctx.fill(); }
+    } else if(kind==='diagonal'){
+      const spacing = 46;
+      const o = off % spacing;
+      ctx.globalAlpha = 0.16; ctx.strokeStyle = '#000'; ctx.lineWidth = w*0.1;
+      for(let y=-spacing*2+o; y<H+spacing*2; y+=spacing){
+        ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x0+w, y+w); ctx.stroke();
+      }
+    } else if(kind==='crystal'){
+      const spacing = 60;
+      const o = off*0.7 % spacing;
+      ctx.globalAlpha = 0.3; ctx.fillStyle = 'rgba(255,255,255,0.9)';
+      for(let y=-spacing+o; y<H+spacing; y+=spacing){
+        const cx = x0+w*0.5, cy = y;
+        ctx.beginPath(); ctx.moveTo(cx,cy-10); ctx.lineTo(cx+w*0.18,cy); ctx.lineTo(cx,cy+10); ctx.lineTo(cx-w*0.18,cy); ctx.closePath(); ctx.fill();
+      }
+    } else if(kind==='panel'){
+      const blockH = 90;
+      const o = off % blockH;
+      ctx.globalAlpha = 0.28; ctx.strokeStyle = 'rgba(0,0,0,0.5)'; ctx.lineWidth = 2;
+      for(let y=-blockH+o; y<H+blockH; y+=blockH){ ctx.beginPath(); ctx.moveTo(x0,y); ctx.lineTo(x0+w,y); ctx.stroke(); }
+      ctx.fillStyle = 'rgba(255,255,255,0.35)';
+      for(let y=-blockH+o+10; y<H+blockH; y+=blockH){
+        ctx.beginPath(); ctx.arc(x0+w*0.18,y,2.2,0,Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(x0+w*0.82,y,2.2,0,Math.PI*2); ctx.fill();
+      }
+    } else if(kind==='crater'){
+      const f = pillarTexField('crater', 10, 140);
+      const o = off % f.tileH;
+      for(let ty=-f.tileH+o; ty<H+f.tileH; ty+=f.tileH){
+        for(const p of f.pts){
+          const cx = x0+p.xf*w, cy = ty+p.yf, rr = w*0.09*p.r;
+          ctx.globalAlpha = 0.32; ctx.fillStyle = 'rgba(0,0,0,1)';
+          ctx.beginPath(); ctx.arc(cx,cy,rr,0,Math.PI*2); ctx.fill();
+          ctx.globalAlpha = 0.25; ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.lineWidth = 1;
+          ctx.stroke();
+        }
+      }
+    } else if(kind==='crack'){
+      const f = pillarTexField('crack', 6, 160);
+      const o = off % f.tileH;
+      ctx.globalAlpha = 0.4; ctx.strokeStyle = 'rgba(0,0,0,0.7)'; ctx.lineWidth = w*0.045; ctx.lineCap = 'round';
+      for(let ty=-f.tileH+o; ty<H+f.tileH; ty+=f.tileH){
+        for(const p of f.pts){
+          const cx = x0+p.xf*w, cy = ty+p.yf;
+          ctx.beginPath();
+          ctx.moveTo(cx-w*0.12,cy-10); ctx.lineTo(cx,cy); ctx.lineTo(cx+w*0.1,cy+14); ctx.lineTo(cx-w*0.05,cy+26);
+          ctx.stroke();
+        }
+      }
+    } else if(kind==='bands'){
+      const bandH = 34;
+      const o = off*0.5 % bandH;
+      ctx.globalAlpha = 0.22;
+      let i = 0;
+      for(let y=-bandH+o; y<H+bandH; y+=bandH, i++){
+        ctx.fillStyle = i%2===0 ? 'rgba(0,0,0,0.35)' : 'rgba(255,255,255,0.28)';
+        ctx.beginPath();
+        ctx.moveTo(x0, y);
+        for(let sx=0; sx<=w; sx+=6){ ctx.lineTo(x0+sx, y+Math.sin((sx+now/200)*0.15)*4); }
+        ctx.lineTo(x0+w, y+bandH*0.6); ctx.lineTo(x0, y+bandH*0.6);
+        ctx.closePath(); ctx.fill();
+      }
+    } else if(kind==='grain'){
+      const f = pillarTexField('grain', 40, 120);
+      const o = off % f.tileH;
+      ctx.globalAlpha = 0.4; ctx.fillStyle = 'rgba(255,255,255,0.9)';
+      for(let ty=-f.tileH+o; ty<H+f.tileH; ty+=f.tileH){
+        for(const p of f.pts){ ctx.beginPath(); ctx.arc(x0+p.xf*w, ty+p.yf, 1, 0, Math.PI*2); ctx.fill(); }
+      }
+    } else if(kind==='streak'){
+      const spacing = w*0.4;
+      ctx.globalAlpha = 0.3; ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.lineWidth = 2;
+      for(let sx=x0+spacing*0.5; sx<x0+w; sx+=spacing){
+        ctx.beginPath(); ctx.moveTo(sx, 0); ctx.lineTo(sx, H); ctx.stroke();
+      }
+      const blobY = ((now/8) % (H+200))-100;
+      const g = ctx.createRadialGradient(x0+w/2,blobY,0,x0+w/2,blobY,w*0.7);
+      g.addColorStop(0,'rgba(255,255,255,0.4)'); g.addColorStop(1,'rgba(255,255,255,0)');
+      ctx.globalAlpha = 1; ctx.fillStyle = g; ctx.fillRect(x0,blobY-w,w,w*2);
+    } else if(kind==='energy'){
+      const f = pillarTexField('energy', 8, 150);
+      const o = off % f.tileH;
+      let prev = null;
+      for(let ty=-f.tileH+o; ty<H+f.tileH; ty+=f.tileH){
+        for(const p of f.pts){
+          const cx = x0+p.xf*w, cy = ty+p.yf;
+          const pulse = 0.5+0.4*Math.sin(now/500+p.xf*10);
+          if(prev){ ctx.globalAlpha = pulse*0.5; ctx.strokeStyle = 'rgba(184,168,232,0.8)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(prev[0],prev[1]); ctx.lineTo(cx,cy); ctx.stroke(); }
+          ctx.globalAlpha = pulse; ctx.fillStyle = 'rgba(210,190,255,0.9)';
+          ctx.beginPath(); ctx.arc(cx,cy,2.2,0,Math.PI*2); ctx.fill();
+          prev = [cx,cy];
+        }
+      }
+    }
+    ctx.restore();
   }
 
   function drawCharacter(x,y,scale,rot,now){
