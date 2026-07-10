@@ -397,6 +397,8 @@
   function sfxTick(vol){ beep(1500,0.04,'square', vol||0.09); }
   function sfxHeartbeat(){ beep(85,0.1,'sine',0.16); beep(65,0.14,'sine',0.13,0.15); }
   function sfxNinjaDash(){ noiseBurst(0.3,0.24,0,1600); beep(180,0.16,'sawtooth',0.14,0); beep(90,0.2,'square',0.1,0.05); }
+  function sfxWebSwing(){ noiseBurst(0.1,0.16,0,4200); beep(900,0.07,'triangle',0.12,0); beep(1300,0.08,'triangle',0.1,0.06); }
+  function sfxSpinKick(){ noiseBurst(0.24,0.22,0,2600); beep(260,0.14,'square',0.13,0); beep(140,0.18,'sawtooth',0.12,0.06); }
   function sfxFall(){ beep(300,0.12,'sine',0.1); beep(160,0.22,'sine',0.09,0.06); }
   function noiseBurst(dur,vol,delay,filterFreq){
     if(!actx || muted) return;
@@ -661,8 +663,18 @@
     { id:'sky',     name:'하늘이 (하늘)',   character:'bird', body:'#7FD8F2', wing:'#4FB3D9', unlockHeight:80 },
     { id:'violet',  name:'하늘이 (보라)',   character:'bird', body:'#C9A3FF', wing:'#9B6FE0', unlockHeight:150 },
     { id:'gold',    name:'하늘이 (골드)',   character:'bird', body:'#FFE066', wing:'#E0B93D', unlockHeight:300 },
-    { id:'ninja',   name:'닌자', character:'ninja', body:'#3A3F52', wing:'#2A2E3D', mask:'#232838', headband:'#D64545', unlockHeight:0 }
+    { id:'ninja',   name:'닌자', character:'ninja', body:'#3A3F52', wing:'#2A2E3D', mask:'#232838', headband:'#D64545', unlockHeight:0 },
+    { id:'spider',  name:'스파이더맨', character:'spider', body:'#D63A2E', wing:'#1E3A8A', web:'#161616', unlockHeight:0 },
+    { id:'taekwon', name:'태권보이', character:'taekwon', body:'#F5D0A9', gi:'#F7F7F2', belt:'#1C1C1C', headband:'#D6393A', hair:'#241C14', unlockHeight:0 }
   ];
+  // each character's ultimate flavor: shout text, voice line, flash color, sfx, and particle tint
+  const ULTIMATE_FX = {
+    ninja:   { shout:'그림자 질주!!', shoutColor:'#CFC6FF', voiceId:'ninjadash',  voiceText:'Ninja Dash!!',  flash:'#2A2A3A', sfx:function(){ sfxNinjaDash(); }, particle:['#3A3F52','#8F8FB0'] },
+    spider:  { shout:'웹 스윙!!',     shoutColor:'#DCE6FF', voiceId:'webswing',   voiceText:'Web Swing!!',   flash:'#1E3A8A', sfx:function(){ sfxWebSwing(); },  particle:['#D63A2E','#F5F5F5'] },
+    taekwon: { shout:'회전 발차기!!', shoutColor:'#BEE3FF', voiceId:'spinkick',   voiceText:'Spin Kick!!',   flash:'#78C8FF', sfx:function(){ sfxSpinKick(); },  particle:['#F5D0A9','#78C8FF'] },
+    bird:    { shout:'Fire Ball!!',   shoutColor:'#FFD93D', voiceId:'fireball',   voiceText:'Fire Ball!!',   flash:'#FFD93D', sfx:function(){ sfxFireball(); },  particle:['#FF9F45','#FFD93D'] }
+  };
+  function currentUltimateFx(){ return ULTIMATE_FX[currentSkin().character] || ULTIMATE_FX.bird; }
   function isSkinUnlocked(i){ return sessionBest >= SKINS[i].unlockHeight; }
   let selectedSkinIndex = parseInt(lsGet('skinIndex','0'),10)||0;
   if(selectedSkinIndex<0 || selectedSkinIndex>=SKINS.length || !isSkinUnlocked(selectedSkinIndex)) selectedSkinIndex = 0;
@@ -948,25 +960,18 @@
     fireballStart = now;
     fireballStartHeight = height;
     fireballDuration = 4200;
-    const isNinja = currentSkin().character==='ninja';
-    if(isNinja){
-      triggerShout('그림자 질주!!', '#CFC6FF', 1000);
-      playVoiceLine('ninjadash', 'Ninja Dash!!', 1.15, 0.9);
-      triggerFlash('#2A2A3A', 300);
-      sfxNinjaDash();
-    } else {
-      triggerShout('Fire Ball!!', '#FFD93D', 1000);
-      playVoiceLine('fireball', 'Fire Ball!!', 1.1, 0.85);
-      triggerFlash('#FFD93D', 350);
-      sfxFireball();
-    }
+    const fx = currentUltimateFx();
+    triggerShout(fx.shout, fx.shoutColor, 1000);
+    playVoiceLine(fx.voiceId, fx.voiceText, 1.1, 0.9);
+    triggerFlash(fx.flash, 320);
+    fx.sfx();
     shakeUntil = now+500; shakeMag = 14;
     // satisfying screen-clear: everything currently falling bursts away
     // (clear in place, NOT reassign - this can run while update()'s obstacle
     // loop is mid-iteration via equipHelmet(), and reassigning `obstacles` to
     // a new array would leave that loop indexing into a stale/empty array)
     for(const o of obstacles){
-      spawnParticles(o.x, o.y, isNinja?'#8F8FB0':'#FF9F45', 6, [60,200], 0.5);
+      spawnParticles(o.x, o.y, Math.random()<0.5?fx.particle[0]:fx.particle[1], 6, [60,200], 0.5);
     }
     obstacles.length = 0;
   }
@@ -1291,9 +1296,9 @@
         charRot = Math.sin(now/60)*0.15;
         charScale = 1.08 + Math.sin(now/80)*0.05;
         if(Math.random()<0.6){
-          const ninjaTrail = currentSkin().character==='ninja';
+          const trailFx = currentUltimateFx();
           spawnParticles(charX+randRange(-charRadius*0.4,charRadius*0.4), charY+charRadius*0.7,
-            ninjaTrail ? (Math.random()<0.5?'#3A3F52':'#8F8FB0') : (Math.random()<0.5?'#FF9F45':'#FFD93D'), 1, [20,60], 0.35);
+            Math.random()<0.5?trailFx.particle[0]:trailFx.particle[1], 1, [20,60], 0.35);
         }
         if(t>=1){
           charState = 'resting';
@@ -1737,7 +1742,10 @@
   }
 
   function drawCharacter(x,y,scale,rot,now){
-    if(currentSkin().character==='ninja'){ drawCharacterNinja(x,y,scale,rot,now); return; }
+    const __charType = currentSkin().character;
+    if(__charType==='ninja'){ drawCharacterNinja(x,y,scale,rot,now); return; }
+    if(__charType==='spider'){ drawCharacterSpider(x,y,scale,rot,now); return; }
+    if(__charType==='taekwon'){ drawCharacterTaekwon(x,y,scale,rot,now); return; }
     const isFlashing = now < invincibleUntil && Math.floor(now/90)%2===0;
     const sinceLand = now-landTime;
     let squash = 1, squashY = 1;
@@ -1986,6 +1994,267 @@
     drawZoneOutfit(r, currentZoneIdx(height));
 
     // steel helmet (shield power-up), shared with the bird
+    if(helmetLevel>=1){
+      drawHelmetOnHead(r, helmetLevel, now);
+    }
+
+    ctx.restore();
+  }
+
+  // ---------- spider-hero character ----------
+  // ultimate: "웹 스윙" (web swing) - a trailing web-strand + web-burst ring instead of a flame aura
+  function drawSpiderWebAura(r, now){
+    ctx.save();
+    const glow = ctx.createRadialGradient(0,0,r*0.3,0,0,r*1.6);
+    glow.addColorStop(0,'rgba(220,230,255,0.5)'); glow.addColorStop(1,'rgba(220,230,255,0)');
+    ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(0,0,r*1.6,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+    // trailing web strand streaming behind the travel direction
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+    ctx.lineWidth = r*0.05; ctx.lineCap='round';
+    ctx.beginPath();
+    for(let i=0;i<=10;i++){
+      const t = i/10;
+      const wx = -travelDir*r*1.9*t;
+      const wy = Math.sin(now/110 + t*7)*r*0.22*t;
+      if(i===0) ctx.moveTo(wx,wy); else ctx.lineTo(wx,wy);
+    }
+    ctx.stroke();
+    ctx.restore();
+    // pulsing web-burst ring
+    const ringP = (now%700)/700;
+    ctx.save();
+    ctx.globalAlpha = 1-ringP;
+    ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+    ctx.lineWidth = r*0.04;
+    ctx.beginPath(); ctx.arc(0,0,r*(1+ringP*0.7),0,Math.PI*2); ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawCharacterSpider(x,y,scale,rot,now){
+    const isFlashing = now < invincibleUntil && Math.floor(now/90)%2===0;
+    const sinceLand = now-landTime;
+    let squash = 1, squashY = 1;
+    if(sinceLand>=0 && sinceLand<260){
+      const p = sinceLand/260;
+      const wob = Math.sin(p*Math.PI)*(1-p);
+      squash = 1+wob*0.18; squashY = 1-wob*0.18;
+    }
+    ctx.save();
+    ctx.translate(x,y);
+    ctx.rotate(rot);
+    ctx.scale(scale*squash, scale*squashY);
+
+    const r = charRadius;
+    const skin = currentSkin();
+
+    // shadow
+    ctx.save();
+    ctx.globalAlpha = 0.18;
+    ctx.fillStyle = '#000';
+    ctx.beginPath(); ctx.ellipse(0, r*1.15, r*0.9, r*0.28, 0,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+
+    if(charState==='fireball'){
+      drawSpiderWebAura(r, now);
+    }
+
+    // feet (only when resting on a pillar)
+    if(charState==='resting'){
+      ctx.fillStyle = skin.web;
+      ctx.beginPath(); ctx.ellipse(-r*0.32, r*0.92, r*0.2, r*0.12, 0,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(r*0.32, r*0.92, r*0.2, r*0.12, 0,0,Math.PI*2); ctx.fill();
+    }
+
+    // angular shoulder/side panel (spider's equivalent slot to the bird's wing)
+    ctx.fillStyle = skin.wing;
+    ctx.beginPath();
+    ctx.moveTo(-r*0.95, -r*0.1);
+    ctx.lineTo(-r*0.45, -r*0.55);
+    ctx.lineTo(-r*0.35, r*0.15);
+    ctx.closePath(); ctx.fill();
+
+    // body (masked head, one blob matching the bird's proportions)
+    ctx.fillStyle = isFlashing ? '#FFFFFF' : skin.body;
+    ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.fill();
+
+    // web-pattern lines across the mask
+    if(!isFlashing){
+      ctx.save();
+      ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.clip();
+      ctx.strokeStyle = skin.web; ctx.lineWidth = r*0.028; ctx.globalAlpha = 0.55;
+      for(let i=-2;i<=2;i++){
+        ctx.beginPath();
+        ctx.moveTo(-r, i*r*0.38);
+        ctx.quadraticCurveTo(0, i*r*0.38+r*0.16, r, i*r*0.38);
+        ctx.stroke();
+      }
+      for(let i=-1;i<=1;i++){
+        ctx.beginPath();
+        ctx.moveTo(i*r*0.5, -r); ctx.quadraticCurveTo(i*r*0.5+r*0.16, 0, i*r*0.5, r);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    // large white eye lenses (the character's defining feature)
+    const eyeY = -r*0.06;
+    const eyeDX = r*0.32;
+    if(blinking){
+      ctx.strokeStyle = skin.web; ctx.lineWidth = r*0.07; ctx.lineCap='round';
+      ctx.beginPath(); ctx.moveTo(-eyeDX-r*0.16,eyeY); ctx.lineTo(-eyeDX+r*0.16,eyeY); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(eyeDX-r*0.16,eyeY); ctx.lineTo(eyeDX+r*0.16,eyeY); ctx.stroke();
+    } else {
+      const dir = charState!=='resting' ? travelDir : 0;
+      const tilt = charState==='fireball_grin' ? -0.35 : -0.15;
+      ctx.fillStyle = '#F5F5F5';
+      ctx.strokeStyle = skin.web; ctx.lineWidth = r*0.035;
+      ctx.beginPath(); ctx.ellipse(-eyeDX+dir*r*0.04, eyeY, r*0.22, r*0.16, tilt, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(eyeDX+dir*r*0.04, eyeY, r*0.22, r*0.16, -tilt, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+    }
+
+    // web-shooter hand gesture during the ultimate wind-up (replaces the bird's grin/teeth)
+    if(charState==='fireball_grin'){
+      const gt = clamp((now-fireballGrinStart)/FIREBALL_GRIN_DURATION,0,1);
+      const bob = Math.sin(gt*Math.PI)*r*0.06;
+      ctx.fillStyle = skin.body;
+      ctx.beginPath(); ctx.arc(-r*0.15, r*0.42-bob, r*0.14,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(r*0.15, r*0.42-bob, r*0.14,0,Math.PI*2); ctx.fill();
+    }
+
+    drawZoneOutfit(r, currentZoneIdx(height));
+    if(helmetLevel>=1){
+      drawHelmetOnHead(r, helmetLevel, now);
+    }
+
+    ctx.restore();
+  }
+
+  // ---------- taekwondo character ----------
+  // ultimate: "회전 발차기" (spinning kick) - rotating ki speed-arcs instead of a flame aura
+  function drawTaekwonKickArcs(r, now){
+    ctx.save();
+    const glow = ctx.createRadialGradient(0,0,r*0.3,0,0,r*1.6);
+    glow.addColorStop(0,'rgba(120,200,255,0.5)'); glow.addColorStop(1,'rgba(120,200,255,0)');
+    ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(0,0,r*1.6,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+    const spin = now/85;
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,255,255,0.85)';
+    ctx.lineWidth = r*0.09; ctx.lineCap='round';
+    for(let i=0;i<3;i++){
+      ctx.save();
+      ctx.rotate(spin + i*(Math.PI*2/3));
+      ctx.beginPath(); ctx.arc(0,0,r*1.35, 0, Math.PI*0.55); ctx.stroke();
+      ctx.restore();
+    }
+    ctx.restore();
+  }
+
+  function drawCharacterTaekwon(x,y,scale,rot,now){
+    const isFlashing = now < invincibleUntil && Math.floor(now/90)%2===0;
+    const sinceLand = now-landTime;
+    let squash = 1, squashY = 1;
+    if(sinceLand>=0 && sinceLand<260){
+      const p = sinceLand/260;
+      const wob = Math.sin(p*Math.PI)*(1-p);
+      squash = 1+wob*0.18; squashY = 1-wob*0.18;
+    }
+    ctx.save();
+    ctx.translate(x,y);
+    ctx.rotate(rot);
+    ctx.scale(scale*squash, scale*squashY);
+
+    const r = charRadius;
+    const skin = currentSkin();
+
+    // shadow
+    ctx.save();
+    ctx.globalAlpha = 0.18;
+    ctx.fillStyle = '#000';
+    ctx.beginPath(); ctx.ellipse(0, r*1.15, r*0.9, r*0.28, 0,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+
+    if(charState==='fireball'){
+      drawTaekwonKickArcs(r, now);
+    }
+
+    // feet (only when resting on a pillar) - bare feet
+    if(charState==='resting'){
+      ctx.fillStyle = skin.body;
+      ctx.beginPath(); ctx.ellipse(-r*0.32, r*0.92, r*0.2, r*0.12, 0,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(r*0.32, r*0.92, r*0.2, r*0.12, 0,0,Math.PI*2); ctx.fill();
+    }
+
+    // dobok sleeve/arm (taekwon's equivalent slot to the bird's wing)
+    ctx.fillStyle = skin.gi;
+    ctx.beginPath();
+    ctx.ellipse(-r*0.78, r*0.1, r*0.4, r*0.56, -0.5, 0, Math.PI*2);
+    ctx.fill();
+
+    // head (skin tone, one blob matching the bird's proportions)
+    ctx.fillStyle = isFlashing ? '#FFFFFF' : skin.body;
+    ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.fill();
+
+    // hair across the top of the head
+    if(!isFlashing){
+      ctx.save();
+      ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.clip();
+      ctx.fillStyle = skin.hair;
+      ctx.fillRect(-r, -r, r*2, r*0.55);
+      ctx.restore();
+    }
+
+    // headband
+    ctx.fillStyle = skin.headband;
+    ctx.beginPath(); ctx.ellipse(0, -r*0.28, r*0.92, r*0.13, 0,0,Math.PI*2); ctx.fill();
+
+    // dobok v-neck collar at the bottom
+    ctx.fillStyle = skin.gi;
+    ctx.beginPath();
+    ctx.moveTo(-r*0.5, r*0.6); ctx.lineTo(r*0.5, r*0.6); ctx.lineTo(0, r*0.98);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle = skin.belt;
+    ctx.beginPath(); ctx.ellipse(0, r*0.66, r*0.55, r*0.09, 0,0,Math.PI*2); ctx.fill();
+
+    // blush
+    ctx.fillStyle = 'rgba(255,120,120,0.5)';
+    ctx.beginPath(); ctx.ellipse(-r*0.5, r*0.18, r*0.15, r*0.09, 0,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(r*0.5, r*0.18, r*0.15, r*0.09, 0,0,Math.PI*2); ctx.fill();
+
+    // eyes with a focused brow
+    const eyeY = -r*0.02;
+    const eyeDX = r*0.34;
+    if(charState==='fireball_grin'){
+      ctx.strokeStyle = '#2A1E14'; ctx.lineWidth = r*0.08; ctx.lineCap='round';
+      ctx.beginPath(); ctx.arc(-eyeDX, eyeY+r*0.03, r*0.15, Math.PI*1.08, Math.PI*1.92); ctx.stroke();
+      ctx.beginPath(); ctx.arc(eyeDX, eyeY+r*0.03, r*0.15, Math.PI*1.08, Math.PI*1.92); ctx.stroke();
+    } else if(blinking){
+      ctx.strokeStyle = '#2A1E14'; ctx.lineWidth = r*0.07; ctx.lineCap='round';
+      ctx.beginPath(); ctx.moveTo(-eyeDX-r*0.13,eyeY); ctx.lineTo(-eyeDX+r*0.13,eyeY); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(eyeDX-r*0.13,eyeY); ctx.lineTo(eyeDX+r*0.13,eyeY); ctx.stroke();
+    } else {
+      const dir = charState!=='resting' ? travelDir : 0;
+      ctx.fillStyle = '#2A1E14';
+      ctx.beginPath(); ctx.ellipse(-eyeDX+dir*r*0.04, eyeY, r*0.15, r*0.17,0,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(eyeDX+dir*r*0.04, eyeY, r*0.15, r*0.17,0,0,Math.PI*2); ctx.fill();
+    }
+    // determined eyebrows
+    ctx.strokeStyle = skin.hair; ctx.lineWidth = r*0.055; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(-eyeDX-r*0.15, eyeY-r*0.22); ctx.lineTo(-eyeDX+r*0.12, eyeY-r*0.3); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(eyeDX+r*0.15, eyeY-r*0.22); ctx.lineTo(eyeDX-r*0.12, eyeY-r*0.3); ctx.stroke();
+
+    // guard-stance fists during the ultimate wind-up (replaces the bird's grin/teeth)
+    if(charState==='fireball_grin'){
+      const gt = clamp((now-fireballGrinStart)/FIREBALL_GRIN_DURATION,0,1);
+      const bob = Math.sin(gt*Math.PI)*r*0.06;
+      ctx.fillStyle = skin.body;
+      ctx.beginPath(); ctx.arc(-r*0.22, r*0.5-bob, r*0.14,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(r*0.22, r*0.5-bob, r*0.14,0,Math.PI*2); ctx.fill();
+    }
+
+    drawZoneOutfit(r, currentZoneIdx(height));
     if(helmetLevel>=1){
       drawHelmetOnHead(r, helmetLevel, now);
     }
