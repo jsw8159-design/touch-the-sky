@@ -445,7 +445,12 @@
       lbGlobalEmpty: '아직 등록된 기록이 없어요', lbMeSuffix: ' (나)',
       statPlays: '🎮 총 플레이', statDistance: '📏 누적 이동거리', statLandings: '🦶 총 착지',
       statBestCombo: '🔥 역대 최고 콤보', statFalls: '💥 추락 종료', statHpDeaths: '💔 체력 소진 종료',
-      unitTimes: '회', unitCombo: '연속',
+      statStreak: '🔥 연속 접속',
+      unitTimes: '회', unitCombo: '연속', unitDays: '일',
+      streakBadge: '🔥 {n}일 연속',
+      toastStreakDay: '🔥 {n}일 연속 플레이 중!',
+      toastStreakRewardSkin: '🔥 {n}일 연속 보너스! {name} 해금!',
+      toastStreakReward: '🔥 {n}일 연속 달성 보너스!',
       titleLine1: '하늘에', titleLine2: '닿고 싶어',
       challengeSubtitle: '⚔️ {name}님의 {h}m 에 도전!',
       bestHeightLabel: '역대 최고 기록: {h}m',
@@ -517,7 +522,12 @@
       lbGlobalEmpty: 'No records yet', lbMeSuffix: ' (me)',
       statPlays: '🎮 Total Plays', statDistance: '📏 Total Distance', statLandings: '🦶 Total Landings',
       statBestCombo: '🔥 Best Combo Ever', statFalls: '💥 Ended by Falling', statHpDeaths: '💔 Ended by HP Loss',
-      unitTimes: '', unitCombo: 'x',
+      statStreak: '🔥 Day Streak',
+      unitTimes: '', unitCombo: 'x', unitDays: '',
+      streakBadge: '🔥 {n}-day streak',
+      toastStreakDay: '🔥 {n}-day streak!',
+      toastStreakRewardSkin: '🔥 {n}-day streak bonus! {name} unlocked!',
+      toastStreakReward: '🔥 {n}-day streak bonus!',
       titleLine1: 'Touch the', titleLine2: 'Sky',
       challengeSubtitle: '⚔️ Challenging {name}\'s {h}m!',
       bestHeightLabel: 'Best Height: {h}m',
@@ -707,7 +717,21 @@
   }
   function sfxStart(){ beep(440,0.09,'triangle',0.1); beep(660,0.09,'triangle',0.1,0.08); beep(880,0.12,'triangle',0.1,0.16); }
   function sfxUnlock(){ beep(660,0.08,'square',0.08); beep(990,0.1,'square',0.08,0.09); }
-  function sfxCombo(){ beep(760,0.06,'triangle',0.11); beep(1000,0.07,'triangle',0.1,0.06); beep(1300,0.08,'triangle',0.1,0.12); }
+  // procedural placeholder for the escalating 5/10/15/.../30-combo milestone stinger - pitch/volume/
+  // texture ramp up with tier (1-6). plays a real recorded clip instead if one is provided for 'combo{5*tier}'
+  function sfxComboTier(tier){
+    const base = 640 + tier*95;
+    const vol = 0.11 + tier*0.012;
+    beep(base, 0.07, 'triangle', vol);
+    beep(base*1.3, 0.08, 'triangle', vol, 0.06);
+    beep(base*1.7, 0.09, 'triangle', vol, 0.12);
+    if(tier>=3) beep(base*2.1, 0.1, 'square', vol*0.8, 0.18);
+    if(tier>=5) noiseBurst(0.12, 0.09+tier*0.01, 0.2, 2600+tier*500);
+  }
+  function playComboSfx(tier){
+    if(playVoiceClip('combo'+(tier*5))) return;
+    sfxComboTier(tier);
+  }
   function sfxTick(vol){ beep(1500,0.04,'square', vol||0.09); }
   function sfxHeartbeat(){ beep(85,0.1,'sine',0.16); beep(65,0.14,'sine',0.13,0.15); }
   function sfxNinjaDash(){ noiseBurst(0.3,0.24,0,1600); beep(180,0.16,'sawtooth',0.14,0); beep(90,0.2,'square',0.1,0.05); }
@@ -956,6 +980,10 @@
   // combo: consecutive successful landings without taking a hit. boosts height gained per landing.
   let combo=0, comboBest=0, comboMultiplier=1, comboPopAt=-999;
   function comboMultiplierFor(c){ return 1 + Math.min(c,10)*0.1; } // ramps to x2.0 at a 10-streak
+  // escalation tiers at every 5-combo milestone (5,10,...,30), capped at tier 6 - drives
+  // the intensifying sfx/bigger combo text/faster fall speed as a streak builds
+  function comboTier(){ return Math.min(6, Math.floor(combo/5)); }
+  function comboSpeedMultiplier(){ return 1 + comboTier()*0.06; } // up to 1.36x at tier 6
 
   // ---------- sound mute ----------
   let muted = lsGet('muted','0')==='1';
@@ -994,6 +1022,7 @@
     lifeStats.plays++;
     saveLifeStats();
     incDailyCounter('plays', 1);
+    checkDailyStreak();
   }
   function recordGameOverStats(){
     lifeStats.distance += Math.floor(height);
@@ -1071,6 +1100,49 @@
     saveDailyMissions();
   }
 
+  // ---------- daily streak (consecutive-day play reward) ----------
+  let streakCount = parseInt(lsGet('streakCount','0'),10)||0;
+  let streakLastDate = lsGet('streakLastDate','');
+  let streakRewardedTiers = new Set(lsGetJSON('streakRewardedTiers', []));
+  const STREAK_MILESTONES = [3,7,14,30];
+  // called once per run start; only actually updates the streak the first time
+  // it runs on a given calendar day (idempotent for any later runs that day)
+  function checkDailyStreak(){
+    const today = todayKey();
+    if(streakLastDate === today) return;
+    const y = new Date(); y.setDate(y.getDate()-1);
+    const yesterdayKey = dateKeyFor(y);
+    streakCount = (streakLastDate === yesterdayKey) ? streakCount+1 : 1;
+    streakLastDate = today;
+    lsSet('streakCount', String(streakCount));
+    lsSet('streakLastDate', streakLastDate);
+    if(streakCount>=2){
+      unlockToastText = t('toastStreakDay', { n: streakCount });
+      unlockToastUntil = performance.now()+2400;
+    }
+    checkStreakReward();
+    checkAchievements();
+  }
+  function checkStreakReward(){
+    for(const m of STREAK_MILESTONES){
+      if(streakCount>=m && !streakRewardedTiers.has(m)){
+        streakRewardedTiers.add(m);
+        lsSetJSON('streakRewardedTiers', Array.from(streakRewardedTiers));
+        const idx = nextLockedSkinIndex();
+        if(idx>=0){
+          adUnlockedSkins.add(idx);
+          lsSet('adUnlockedSkins', JSON.stringify(Array.from(adUnlockedSkins)));
+          unlockToastText = t('toastStreakRewardSkin', { n: m, name: skinName(SKINS[idx]) });
+        } else {
+          unlockToastText = t('toastStreakReward', { n: m });
+        }
+        unlockToastUntil = performance.now()+2800;
+        sfxMaxHpUp();
+        syncUiButtons();
+      }
+    }
+  }
+
   // ---------- achievements ----------
   const ACHIEVEMENTS = [
     { id:'first_flight', icon:'🐣', name:{ko:'첫 비행',en:'First Flight'},      desc:{ko:'게임을 1번 플레이하기',en:'Play 1 run'},        check:function(){ return lifeStats.plays>=1; } },
@@ -1083,7 +1155,9 @@
     { id:'social',       icon:'🐧', name:{ko:'인싸',en:'Social Butterfly'},          desc:{ko:'친구 누적 10번 만나기',en:'Meet friends 10 times total'},         check:function(){ return lifeStats.friendsMetTotal>=10; } },
     { id:'marathon',     icon:'📏', name:{ko:'장수 비행',en:'Marathon Flyer'},     desc:{ko:'누적 10000m 이동하기',en:'Travel 10000m total'},          check:function(){ return lifeStats.distance>=10000; } },
     { id:'veteran',      icon:'🎮', name:{ko:'포기란 없다',en:'Never Give Up'},   desc:{ko:'누적 50판 플레이하기',en:'Play 50 runs total'},          check:function(){ return lifeStats.plays>=50; } },
-    { id:'inviter',      icon:'📨', name:{ko:'초대왕',en:'Inviter King'},        desc:{ko:'친구 초대로 3명 플레이시키기',en:'Get 3 friends to play via invite'},  check:function(){ return (lifeStats.invitesConverted||0)>=3; } }
+    { id:'inviter',      icon:'📨', name:{ko:'초대왕',en:'Inviter King'},        desc:{ko:'친구 초대로 3명 플레이시키기',en:'Get 3 friends to play via invite'},  check:function(){ return (lifeStats.invitesConverted||0)>=3; } },
+    { id:'streak_7',     icon:'🔥', name:{ko:'꾸준함',en:'Consistency'},        desc:{ko:'7일 연속 플레이하기',en:'Play 7 days in a row'},        check:function(){ return streakCount>=7; } },
+    { id:'streak_30',    icon:'🔥', name:{ko:'철인',en:'Iron Will'},            desc:{ko:'30일 연속 플레이하기',en:'Play 30 days in a row'},      check:function(){ return streakCount>=30; } }
   ];
   function achName(a){ return a.name[lang] || a.name.ko; }
   function achDesc(a){ return a.desc[lang] || a.desc.ko; }
@@ -1721,7 +1795,7 @@
       : type==='friend' ? 0.78
       : (type==='helmet'||type==='ad'||type==='hpup'||type==='star') ? 0.8
       : 1;
-    const vy = obstacleSpeedBase()*(0.85+Math.random()*0.35)*speedMul;
+    const vy = obstacleSpeedBase()*(0.85+Math.random()*0.35)*speedMul*comboSpeedMultiplier();
     obstacles.push({
       type, x, baseX:x, y:-r-10, r, vy, age:0,
       amp: r*1.7, freq: 2+Math.random()*1.6, phase: Math.random()*Math.PI*2,
@@ -1832,8 +1906,8 @@
     sfxLand();
     if(combo>=5 && combo%5===0){
       triggerShout(t('shoutCombo', { combo: combo }), '#FF9F1C', 800);
-      sfxCombo();
-      vibrate([25,30,25,30,60]);
+      playComboSfx(comboTier());
+      vibrate([25,30,25,30,60].map(v=>Math.round(v*(1+comboTier()*0.1))));
     }
     if(challengeTarget!=null && !challengeBeatenShoutShown && height > challengeTarget){
       challengeBeatenShoutShown = true;
@@ -1891,7 +1965,7 @@
     gapWidth += (gapTarget-gapWidth)*Math.min(1,dt*1.5);
     pillarLeftX = (W-gapWidth)/2;
     pillarRightX = pillarLeftX+gapWidth;
-    bgScrollOffset += dt*scrollSpeed;
+    bgScrollOffset += dt*scrollSpeed*comboSpeedMultiplier();
 
     // blink
     if(!blinking && now>blinkAt){ blinking=true; blinkUntil=now+120; }
@@ -4040,13 +4114,14 @@
       ctx.restore();
 
       const popT = clamp((now-comboPopAt)/220,0,1);
-      const popScale = 1 + (1-popT)*0.22;
+      const tierScale = 1 + comboTier()*0.15; // combo text grows permanently bigger as escalation tiers climb
+      const popScale = (1 + (1-popT)*0.22) * tierScale;
       ctx.save();
       ctx.translate(W-18, by);
       ctx.scale(popScale,popScale);
       ctx.fillStyle = 'rgba(0,0,0,0.35)';
       ctx.fillText(comboText, 1, 1);
-      ctx.fillStyle = '#FFD166';
+      ctx.fillStyle = lerpColorHex('#FFD166', '#FF3B3B', comboTier()/6); // heats up from gold to red at max tier
       ctx.fillText(comboText, 0, 0);
       ctx.restore();
     }
@@ -4087,7 +4162,9 @@
         ctx.fillText(t('challengeSubtitle', { name: challengeFrom, h: Math.floor(challengeTarget) }), W/2, H*0.435);
       } else {
         ctx.fillStyle = '#FFD93D';
-        ctx.fillText(t('bestHeightLabel', { h: Math.floor(sessionBest) }), W/2, H*0.435);
+        let bestLine = t('bestHeightLabel', { h: Math.floor(sessionBest) });
+        if(streakCount>=2) bestLine += '   ' + t('streakBadge', { n: streakCount });
+        ctx.fillText(bestLine, W/2, H*0.435);
       }
 
       ctx.font = `${Math.round(W*0.038)}px 'Jua', sans-serif`;
@@ -4365,6 +4442,7 @@
       }
     } else { // stats
       const rows = [
+        [t('statStreak'), streakCount+t('unitDays')],
         [t('statPlays'), lifeStats.plays+t('unitTimes')],
         [t('statDistance'), lifeStats.distance+'m'],
         [t('statLandings'), lifeStats.landings+t('unitTimes')],
