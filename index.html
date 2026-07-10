@@ -155,6 +155,11 @@
   #btnAdUnlock:active { background: rgba(255,90,140,1); }
   #btnSettings { left: 60px; bottom: 10px; font-size: 18px; }
   #btnCostume { left: 110px; bottom: 10px; font-size: 18px; display: none; }
+  #btnLang {
+    left: 160px; bottom: 10px;
+    width: auto; height: auto; border-radius: 16px;
+    padding: 9px 12px; font-size: 13px; font-family: 'Jua', sans-serif;
+  }
   #btnCostumePrev, #btnCostumeNext {
     top: 55%;
     width: auto; height: auto; border-radius: 20px;
@@ -212,20 +217,20 @@
            약관으로 금지하므로, 이 로테이터는 플레이스홀더 전용입니다.) -->
       <div id="adRotator">
         <div class="ad-slide active">
-          <div class="ad-title">광고 배너 영역</div>
-          <div class="ad-size">여기에 광고가 표시됩니다 (권장 320×50)</div>
+          <div class="ad-title" id="adTitle0">광고 배너 영역</div>
+          <div class="ad-size" id="adSize0">여기에 광고가 표시됩니다 (권장 320×50)</div>
         </div>
         <div class="ad-slide">
-          <div class="ad-title" style="color:#4285F4;">🎮 오늘의 추천 게임</div>
-          <div class="ad-size">지금 다운로드하고 플레이해보세요</div>
+          <div class="ad-title" id="adTitle1" style="color:#4285F4;">🎮 오늘의 추천 게임</div>
+          <div class="ad-size" id="adSize1">지금 다운로드하고 플레이해보세요</div>
         </div>
         <div class="ad-slide">
-          <div class="ad-title" style="color:#EA7B2C;">🛒 깜짝 특가 세일</div>
-          <div class="ad-size">지금 확인하면 할인 받아요</div>
+          <div class="ad-title" id="adTitle2" style="color:#EA7B2C;">🛒 깜짝 특가 세일</div>
+          <div class="ad-size" id="adSize2">지금 확인하면 할인 받아요</div>
         </div>
         <div class="ad-slide">
-          <div class="ad-title" style="color:#9B5DE5;">🎬 신작 예고편 공개</div>
-          <div class="ad-size">지금 바로 확인해보세요</div>
+          <div class="ad-title" id="adTitle3" style="color:#9B5DE5;">🎬 신작 예고편 공개</div>
+          <div class="ad-size" id="adSize3">지금 바로 확인해보세요</div>
         </div>
       </div>
     </div>
@@ -239,6 +244,7 @@
         <button id="btnCostume" class="uiBtn" type="button" aria-label="복장">🎀</button>
         <button id="btnCostumePrev" class="uiBtn" type="button">◀ 이전</button>
         <button id="btnCostumeNext" class="uiBtn" type="button">다음 ▶</button>
+        <button id="btnLang" class="uiBtn" type="button">🇺🇸 EN</button>
         <button id="btnPause" class="uiBtn" type="button" aria-label="일시정지">⏸</button>
         <button id="btnLeaderboard" class="uiBtn" type="button" aria-label="리더보드">🏆</button>
         <button id="btnMissions" class="uiBtn" type="button" aria-label="도전과제">🎯</button>
@@ -360,6 +366,7 @@
   const btnCostume = document.getElementById('btnCostume');
   const btnCostumePrev = document.getElementById('btnCostumePrev');
   const btnCostumeNext = document.getElementById('btnCostumeNext');
+  const btnLang = document.getElementById('btnLang');
 
   // ---------- persistence (localStorage) ----------
   const LS_PREFIX = 'ttsSky_';
@@ -382,8 +389,170 @@
     try{ localStorage.setItem(LS_PREFIX+key, JSON.stringify(value)); }catch(e){}
   }
 
+  // ---------- language / i18n ----------
+  let lang = lsGet('lang','ko');
+  if(lang!=='ko' && lang!=='en') lang = 'ko';
+  const I18N = {
+    ko: {
+      gameTitle: '하늘에 닿고 싶어',
+      muteAria: '음소거', settingsAria: '설정', costumeAria: '복장', pauseAria: '일시정지',
+      leaderboardAria: '리더보드', missionsAria: '도전과제', skinPrevAria: '이전 캐릭터', skinNextAria: '다음 캐릭터',
+      btnClose: '닫기', btnShareDefault: '🔗 도전장 보내기', btnShareWin: '🎉 승리 자랑하기',
+      btnLbLocal: '내 기록', btnLbGlobal: '전체 랭킹', btnLbStats: '내 통계',
+      btnNicknameSet: '닉네임 설정', btnAdUnlock: '📺 캐릭터 해금',
+      btnMissionTab: '일일 미션', btnAchTab: '업적', btnCostumePrev: '◀ 이전', btnCostumeNext: '다음 ▶',
+      vibLabels: ['끄기','약하게','보통','강하게'], vibPrefix: '📳 진동: ', colorblindPrefix: '👁️ 색약 모드: ',
+      onLabel: '켜짐', offLabel: '꺼짐', nicknamePrefix: '✏️ ',
+      nicknamePromptNew: '공유/랭킹에 표시할 닉네임을 입력해주세요',
+      nicknamePromptChange: '새 닉네임을 입력해주세요',
+      anonymous: '익명', friendDefault: '친구',
+      shareText: '{nick}님이 [하늘에 닿고 싶어]에서 {score}m를 기록했어요! 나를 이길 수 있을까요? 🐤',
+      shareTitle: '하늘에 닿고 싶어 - 도전장',
+      sharePrompt: '아래 내용을 복사해서 친구에게 보내주세요',
+      shareCopiedToast: '🔗 도전 링크가 복사됐어요!',
+      toastHpUp: '💗 최대 HP +1!',
+      toastHelmetUnlock: '🛡️ 강철투구 등장!',
+      toastAdUnlock: '📢 광고 캡슐 등장! HP+1',
+      toastLeafUnlock: '🍃 회오리 낙엽 등장!',
+      toastFriendUnlock: '🐧 친구 등장! 색깔마다 다른 보너스(+20/30/50m)!',
+      toastLightningUnlock: '⚡ 번개 등장! HP-2 주의',
+      toastHpupUnlock: '💗 HP 강화 캡슐 등장!',
+      toastBoulderUnlock: '🪨 큰 돌덩이 등장!',
+      toastStarUnlock: '⭐ 무적 별 등장! 3초간 무적!',
+      toastSkinUnlock: '🎉 {name} 해금!',
+      toastInviteBonusSkin: '🎁 초대 보너스! {name} 해금!',
+      toastInviteBonus: '🎁 초대 보너스 획득!',
+      toastReferralIn: '🎉 {names}님이 도전장으로 플레이했어요! 보상 획득',
+      toastMissionDone: '🎯 미션 완료! {icon} {desc}',
+      toastAchievement: '🏅 업적 달성! {icon} {name}',
+      shoutInvincible: '무적!',
+      shoutCombo: '🔥 {combo}연속 콤보!',
+      shoutChallengeOvertake: '⚔️ {name} 추월!',
+      shoutHighFive: '짝! +{n}m',
+      dailyMissionsTitle: '🎯 일일 미션', achievementsTitle: '🏅 업적',
+      missionsReset: '매일 자정에 새 미션으로 바뀌어요',
+      achEarnedOf: '{n} / {total} 달성',
+      tapEmptyToClose: '빈 곳을 탭하면 닫혀요',
+      costumeTitle: '🎀 복장', costumeUnlockedOf: '{n} / {total} 해금',
+      costumeLocked: '🔒 {name} ({h}m)',
+      settingsTitle: '⚙️ 설정',
+      adWatching: '📺 광고 시청 중...',
+      adUnlockUntil: '{name} 캐릭터 해금까지',
+      adPlaceholderNote: '(실제 광고 네트워크 연동 전 임시 화면입니다)',
+      lbGlobalTitle: '🌍 전체 랭킹', lbStatsTitle: '📊 내 통계', lbLocalTitle: '🏆 내 TOP {n}',
+      lbEmpty: '아직 기록이 없어요', lbLoading: '불러오는 중...',
+      lbError: '랭킹을 불러올 수 없어요', lbErrorHint: '인터넷 연결을 확인해주세요',
+      lbGlobalEmpty: '아직 등록된 기록이 없어요', lbMeSuffix: ' (나)',
+      statPlays: '🎮 총 플레이', statDistance: '📏 누적 이동거리', statLandings: '🦶 총 착지',
+      statBestCombo: '🔥 역대 최고 콤보', statFalls: '💥 추락 종료', statHpDeaths: '💔 체력 소진 종료',
+      unitTimes: '회', unitCombo: '연속',
+      titleLine1: '하늘에', titleLine2: '닿고 싶어',
+      challengeSubtitle: '⚔️ {name}님의 {h}m 에 도전!',
+      bestHeightLabel: '역대 최고 기록: {h}m',
+      instr1: '탭하면 점프, 공중에서 한번 더 탭하면', instr2: '반대쪽까지 이어서 점프해요', instr3: '너무 오래 머무르면 떨어지니 조심!',
+      startPrompt: '탭 / 스페이스바로 시작', selectCharacter: '◀ 캐릭터 선택 ▶',
+      gameOverFall: '떨어지고 말았어요!', gameOverHp: '게임 오버',
+      heightLabel: '높이: {h}m',
+      newRecord: '🏆 신기록! {h}m', bestHeight2: '역대 최고 기록: {h}m',
+      challengeWon: '⚔️ {name}님을 이겼어요! (+{diff}m)',
+      challengeLost: '⚔️ {name}님 기록에 {diff}m 부족해요',
+      bestComboLabel: '최고 콤보: {n}연속',
+      restartPrompt: '탭 / 스페이스바로 다시 시작',
+      pausedTitle: '일시정지', pausedHint: '탭하면 계속하기',
+      comboText: '🔥 콤보 x{mult} ({n})',
+      adBannerTitle: '광고 배너 영역', adBannerSize: '여기에 광고가 표시됩니다 (권장 320×50)',
+      adSlide1Title: '🎮 오늘의 추천 게임', adSlide1Size: '지금 다운로드하고 플레이해보세요',
+      adSlide2Title: '🛒 깜짝 특가 세일', adSlide2Size: '지금 확인하면 할인 받아요',
+      adSlide3Title: '🎬 신작 예고편 공개', adSlide3Size: '지금 바로 확인해보세요'
+    },
+    en: {
+      gameTitle: 'Touch the Sky',
+      muteAria: 'Mute', settingsAria: 'Settings', costumeAria: 'Costume', pauseAria: 'Pause',
+      leaderboardAria: 'Leaderboard', missionsAria: 'Challenges', skinPrevAria: 'Previous character', skinNextAria: 'Next character',
+      btnClose: 'Close', btnShareDefault: '🔗 Send Challenge', btnShareWin: '🎉 Share Your Win',
+      btnLbLocal: 'My Records', btnLbGlobal: 'Global Rank', btnLbStats: 'My Stats',
+      btnNicknameSet: 'Set Nickname', btnAdUnlock: '📺 Unlock Character',
+      btnMissionTab: 'Daily Missions', btnAchTab: 'Achievements', btnCostumePrev: '◀ Prev', btnCostumeNext: 'Next ▶',
+      vibLabels: ['Off','Light','Normal','Strong'], vibPrefix: '📳 Vibration: ', colorblindPrefix: '👁️ Colorblind Mode: ',
+      onLabel: 'On', offLabel: 'Off', nicknamePrefix: '✏️ ',
+      nicknamePromptNew: 'Enter a nickname to show on shares/leaderboards',
+      nicknamePromptChange: 'Enter your new nickname',
+      anonymous: 'Anonymous', friendDefault: 'Friend',
+      shareText: '{nick} scored {score}m in [Touch the Sky]! Can you beat me? 🐤',
+      shareTitle: 'Touch the Sky - Challenge',
+      sharePrompt: 'Copy the text below and send it to a friend',
+      shareCopiedToast: '🔗 Challenge link copied!',
+      toastHpUp: '💗 Max HP +1!',
+      toastHelmetUnlock: '🛡️ Steel Helmet appeared!',
+      toastAdUnlock: '📢 Ad Capsule appeared! HP+1',
+      toastLeafUnlock: '🍃 Swirling Leaf appeared!',
+      toastFriendUnlock: '🐧 A Friend appeared! Different bonus per color (+20/30/50m)!',
+      toastLightningUnlock: '⚡ Lightning appeared! Watch out, HP-2',
+      toastHpupUnlock: '💗 HP Boost Capsule appeared!',
+      toastBoulderUnlock: '🪨 Big Boulder appeared!',
+      toastStarUnlock: '⭐ Invincibility Star appeared! 3s invincible!',
+      toastSkinUnlock: '🎉 {name} unlocked!',
+      toastInviteBonusSkin: '🎁 Invite bonus! {name} unlocked!',
+      toastInviteBonus: '🎁 Invite bonus earned!',
+      toastReferralIn: '🎉 {names} played via your challenge! Reward earned',
+      toastMissionDone: '🎯 Mission complete! {icon} {desc}',
+      toastAchievement: '🏅 Achievement unlocked! {icon} {name}',
+      shoutInvincible: 'Invincible!',
+      shoutCombo: '🔥 {combo}x Combo!',
+      shoutChallengeOvertake: '⚔️ Passed {name}!',
+      shoutHighFive: 'High five! +{n}m',
+      dailyMissionsTitle: '🎯 Daily Missions', achievementsTitle: '🏅 Achievements',
+      missionsReset: 'New missions every midnight',
+      achEarnedOf: '{n} / {total} earned',
+      tapEmptyToClose: 'Tap empty space to close',
+      costumeTitle: '🎀 Costume', costumeUnlockedOf: '{n} / {total} unlocked',
+      costumeLocked: '🔒 {name} ({h}m)',
+      settingsTitle: '⚙️ Settings',
+      adWatching: '📺 Watching ad...',
+      adUnlockUntil: 'until {name} unlocks',
+      adPlaceholderNote: '(placeholder screen - not yet wired to a real ad network)',
+      lbGlobalTitle: '🌍 Global Rank', lbStatsTitle: '📊 My Stats', lbLocalTitle: '🏆 My Top {n}',
+      lbEmpty: 'No records yet', lbLoading: 'Loading...',
+      lbError: "Couldn't load rankings", lbErrorHint: 'Please check your internet connection',
+      lbGlobalEmpty: 'No records yet', lbMeSuffix: ' (me)',
+      statPlays: '🎮 Total Plays', statDistance: '📏 Total Distance', statLandings: '🦶 Total Landings',
+      statBestCombo: '🔥 Best Combo Ever', statFalls: '💥 Ended by Falling', statHpDeaths: '💔 Ended by HP Loss',
+      unitTimes: '', unitCombo: 'x',
+      titleLine1: 'Touch the', titleLine2: 'Sky',
+      challengeSubtitle: '⚔️ Challenging {name}\'s {h}m!',
+      bestHeightLabel: 'Best Height: {h}m',
+      instr1: 'Tap to jump. Tap again in mid-air', instr2: 'to leap to the other side', instr3: "Don't linger too long or you'll fall!",
+      startPrompt: 'Tap / Space to Start', selectCharacter: '◀ Select Character ▶',
+      gameOverFall: 'You fell!', gameOverHp: 'Game Over',
+      heightLabel: 'Height: {h}m',
+      newRecord: '🏆 New Record! {h}m', bestHeight2: 'Best Height: {h}m',
+      challengeWon: '⚔️ You beat {name}! (+{diff}m)',
+      challengeLost: "⚔️ {diff}m short of {name}'s record",
+      bestComboLabel: 'Best Combo: {n}x',
+      restartPrompt: 'Tap / Space to Restart',
+      pausedTitle: 'Paused', pausedHint: 'Tap to resume',
+      comboText: '🔥 Combo x{mult} ({n})',
+      adBannerTitle: 'Ad Banner Area', adBannerSize: 'Your ad could be here (recommended 320x50)',
+      adSlide1Title: "🎮 Today's Featured Game", adSlide1Size: 'Download and play now',
+      adSlide2Title: '🛒 Flash Sale', adSlide2Size: 'Check it out for a discount',
+      adSlide3Title: '🎬 New Trailer Released', adSlide3Size: 'Watch it now'
+    }
+  };
+  function t(key, vars){
+    const dict = I18N[lang] || I18N.ko;
+    let s = dict[key]!=null ? dict[key] : (I18N.ko[key]!=null ? I18N.ko[key] : key);
+    if(vars){ for(const k in vars){ s = s.split('{'+k+'}').join(String(vars[k])); } }
+    return s;
+  }
+  function setLang(l){
+    lang = (l==='en') ? 'en' : 'ko';
+    lsSet('lang', lang);
+    document.title = t('gameTitle');
+    applyAdSlideLang();
+    syncUiButtons();
+  }
+
   // ---------- accessibility settings ----------
-  const VIB_LABELS = ['끄기','약하게','보통','강하게'];
   let vibrationLevel = parseInt(lsGet('vibrationLevel','2'),10);
   if(isNaN(vibrationLevel) || vibrationLevel<0 || vibrationLevel>3) vibrationLevel = 2;
   let colorblindMode = lsGet('colorblindMode','0')==='1';
@@ -418,6 +587,16 @@
   // 실제 광고가 #adSlot에 삽입되면 CSS가 이 로테이터를 자동으로 숨기고,
   // 이 함수는 실제 광고에는 아무 영향도 주지 않습니다(광고 네트워크 정책 보호).
   let adSlideIndex = 0;
+  function applyAdSlideLang(){
+    const t0=document.getElementById('adTitle0'), s0=document.getElementById('adSize0');
+    const t1=document.getElementById('adTitle1'), s1=document.getElementById('adSize1');
+    const t2=document.getElementById('adTitle2'), s2=document.getElementById('adSize2');
+    const t3=document.getElementById('adTitle3'), s3=document.getElementById('adSize3');
+    if(t0) t0.textContent = t('adBannerTitle'); if(s0) s0.textContent = t('adBannerSize');
+    if(t1) t1.textContent = t('adSlide1Title'); if(s1) s1.textContent = t('adSlide1Size');
+    if(t2) t2.textContent = t('adSlide2Title'); if(s2) s2.textContent = t('adSlide2Size');
+    if(t3) t3.textContent = t('adSlide3Title'); if(s3) s3.textContent = t('adSlide3Size');
+  }
   function advanceAdBanner(){
     const slides = document.querySelectorAll('#adRotator .ad-slide');
     if(!slides.length) return;
@@ -831,13 +1010,14 @@
   function todayKey(){ return dateKeyFor(new Date()); }
   function simpleHash(str){ let h=0; for(let i=0;i<str.length;i++){ h=(h*31+str.charCodeAt(i))>>>0; } return h; }
   const MISSION_TEMPLATES = [
-    { id:'height300', icon:'📏', desc:'한 판에서 300m 넘기', target:300, key:'maxHeight' },
-    { id:'combo8',     icon:'🔥', desc:'8콤보 달성하기',      target:8,   key:'maxCombo' },
-    { id:'plays2',     icon:'🎮', desc:'2판 플레이하기',      target:2,   key:'plays' },
-    { id:'land15',     icon:'🦶', desc:'15번 착지하기',       target:15,  key:'landings' },
-    { id:'star1',      icon:'⭐', desc:'무적 별 1번 먹기',    target:1,   key:'starsUsed' },
-    { id:'friend1',    icon:'🐧', desc:'친구 1번 만나기',     target:1,   key:'friendsMet' }
+    { id:'height300', icon:'📏', desc:{ko:'한 판에서 300m 넘기',en:'Reach 300m in one run'}, target:300, key:'maxHeight' },
+    { id:'combo8',     icon:'🔥', desc:{ko:'8콤보 달성하기',en:'Reach an 8x combo'},      target:8,   key:'maxCombo' },
+    { id:'plays2',     icon:'🎮', desc:{ko:'2판 플레이하기',en:'Play 2 runs'},      target:2,   key:'plays' },
+    { id:'land15',     icon:'🦶', desc:{ko:'15번 착지하기',en:'Land 15 times'},       target:15,  key:'landings' },
+    { id:'star1',      icon:'⭐', desc:{ko:'무적 별 1번 먹기',en:'Grab 1 invincibility star'},    target:1,   key:'starsUsed' },
+    { id:'friend1',    icon:'🐧', desc:{ko:'친구 1번 만나기',en:'Meet a friend once'},     target:1,   key:'friendsMet' }
   ];
+  function missionDesc(m){ return m.desc[lang] || m.desc.ko; }
   function missionById(id){ return MISSION_TEMPLATES.find(function(m){ return m.id===id; }); }
   function pickDailyMissionIds(dateStr){
     let seed = simpleHash(dateStr);
@@ -872,7 +1052,7 @@
       if(missionDone(id) && !dailyMissions.completedShown[id]){
         dailyMissions.completedShown[id] = true;
         const m = missionById(id);
-        unlockToastText = '🎯 미션 완료! '+m.icon+' '+m.desc;
+        unlockToastText = t('toastMissionDone', { icon: m.icon, desc: missionDesc(m) });
         unlockToastUntil = performance.now()+2600;
         sfxMaxHpUp();
       }
@@ -893,18 +1073,20 @@
 
   // ---------- achievements ----------
   const ACHIEVEMENTS = [
-    { id:'first_flight', icon:'🐣', name:'첫 비행',      desc:'게임을 1번 플레이하기',        check:function(){ return lifeStats.plays>=1; } },
-    { id:'landing_100',  icon:'🦶', name:'착지왕',        desc:'누적 100번 착지하기',          check:function(){ return lifeStats.landings>=100; } },
-    { id:'combo_10',     icon:'🔥', name:'콤보 마스터',   desc:'10콤보 달성하기',              check:function(){ return lifeStats.bestCombo>=10; } },
-    { id:'orbit',        icon:'🌍', name:'우주 정복자',   desc:'지구 궤도(2000m)에 도달하기',   check:function(){ return sessionBest>=2000; } },
-    { id:'beyond',       icon:'🌌', name:'태양계 탈출',   desc:'태양계 밖(8500m)에 도달하기',   check:function(){ return sessionBest>=8500; } },
-    { id:'collector',    icon:'🎭', name:'수집가',        desc:'모든 캐릭터 해금하기',          check:function(){ return SKINS.every(function(_,i){ return isSkinUnlocked(i); }); } },
-    { id:'phoenix',      icon:'⭐', name:'불사조',        desc:'무적 별 누적 10번 먹기',        check:function(){ return lifeStats.starsUsedTotal>=10; } },
-    { id:'social',       icon:'🐧', name:'인싸',          desc:'친구 누적 10번 만나기',         check:function(){ return lifeStats.friendsMetTotal>=10; } },
-    { id:'marathon',     icon:'📏', name:'장수 비행',     desc:'누적 10000m 이동하기',          check:function(){ return lifeStats.distance>=10000; } },
-    { id:'veteran',      icon:'🎮', name:'포기란 없다',   desc:'누적 50판 플레이하기',          check:function(){ return lifeStats.plays>=50; } },
-    { id:'inviter',      icon:'📨', name:'초대왕',        desc:'친구 초대로 3명 플레이시키기',  check:function(){ return (lifeStats.invitesConverted||0)>=3; } }
+    { id:'first_flight', icon:'🐣', name:{ko:'첫 비행',en:'First Flight'},      desc:{ko:'게임을 1번 플레이하기',en:'Play 1 run'},        check:function(){ return lifeStats.plays>=1; } },
+    { id:'landing_100',  icon:'🦶', name:{ko:'착지왕',en:'Landing King'},        desc:{ko:'누적 100번 착지하기',en:'Land 100 times total'},          check:function(){ return lifeStats.landings>=100; } },
+    { id:'combo_10',     icon:'🔥', name:{ko:'콤보 마스터',en:'Combo Master'},   desc:{ko:'10콤보 달성하기',en:'Reach a 10x combo'},              check:function(){ return lifeStats.bestCombo>=10; } },
+    { id:'orbit',        icon:'🌍', name:{ko:'우주 정복자',en:'Space Conqueror'},   desc:{ko:'지구 궤도(2000m)에 도달하기',en:'Reach Earth orbit (2000m)'},   check:function(){ return sessionBest>=2000; } },
+    { id:'beyond',       icon:'🌌', name:{ko:'태양계 탈출',en:'Solar Escapee'},   desc:{ko:'태양계 밖(8500m)에 도달하기',en:'Reach beyond the solar system (8500m)'},   check:function(){ return sessionBest>=8500; } },
+    { id:'collector',    icon:'🎭', name:{ko:'수집가',en:'Collector'},        desc:{ko:'모든 캐릭터 해금하기',en:'Unlock every character'},          check:function(){ return SKINS.every(function(_,i){ return isSkinUnlocked(i); }); } },
+    { id:'phoenix',      icon:'⭐', name:{ko:'불사조',en:'Phoenix'},        desc:{ko:'무적 별 누적 10번 먹기',en:'Grab 10 invincibility stars total'},        check:function(){ return lifeStats.starsUsedTotal>=10; } },
+    { id:'social',       icon:'🐧', name:{ko:'인싸',en:'Social Butterfly'},          desc:{ko:'친구 누적 10번 만나기',en:'Meet friends 10 times total'},         check:function(){ return lifeStats.friendsMetTotal>=10; } },
+    { id:'marathon',     icon:'📏', name:{ko:'장수 비행',en:'Marathon Flyer'},     desc:{ko:'누적 10000m 이동하기',en:'Travel 10000m total'},          check:function(){ return lifeStats.distance>=10000; } },
+    { id:'veteran',      icon:'🎮', name:{ko:'포기란 없다',en:'Never Give Up'},   desc:{ko:'누적 50판 플레이하기',en:'Play 50 runs total'},          check:function(){ return lifeStats.plays>=50; } },
+    { id:'inviter',      icon:'📨', name:{ko:'초대왕',en:'Inviter King'},        desc:{ko:'친구 초대로 3명 플레이시키기',en:'Get 3 friends to play via invite'},  check:function(){ return (lifeStats.invitesConverted||0)>=3; } }
   ];
+  function achName(a){ return a.name[lang] || a.name.ko; }
+  function achDesc(a){ return a.desc[lang] || a.desc.ko; }
   let earnedAchievements = new Set(lsGetJSON('achievements', []));
   function checkAchievements(){
     let changed = false;
@@ -913,7 +1095,7 @@
       if(!earnedAchievements.has(a.id) && a.check()){
         earnedAchievements.add(a.id);
         changed = true;
-        unlockToastText = '🏅 업적 달성! '+a.icon+' '+a.name;
+        unlockToastText = t('toastAchievement', { icon: a.icon, name: achName(a) });
         unlockToastUntil = performance.now()+2600;
         sfxMaxHpUp();
       }
@@ -935,7 +1117,7 @@
   function submitGlobalScoreIfBest(score){
     if(score <= globalBestSubmitted) return;
     if(!window.__ttsCloud) return;
-    const nick = myNickname || '익명';
+    const nick = myNickname || t('anonymous');
     window.__ttsCloud.submitScore(clientId, nick, score).then(function(ok){
       if(ok){ globalBestSubmitted = score; lsSet('globalBestSubmitted', String(score)); }
     });
@@ -954,27 +1136,28 @@
 
   // ---------- unlockable character skins ----------
   const SKINS = [
-    { id:'classic', name:'하늘이 (클래식)', character:'bird', body:'#FFC947', wing:'#F2A93B', unlockHeight:0 },
-    { id:'pink',    name:'하늘이 (핑크)',   character:'bird', body:'#FF9EC4', wing:'#F26FA3', unlockHeight:30 },
-    { id:'sky',     name:'하늘이 (하늘)',   character:'bird', body:'#7FD8F2', wing:'#4FB3D9', unlockHeight:80 },
-    { id:'violet',  name:'하늘이 (보라)',   character:'bird', body:'#C9A3FF', wing:'#9B6FE0', unlockHeight:150 },
-    { id:'gold',    name:'하늘이 (골드)',   character:'bird', body:'#FFE066', wing:'#E0B93D', unlockHeight:300 },
-    { id:'ninja',   name:'닌자', character:'ninja', body:'#3A3F52', wing:'#2A2E3D', mask:'#232838', headband:'#D64545', unlockHeight:0 },
-    { id:'spider',  name:'스파이더맨', character:'spider', body:'#D63A2E', wing:'#1E3A8A', web:'#161616', unlockHeight:0 },
-    { id:'taekwon', name:'태권보이', character:'taekwon', body:'#F5D0A9', gi:'#F7F7F2', belt:'#1C1C1C', headband:'#D6393A', hair:'#241C14', unlockHeight:0 },
-    { id:'astronaut', name:'우주비행사', character:'astronaut', body:'#F0F2F5', wing:'#D8DDE6', visor:'#4FA8E8', unlockHeight:2000 },
-    { id:'robot',     name:'로봇',       character:'robot',     body:'#9AAAC0', wing:'#5E7189', visor:'#5CFFE0', unlockHeight:4000 },
-    { id:'dinosaur',  name:'공룡',       character:'dinosaur',  body:'#6FBE5A', wing:'#4E9440', belly:'#E8E0A8', unlockHeight:6000 }
+    { id:'classic', name:{ko:'하늘이 (클래식)',en:'Sky (Classic)'}, character:'bird', body:'#FFC947', wing:'#F2A93B', unlockHeight:0 },
+    { id:'pink',    name:{ko:'하늘이 (핑크)',en:'Sky (Pink)'},   character:'bird', body:'#FF9EC4', wing:'#F26FA3', unlockHeight:30 },
+    { id:'sky',     name:{ko:'하늘이 (하늘)',en:'Sky (Blue)'},   character:'bird', body:'#7FD8F2', wing:'#4FB3D9', unlockHeight:80 },
+    { id:'violet',  name:{ko:'하늘이 (보라)',en:'Sky (Violet)'},  character:'bird', body:'#C9A3FF', wing:'#9B6FE0', unlockHeight:150 },
+    { id:'gold',    name:{ko:'하늘이 (골드)',en:'Sky (Gold)'},   character:'bird', body:'#FFE066', wing:'#E0B93D', unlockHeight:300 },
+    { id:'ninja',   name:{ko:'닌자',en:'Ninja'}, character:'ninja', body:'#3A3F52', wing:'#2A2E3D', mask:'#232838', headband:'#D64545', unlockHeight:0 },
+    { id:'spider',  name:{ko:'스파이더맨',en:'Spider Hero'}, character:'spider', body:'#D63A2E', wing:'#1E3A8A', web:'#161616', unlockHeight:0 },
+    { id:'taekwon', name:{ko:'태권보이',en:'Taekwon Boy'}, character:'taekwon', body:'#F5D0A9', gi:'#F7F7F2', belt:'#1C1C1C', headband:'#D6393A', hair:'#241C14', unlockHeight:0 },
+    { id:'astronaut', name:{ko:'우주비행사',en:'Astronaut'}, character:'astronaut', body:'#F0F2F5', wing:'#D8DDE6', visor:'#4FA8E8', unlockHeight:2000 },
+    { id:'robot',     name:{ko:'로봇',en:'Robot'},       character:'robot',     body:'#9AAAC0', wing:'#5E7189', visor:'#5CFFE0', unlockHeight:4000 },
+    { id:'dinosaur',  name:{ko:'공룡',en:'Dinosaur'},  character:'dinosaur',  body:'#6FBE5A', wing:'#4E9440', belly:'#E8E0A8', unlockHeight:6000 }
   ];
+  function skinName(skin){ return skin.name[lang] || skin.name.ko; }
   // each character's ultimate flavor: shout text, voice line, flash color, sfx, and particle tint
   const ULTIMATE_FX = {
-    ninja:     { shout:'그림자 질주!!',   shoutColor:'#CFC6FF', voiceId:'ninjadash',  voiceText:'Ninja Dash!!',   flash:'#2A2A3A', sfx:function(){ sfxNinjaDash(); },   particle:['#3A3F52','#8F8FB0'] },
-    spider:    { shout:'웹 스윙!!',       shoutColor:'#DCE6FF', voiceId:'webswing',   voiceText:'Web Swing!!',    flash:'#1E3A8A', sfx:function(){ sfxWebSwing(); },    particle:['#D63A2E','#F5F5F5'] },
-    taekwon:   { shout:'회전 발차기!!',   shoutColor:'#BEE3FF', voiceId:'spinkick',   voiceText:'Spin Kick!!',    flash:'#78C8FF', sfx:function(){ sfxSpinKick(); },    particle:['#F5D0A9','#78C8FF'] },
-    astronaut: { shout:'제로 그래비티!!', shoutColor:'#BEE3FF', voiceId:'zerog',      voiceText:'Zero Gravity!!', flash:'#4FA8E8', sfx:function(){ sfxZeroG(); },       particle:['#F0F2F5','#4FA8E8'] },
-    robot:     { shout:'레이저 부스터!!', shoutColor:'#5CFFE0', voiceId:'laserboost', voiceText:'Laser Boost!!',  flash:'#5CFFE0', sfx:function(){ sfxLaserBoost(); },  particle:['#9AAAC0','#5CFFE0'] },
-    dinosaur:  { shout:'포효 브레이크!!', shoutColor:'#B9FF7A', voiceId:'roar',       voiceText:'Roar!!',         flash:'#6FBE5A', sfx:function(){ sfxRoar(); },        particle:['#6FBE5A','#E8E0A8'] },
-    bird:      { shout:'Fire Ball!!',     shoutColor:'#FFD93D', voiceId:'fireball',   voiceText:'Fire Ball!!',    flash:'#FFD93D', sfx:function(){ sfxFireball(); },    particle:['#FF9F45','#FFD93D'] }
+    ninja:     { shout:{ko:'그림자 질주!!',en:'Shadow Dash!!'},   shoutColor:'#CFC6FF', voiceId:'ninjadash',  voiceText:'Ninja Dash!!',   flash:'#2A2A3A', sfx:function(){ sfxNinjaDash(); },   particle:['#3A3F52','#8F8FB0'] },
+    spider:    { shout:{ko:'웹 스윙!!',en:'Web Swing!!'},       shoutColor:'#DCE6FF', voiceId:'webswing',   voiceText:'Web Swing!!',    flash:'#1E3A8A', sfx:function(){ sfxWebSwing(); },    particle:['#D63A2E','#F5F5F5'] },
+    taekwon:   { shout:{ko:'회전 발차기!!',en:'Spin Kick!!'},   shoutColor:'#BEE3FF', voiceId:'spinkick',   voiceText:'Spin Kick!!',    flash:'#78C8FF', sfx:function(){ sfxSpinKick(); },    particle:['#F5D0A9','#78C8FF'] },
+    astronaut: { shout:{ko:'제로 그래비티!!',en:'Zero Gravity!!'}, shoutColor:'#BEE3FF', voiceId:'zerog',      voiceText:'Zero Gravity!!', flash:'#4FA8E8', sfx:function(){ sfxZeroG(); },       particle:['#F0F2F5','#4FA8E8'] },
+    robot:     { shout:{ko:'레이저 부스터!!',en:'Laser Boost!!'}, shoutColor:'#5CFFE0', voiceId:'laserboost', voiceText:'Laser Boost!!',  flash:'#5CFFE0', sfx:function(){ sfxLaserBoost(); },  particle:['#9AAAC0','#5CFFE0'] },
+    dinosaur:  { shout:{ko:'포효 브레이크!!',en:'Roar Break!!'}, shoutColor:'#B9FF7A', voiceId:'roar',       voiceText:'Roar!!',         flash:'#6FBE5A', sfx:function(){ sfxRoar(); },        particle:['#6FBE5A','#E8E0A8'] },
+    bird:      { shout:{ko:'Fire Ball!!',en:'Fire Ball!!'},     shoutColor:'#FFD93D', voiceId:'fireball',   voiceText:'Fire Ball!!',    flash:'#FFD93D', sfx:function(){ sfxFireball(); },    particle:['#FF9F45','#FFD93D'] }
   };
   function currentUltimateFx(){ return ULTIMATE_FX[currentSkin().character] || ULTIMATE_FX.bird; }
   // characters unlock either by reaching a height milestone, OR by watching a rewarded ad
@@ -1018,7 +1201,7 @@
     lsSet('adUnlockedSkins', JSON.stringify(Array.from(adUnlockedSkins)));
     adUnlockActive = false;
     selectedSkinIndex = idx; lsSet('skinIndex', String(idx));
-    unlockToastText = '🎉 '+SKINS[idx].name+' 해금!'; unlockToastUntil = performance.now()+2400;
+    unlockToastText = t('toastSkinUnlock', { name: skinName(SKINS[idx]) }); unlockToastUntil = performance.now()+2400;
     sfxMaxHpUp();
     advanceAdBanner();
     checkAchievements();
@@ -1029,15 +1212,16 @@
   // drawn as a small overlay near the head by drawCostume(), called from every
   // character draw function right after drawZoneOutfit()/drawHelmetOnHead()
   const COSTUMES = [
-    { id:'none',     name:'없음',            emoji:null, unlockHeight:0 },
-    { id:'flag_kr',  name:'태극기 머리핀',   emoji:'🇰🇷', unlockHeight:0 },
-    { id:'party',    name:'파티 모자',       emoji:'🎉', unlockHeight:200 },
-    { id:'flag_us',  name:'성조기 머리핀',   emoji:'🇺🇸', unlockHeight:500 },
-    { id:'flag_jp',  name:'일장기 머리핀',   emoji:'🇯🇵', unlockHeight:1500 },
-    { id:'flag_fr',  name:'삼색기 머리핀',   emoji:'🇫🇷', unlockHeight:3000 },
-    { id:'flag_br',  name:'브라질기 머리핀', emoji:'🇧🇷', unlockHeight:5000 },
-    { id:'crown',    name:'왕관',            emoji:'👑', unlockHeight:8000 }
+    { id:'none',     name:{ko:'없음',en:'None'},            emoji:null, unlockHeight:0 },
+    { id:'flag_kr',  name:{ko:'태극기 머리핀',en:'Korea Flag Pin'},   emoji:'🇰🇷', unlockHeight:0 },
+    { id:'party',    name:{ko:'파티 모자',en:'Party Hat'},       emoji:'🎉', unlockHeight:200 },
+    { id:'flag_us',  name:{ko:'성조기 머리핀',en:'USA Flag Pin'},   emoji:'🇺🇸', unlockHeight:500 },
+    { id:'flag_jp',  name:{ko:'일장기 머리핀',en:'Japan Flag Pin'},   emoji:'🇯🇵', unlockHeight:1500 },
+    { id:'flag_fr',  name:{ko:'삼색기 머리핀',en:'France Flag Pin'},   emoji:'🇫🇷', unlockHeight:3000 },
+    { id:'flag_br',  name:{ko:'브라질기 머리핀',en:'Brazil Flag Pin'}, emoji:'🇧🇷', unlockHeight:5000 },
+    { id:'crown',    name:{ko:'왕관',en:'Crown'},            emoji:'👑', unlockHeight:8000 }
   ];
+  function costumeName(c){ return c.name[lang] || c.name.ko; }
   function isCostumeUnlocked(i){ return sessionBest >= COSTUMES[i].unlockHeight; }
   let selectedCostumeIndex = parseInt(lsGet('costumeIndex','0'),10)||0;
   if(selectedCostumeIndex<0 || selectedCostumeIndex>=COSTUMES.length || !isCostumeUnlocked(selectedCostumeIndex)) selectedCostumeIndex = 0;
@@ -1068,7 +1252,7 @@
   let challengeTarget = urlParams.has('c') ? parseFloat(urlParams.get('c')) : null;
   if(challengeTarget==null || isNaN(challengeTarget) || challengeTarget<0) challengeTarget = null;
   let challengeFrom = urlParams.has('n') ? String(urlParams.get('n')).slice(0,16) : null;
-  if(challengeTarget!=null && !challengeFrom) challengeFrom = '친구';
+  if(challengeTarget!=null && !challengeFrom) challengeFrom = t('friendDefault');
   let challengeFromClientId = urlParams.has('r') ? String(urlParams.get('r')).slice(0,64) : null;
   let challengeBeatenShoutShown = false; // avoid re-firing the "beat it!" shout mid-run
 
@@ -1078,20 +1262,20 @@
     // player gets asked again next time instead of being stuck anonymous
     if(!myNickname){
       let input = null;
-      try{ input = prompt('공유/랭킹에 표시할 닉네임을 입력해주세요', ''); }catch(e){}
+      try{ input = prompt(t('nicknamePromptNew'), ''); }catch(e){}
       const trimmed = (input||'').trim().slice(0,12);
       if(trimmed){ myNickname = trimmed; lsSet('nickname', myNickname); }
     }
     syncUiButtons();
-    return myNickname || '익명';
+    return myNickname || t('anonymous');
   }
 
   function changeNickname(){
     let input = null;
-    try{ input = prompt('새 닉네임을 입력해주세요', myNickname||''); }catch(e){}
+    try{ input = prompt(t('nicknamePromptChange'), myNickname||''); }catch(e){}
     if(input==null) return; // cancelled - keep the current nickname as-is
     const trimmed = input.trim().slice(0,12);
-    myNickname = trimmed || '익명';
+    myNickname = trimmed || t('anonymous');
     lsSet('nickname', myNickname);
     syncUiButtons();
     // already have a global score submitted under the old name - move it to the new one
@@ -1105,7 +1289,7 @@
     const url = new URL(location.href);
     url.hash = '';
     url.searchParams.set('c', Math.floor(score));
-    url.searchParams.set('n', myNickname||'익명');
+    url.searchParams.set('n', myNickname||t('anonymous'));
     url.searchParams.set('r', clientId);
     return url.toString();
   }
@@ -1115,19 +1299,19 @@
     const nick = ensureNickname();
     const roundedScore = Math.floor(score);
     const url = buildChallengeUrl(score);
-    const text = nick+'님이 [하늘에 닿고 싶어]에서 '+roundedScore+'m를 기록했어요! 나를 이길 수 있을까요? 🐤';
+    const text = t('shareText', { nick: nick, score: roundedScore });
     if(navigator.share){
       try{
-        await navigator.share({ title:'하늘에 닿고 싶어 - 도전장', text, url });
+        await navigator.share({ title:t('shareTitle'), text, url });
         return;
       }catch(e){ /* user cancelled the native share sheet, or it's unsupported here - fall through */ }
     }
     try{
       await navigator.clipboard.writeText(text+'\n'+url);
-      unlockToastText = '🔗 도전 링크가 복사됐어요!'; unlockToastUntil = performance.now()+2200;
+      unlockToastText = t('shareCopiedToast'); unlockToastUntil = performance.now()+2200;
       sfxUnlock();
     }catch(e){
-      try{ prompt('아래 내용을 복사해서 친구에게 보내주세요', text+'\n'+url); }catch(e2){}
+      try{ prompt(t('sharePrompt'), text+'\n'+url); }catch(e2){}
     }
   }
 
@@ -1140,15 +1324,15 @@
     if(lsGet('referralCredited','0')==='1') return;
     lsSet('referralCredited','1'); // set immediately to avoid double-crediting on repeat runs
     if(window.__ttsCloud){
-      window.__ttsCloud.recordReferral(challengeFromClientId, clientId, myNickname||'익명');
+      window.__ttsCloud.recordReferral(challengeFromClientId, clientId, myNickname||t('anonymous'));
     }
     const idx = nextLockedSkinIndex();
     if(idx>=0){
       adUnlockedSkins.add(idx);
       lsSet('adUnlockedSkins', JSON.stringify(Array.from(adUnlockedSkins)));
-      unlockToastText = '🎁 초대 보너스! '+SKINS[idx].name+' 해금!'; unlockToastUntil = performance.now()+2800;
+      unlockToastText = t('toastInviteBonusSkin', { name: skinName(SKINS[idx]) }); unlockToastUntil = performance.now()+2800;
     } else {
-      unlockToastText = '🎁 초대 보너스 획득!'; unlockToastUntil = performance.now()+2400;
+      unlockToastText = t('toastInviteBonus'); unlockToastUntil = performance.now()+2400;
     }
     sfxMaxHpUp();
     checkAchievements();
@@ -1175,7 +1359,7 @@
       }
       if(grantedAny) lsSet('adUnlockedSkins', JSON.stringify(Array.from(adUnlockedSkins)));
       const names = fresh.map(function(r){ return r.fromNickname; }).slice(0,3).join(', ');
-      unlockToastText = '🎉 '+names+'님이 도전장으로 플레이했어요! 보상 획득';
+      unlockToastText = t('toastReferralIn', { names: names });
       unlockToastUntil = performance.now()+3000;
       sfxMaxHpUp();
       checkAchievements();
@@ -1340,16 +1524,25 @@
 
   // ---------- UI button visibility ----------
   function syncUiButtons(){
+    btnMute.setAttribute('aria-label', t('muteAria'));
+    btnPause.setAttribute('aria-label', t('pauseAria'));
     btnPause.style.display = (state==='playing' && !showLeaderboard) ? 'flex' : 'none';
     btnPause.textContent = paused ? '▶' : '⏸';
+    btnLeaderboard.setAttribute('aria-label', t('leaderboardAria'));
     btnLeaderboard.style.display = ((state==='start' || state==='gameover') && !showLeaderboard) ? 'flex' : 'none';
     const skinPickerVisible = (state==='start' || state==='gameover') && !showLeaderboard && !adUnlockActive;
+    btnSkinPrev.setAttribute('aria-label', t('skinPrevAria'));
+    btnSkinNext.setAttribute('aria-label', t('skinNextAria'));
     btnSkinPrev.style.display = skinPickerVisible ? 'flex' : 'none';
     btnSkinNext.style.display = skinPickerVisible ? 'flex' : 'none';
+    btnLbClose.textContent = t('btnClose');
     btnLbClose.style.display = showLeaderboard ? 'flex' : 'none';
     btnShare.style.display = ((state==='start' || state==='gameover') && !showLeaderboard) ? 'flex' : 'none';
     btnShare.textContent = (state==='gameover' && challengeTarget!=null && height>challengeTarget)
-      ? '🎉 승리 자랑하기' : '🔗 도전장 보내기';
+      ? t('btnShareWin') : t('btnShareDefault');
+    btnLbLocal.textContent = t('btnLbLocal');
+    btnLbGlobal.textContent = t('btnLbGlobal');
+    btnLbStats.textContent = t('btnLbStats');
     btnLbLocal.style.display = showLeaderboard ? 'flex' : 'none';
     btnLbGlobal.style.display = showLeaderboard ? 'flex' : 'none';
     btnLbStats.style.display = showLeaderboard ? 'flex' : 'none';
@@ -1357,21 +1550,30 @@
     btnLbGlobal.classList.toggle('lbTabActive', leaderboardTab==='global');
     btnLbStats.classList.toggle('lbTabActive', leaderboardTab==='stats');
     btnNickname.style.display = showLeaderboard ? 'flex' : 'none';
-    btnNickname.textContent = '✏️ ' + (myNickname || '닉네임 설정');
+    btnNickname.textContent = t('nicknamePrefix') + (myNickname || t('btnNicknameSet'));
+    btnAdUnlock.textContent = t('btnAdUnlock');
     btnAdUnlock.style.display = (skinPickerVisible && nextLockedSkinIndex()>=0) ? 'flex' : 'none';
+    btnSettings.setAttribute('aria-label', t('settingsAria'));
     btnSettings.style.display = (!showLeaderboard && !adUnlockActive && !showMissions && !showCostume) ? 'flex' : 'none';
     btnVibCycle.style.display = showSettings ? 'flex' : 'none';
-    btnVibCycle.textContent = '📳 진동: ' + VIB_LABELS[vibrationLevel];
+    btnVibCycle.textContent = t('vibPrefix') + t('vibLabels')[vibrationLevel];
     btnColorblind.style.display = showSettings ? 'flex' : 'none';
-    btnColorblind.textContent = '👁️ 색약 모드: ' + (colorblindMode ? '켜짐' : '꺼짐');
+    btnColorblind.textContent = t('colorblindPrefix') + (colorblindMode ? t('onLabel') : t('offLabel'));
+    btnMissions.setAttribute('aria-label', t('missionsAria'));
     btnMissions.style.display = (!showLeaderboard && !adUnlockActive && !showSettings && !showCostume) ? 'flex' : 'none';
+    btnMissionTab.textContent = t('btnMissionTab');
+    btnAchTab.textContent = t('btnAchTab');
     btnMissionTab.style.display = showMissions ? 'flex' : 'none';
     btnAchTab.style.display = showMissions ? 'flex' : 'none';
     btnMissionTab.classList.toggle('lbTabActive', missionsTab==='missions');
     btnAchTab.classList.toggle('lbTabActive', missionsTab==='achievements');
+    btnCostume.setAttribute('aria-label', t('costumeAria'));
     btnCostume.style.display = (!showLeaderboard && !adUnlockActive && !showSettings && !showMissions) ? 'flex' : 'none';
+    btnCostumePrev.textContent = t('btnCostumePrev');
+    btnCostumeNext.textContent = t('btnCostumeNext');
     btnCostumePrev.style.display = showCostume ? 'flex' : 'none';
     btnCostumeNext.style.display = showCostume ? 'flex' : 'none';
+    btnLang.textContent = lang==='ko' ? '🇺🇸 EN' : '🇰🇷 한글';
   }
 
   function enterFreefall(fromX, fromY){
@@ -1408,7 +1610,7 @@
     fireballStartHeight = height;
     fireballDuration = 4200;
     const fx = currentUltimateFx();
-    triggerShout(fx.shout, fx.shoutColor, 1000);
+    triggerShout(fx.shout[lang]||fx.shout.ko, fx.shoutColor, 1000);
     playVoiceLine(fx.voiceId, fx.voiceText, 1.1, 0.9);
     triggerFlash(fx.flash, 320);
     fx.sfx();
@@ -1588,7 +1790,7 @@
     hp = Math.min(hpMax, hp+1);
     spawnParticles(o.x,o.y,'#FF8FA8',12,[60,180],0.55);
     sfxMaxHpUp();
-    unlockToastText = '💗 최대 HP +1!'; unlockToastUntil = performance.now()+1600;
+    unlockToastText = t('toastHpUp'); unlockToastUntil = performance.now()+1600;
   }
 
   const STAR_INVINCIBLE_MS = 3000;
@@ -1596,7 +1798,7 @@
     invincibleUntil = Math.max(invincibleUntil, performance.now()+STAR_INVINCIBLE_MS);
     spawnParticles(o.x,o.y,'#FFD93D',14,[70,220],0.6);
     triggerFlash('#FFF3B0', 260);
-    triggerShout('무적!', '#FFD93D', 1400);
+    triggerShout(t('shoutInvincible'), '#FFD93D', 1400);
     sfxStarPower();
     vibrate([20,20,20]);
     lifeStats.starsUsedTotal++; saveLifeStats();
@@ -1629,13 +1831,13 @@
     spawnParticles(charX, restY+charRadius*0.6, '#C9A876', 6, [30,90], 0.4);
     sfxLand();
     if(combo>=5 && combo%5===0){
-      triggerShout('🔥 '+combo+'연속 콤보!', '#FF9F1C', 800);
+      triggerShout(t('shoutCombo', { combo: combo }), '#FF9F1C', 800);
       sfxCombo();
       vibrate([25,30,25,30,60]);
     }
     if(challengeTarget!=null && !challengeBeatenShoutShown && height > challengeTarget){
       challengeBeatenShoutShown = true;
-      triggerShout('⚔️ '+challengeFrom+' 추월!', '#7CFFB2', 1100);
+      triggerShout(t('shoutChallengeOvertake', { name: challengeFrom }), '#7CFFB2', 1100);
       sfxMaxHpUp();
       vibrate([30,40,30,40,100]);
     }
@@ -1644,42 +1846,42 @@
     }
     if(landings === 3 && !obstacleUnlocked.helmet){
       obstacleUnlocked.helmet = true;
-      unlockToastText = '🛡️ 강철투구 등장!'; unlockToastUntil = performance.now()+2400;
+      unlockToastText = t('toastHelmetUnlock'); unlockToastUntil = performance.now()+2400;
       sfxUnlock();
     }
     if(landings === 5 && !obstacleUnlocked.ad){
       obstacleUnlocked.ad = true;
-      unlockToastText = '📢 광고 캡슐 등장! HP+1'; unlockToastUntil = performance.now()+2400;
+      unlockToastText = t('toastAdUnlock'); unlockToastUntil = performance.now()+2400;
       sfxUnlock();
     }
     if(landings === 8 && !obstacleUnlocked.leaf){
       obstacleUnlocked.leaf = true;
-      unlockToastText = '🍃 회오리 낙엽 등장!'; unlockToastUntil = performance.now()+2200;
+      unlockToastText = t('toastLeafUnlock'); unlockToastUntil = performance.now()+2200;
       sfxUnlock();
     }
     if(landings === 10 && !obstacleUnlocked.friend){
       obstacleUnlocked.friend = true;
-      unlockToastText = '🐧 친구 등장! 색깔마다 다른 보너스(+20/30/50m)!'; unlockToastUntil = performance.now()+2600;
+      unlockToastText = t('toastFriendUnlock'); unlockToastUntil = performance.now()+2600;
       sfxUnlock();
     }
     if(landings === 12 && !obstacleUnlocked.lightning){
       obstacleUnlocked.lightning = true;
-      unlockToastText = '⚡ 번개 등장! HP-2 주의'; unlockToastUntil = performance.now()+2400;
+      unlockToastText = t('toastLightningUnlock'); unlockToastUntil = performance.now()+2400;
       sfxUnlock();
     }
     if(landings === 15 && !obstacleUnlocked.hpup){
       obstacleUnlocked.hpup = true;
-      unlockToastText = '💗 HP 강화 캡슐 등장!'; unlockToastUntil = performance.now()+2400;
+      unlockToastText = t('toastHpupUnlock'); unlockToastUntil = performance.now()+2400;
       sfxUnlock();
     }
     if(landings === 18 && !obstacleUnlocked.boulder){
       obstacleUnlocked.boulder = true;
-      unlockToastText = '🪨 큰 돌덩이 등장!'; unlockToastUntil = performance.now()+2200;
+      unlockToastText = t('toastBoulderUnlock'); unlockToastUntil = performance.now()+2200;
       sfxUnlock();
     }
     if(landings === 22 && !obstacleUnlocked.star){
       obstacleUnlocked.star = true;
-      unlockToastText = '⭐ 무적 별 등장! 3초간 무적!'; unlockToastUntil = performance.now()+2400;
+      unlockToastText = t('toastStarUnlock'); unlockToastUntil = performance.now()+2400;
       sfxUnlock();
     }
   }
@@ -1807,7 +2009,7 @@
         if(t>=1){
           spawnParticles(charX, charY, '#FFD93D', 12, [60,180], 0.5);
           const fv0 = FRIEND_VARIANTS[friendVariant];
-          triggerShout('짝! +'+fv0.ascend+'m', fv0.wing, 700);
+          triggerShout(t('shoutHighFive', { n: fv0.ascend }), fv0.wing, 700);
           playVoiceLine('friend'+friendVariant, fv0.line, 1.0, 1.05 + friendVariant*0.08);
           sfxFriendGreet();
           charState = 'friend_ascend';
@@ -1958,27 +2160,27 @@
     { key:'spring',  label:'봄',      len:500,  skyTop:'#8FD8FF', skyBot:'#EAFBE6', pillarA:'#FFC3E0', pillarB:'#FF95C2', railTint:'#FFEAF4', cloudColor:'rgba(255,255,255,0.85)', texture:'blocks',
       decor:{ type:'sun', color:'#FFE9A8', size:0.1 } },
     { key:'summer',  label:'여름',    len:500,  skyTop:'#2FA8F0', skyBot:'#BFEFFF', pillarA:'#9BE8CF', pillarB:'#5FCBAE', railTint:'#EAFFFA', cloudColor:'rgba(255,255,255,0.85)', texture:'diagonal',
-      decor:{ type:'sun', color:'#FFF3B0', size:0.11 }, enterMsg:'☀️ 여름 하늘로!' },
+      decor:{ type:'sun', color:'#FFF3B0', size:0.11 }, enterMsg:{ko:'☀️ 여름 하늘로!',en:'☀️ Into summer skies!'} },
     { key:'autumn',  label:'가을',    len:500,  skyTop:'#F2A65A', skyBot:'#FFDFAE', pillarA:'#E0894A', pillarB:'#B85F2C', railTint:'#FFE9CC', cloudColor:'rgba(255,244,224,0.85)', texture:'crystal',
-      decor:{ type:'sun', color:'#FFCB7A', size:0.1 }, enterMsg:'🍂 가을 하늘로!' },
+      decor:{ type:'sun', color:'#FFCB7A', size:0.1 }, enterMsg:{ko:'🍂 가을 하늘로!',en:'🍂 Into autumn skies!'} },
     { key:'winter',  label:'겨울',    len:500,  skyTop:'#5C87BE', skyBot:'#EAF4FC', pillarA:'#E4F3FC', pillarB:'#AFCFEE', railTint:'#FFFFFF',  cloudColor:'rgba(255,255,255,0.92)', texture:'streak',
-      decor:{ type:'sun', color:'#EAF6FF', size:0.09 }, enterMsg:'❄️ 겨울 하늘로!' },
+      decor:{ type:'sun', color:'#EAF6FF', size:0.09 }, enterMsg:{ko:'❄️ 겨울 하늘로!',en:'❄️ Into winter skies!'} },
     { key:'orbit',   label:'지구 궤도', len:500, skyTop:'#05061E', skyBot:'#241B45', pillarA:'#7A69B8', pillarB:'#463A73', railTint:'#CFC6FF', cloudColor:'rgba(190,180,255,0.35)', texture:'panel',
-      decor:{ type:'earth', color:'#4E9BE0', accent:'rgba(120,205,120,0.9)', size:0.13 }, enterMsg:'🌍 대기권 돌파! 지구 궤도 진입' },
+      decor:{ type:'earth', color:'#4E9BE0', accent:'rgba(120,205,120,0.9)', size:0.13 }, enterMsg:{ko:'🌍 대기권 돌파! 지구 궤도 진입',en:'🌍 Atmosphere breached! Entering Earth orbit'} },
     { key:'moon',    label:'달',      len:1000, skyTop:'#08080F', skyBot:'#20212E', pillarA:'#C9C9CE', pillarB:'#8E8E96', railTint:'#F0F0F5', cloudColor:'rgba(200,200,205,0.18)', texture:'crater',
-      decor:{ type:'moon', color:'#D8D8DE', accent:'rgba(160,160,170,0.6)', size:0.14 }, enterMsg:'🌕 달에 도착!' },
+      decor:{ type:'moon', color:'#D8D8DE', accent:'rgba(160,160,170,0.6)', size:0.14 }, enterMsg:{ko:'🌕 달에 도착!',en:'🌕 Arrived at the Moon!'} },
     { key:'mars',    label:'화성',    len:1000, skyTop:'#33120A', skyBot:'#8A3B1E', pillarA:'#C1440E', pillarB:'#8B2E0A', railTint:'#FFD9C2', cloudColor:'rgba(230,140,90,0.28)', texture:'crack',
-      decor:{ type:'planet', color:'#C1440E', size:0.13 }, enterMsg:'🔴 화성 진입!' },
+      decor:{ type:'planet', color:'#C1440E', size:0.13 }, enterMsg:{ko:'🔴 화성 진입!',en:'🔴 Entering Mars!'} },
     { key:'jupiter', label:'목성',    len:1000, skyTop:'#241708', skyBot:'#6B4A28', pillarA:'#D8A25E', pillarB:'#A9743A', railTint:'#FFE9C7', cloudColor:'rgba(216,162,94,0.3)', texture:'bands',
-      decor:{ type:'bands', color:'#D8A25E', bands:['#B5793D','#F2D9A8'], size:0.15 }, enterMsg:'🟠 목성 진입!' },
+      decor:{ type:'bands', color:'#D8A25E', bands:['#B5793D','#F2D9A8'], size:0.15 }, enterMsg:{ko:'🟠 목성 진입!',en:'🟠 Entering Jupiter!'} },
     { key:'saturn',  label:'토성',    len:1000, skyTop:'#221C09', skyBot:'#5C4A26', pillarA:'#E9D9A8', pillarB:'#B99B5E', railTint:'#FFF6DD', cloudColor:'rgba(233,217,168,0.3)', texture:'grain',
-      decor:{ type:'ring', color:'#E9D9A8', ringColor:'rgba(220,200,150,0.75)', size:0.12 }, enterMsg:'🪐 토성 진입!' },
+      decor:{ type:'ring', color:'#E9D9A8', ringColor:'rgba(220,200,150,0.75)', size:0.12 }, enterMsg:{ko:'🪐 토성 진입!',en:'🪐 Entering Saturn!'} },
     { key:'uranus',  label:'천왕성',  len:1000, skyTop:'#07211F', skyBot:'#1E4A46', pillarA:'#8FD8E0', pillarB:'#4FA8B0', railTint:'#E3FBFC', cloudColor:'rgba(143,216,224,0.3)', texture:'crystal',
-      decor:{ type:'planet', color:'#8FD8E0', size:0.13 }, enterMsg:'🔵 천왕성 진입!' },
+      decor:{ type:'planet', color:'#8FD8E0', size:0.13 }, enterMsg:{ko:'🔵 천왕성 진입!',en:'🔵 Entering Uranus!'} },
     { key:'neptune', label:'해왕성',  len:1000, skyTop:'#050A28', skyBot:'#16266B', pillarA:'#4166F5', pillarB:'#2B44A8', railTint:'#DCE4FF', cloudColor:'rgba(65,102,245,0.32)', texture:'streak',
-      decor:{ type:'planet', color:'#4166F5', size:0.13 }, enterMsg:'🔷 해왕성 진입!' },
+      decor:{ type:'planet', color:'#4166F5', size:0.13 }, enterMsg:{ko:'🔷 해왕성 진입!',en:'🔷 Entering Neptune!'} },
     { key:'beyond',  label:'태양계 밖', len:1000, skyTop:'#000004', skyBot:'#0A0018', pillarA:'#3A2A5C', pillarB:'#1F1638', railTint:'#B8A8E8', cloudColor:'rgba(160,100,220,0.35)', texture:'energy',
-      decor:null, enterMsg:'🌌 태양계를 벗어났어요!' }
+      decor:null, enterMsg:{ko:'🌌 태양계를 벗어났어요!',en:'🌌 You left the solar system!'} }
   ];
   const ZONE_TRANS = 70; // meters of crossfade blended into the next zone near each boundary
   const ZONE_BOUNDS = (function(){
@@ -2009,7 +2211,7 @@
       lastAnnouncedZoneIdx = zi;
       const z = ZONES[zi];
       if(z.enterMsg){
-        unlockToastText = z.enterMsg; unlockToastUntil = performance.now()+2400;
+        unlockToastText = z.enterMsg[lang]||z.enterMsg.ko; unlockToastUntil = performance.now()+2400;
         sfxUnlock();
       }
     }
@@ -3827,7 +4029,7 @@
 
     // combo indicator (shown while a streak of 2+ clean landings is active)
     if(combo >= 2){
-      const comboText = '🔥 콤보 x'+comboMultiplier.toFixed(1)+' ('+combo+')';
+      const comboText = t('comboText', { mult: comboMultiplier.toFixed(1), n: combo });
       ctx.font = `${Math.round(W*0.038)}px 'Jua', sans-serif`;
       const comboW = ctx.measureText(comboText).width;
       const by = 38 + hs*1.7;
@@ -3873,59 +4075,59 @@
       ctx.textAlign='center';
       ctx.fillStyle = 'rgba(0,0,0,0.4)';
       ctx.font = `${Math.round(W*0.11)}px 'Jua', sans-serif`;
-      ctx.fillText('하늘에', W/2+2, H*0.33+2);
-      ctx.fillText('닿고 싶어', W/2+2, H*0.33+Math.round(W*0.13)+2);
+      ctx.fillText(t('titleLine1'), W/2+2, H*0.33+2);
+      ctx.fillText(t('titleLine2'), W/2+2, H*0.33+Math.round(W*0.13)+2);
       ctx.fillStyle = '#FFFFFF';
-      ctx.fillText('하늘에', W/2, H*0.33);
-      ctx.fillText('닿고 싶어', W/2, H*0.33+Math.round(W*0.13));
+      ctx.fillText(t('titleLine1'), W/2, H*0.33);
+      ctx.fillText(t('titleLine2'), W/2, H*0.33+Math.round(W*0.13));
 
       ctx.font = `${Math.round(W*0.032)}px 'Jua', sans-serif`;
       if(challengeTarget!=null){
         ctx.fillStyle = '#FF6B81';
-        ctx.fillText('⚔️ '+challengeFrom+'님의 '+Math.floor(challengeTarget)+'m 에 도전!', W/2, H*0.435);
+        ctx.fillText(t('challengeSubtitle', { name: challengeFrom, h: Math.floor(challengeTarget) }), W/2, H*0.435);
       } else {
         ctx.fillStyle = '#FFD93D';
-        ctx.fillText('역대 최고 기록: '+Math.floor(sessionBest)+'m', W/2, H*0.435);
+        ctx.fillText(t('bestHeightLabel', { h: Math.floor(sessionBest) }), W/2, H*0.435);
       }
 
       ctx.font = `${Math.round(W*0.038)}px 'Jua', sans-serif`;
       ctx.fillStyle = 'rgba(255,255,255,0.9)';
       const lh = Math.round(W*0.052);
-      ctx.fillText('탭하면 점프, 공중에서 한번 더 탭하면', W/2, H*0.485);
-      ctx.fillText('반대쪽까지 이어서 점프해요', W/2, H*0.485+lh);
-      ctx.fillText('너무 오래 머무르면 떨어지니 조심!', W/2, H*0.485+lh*2);
+      ctx.fillText(t('instr1'), W/2, H*0.485);
+      ctx.fillText(t('instr2'), W/2, H*0.485+lh);
+      ctx.fillText(t('instr3'), W/2, H*0.485+lh*2);
 
       const bob = Math.sin(now/350)*6;
       ctx.font = `${Math.round(W*0.055)}px 'Jua', sans-serif`;
       ctx.fillStyle = '#FFD93D';
-      ctx.fillText('탭 / 스페이스바로 시작', W/2, H*0.78+bob);
+      ctx.fillText(t('startPrompt'), W/2, H*0.78+bob);
 
       // label above the character preview so the side arrows read as a character picker,
       // not just generic navigation
       ctx.font = `${Math.round(W*0.04)}px 'Jua', sans-serif`;
       ctx.fillStyle = '#FFD93D';
-      ctx.fillText('◀ 캐릭터 선택 ▶', W/2, H*0.615);
+      ctx.fillText(t('selectCharacter'), W/2, H*0.615);
 
       drawCharacter(W/2, H*0.655, 1, 0, now);
 
       const unlockedCount = SKINS.reduce((n,_,i)=>n+(isSkinUnlocked(i)?1:0),0);
       ctx.font = `${Math.round(W*0.034)}px 'Jua', sans-serif`;
       ctx.fillStyle = 'rgba(255,255,255,0.9)';
-      ctx.fillText(currentSkin().name+' ('+unlockedCount+'/'+SKINS.length+')', W/2, H*0.72);
+      ctx.fillText(skinName(currentSkin())+' ('+unlockedCount+'/'+SKINS.length+')', W/2, H*0.72);
     } else if(state==='gameover'){
       ctx.fillStyle = 'rgba(5,8,25,0.6)';
       ctx.fillRect(0,0,W,H);
       ctx.textAlign='center';
       ctx.fillStyle = '#FF5C7A';
       ctx.font = `${Math.round(W*0.09)}px 'Jua', sans-serif`;
-      ctx.fillText(gameOverReason==='fall' ? '떨어지고 말았어요!' : '게임 오버', W/2, H*0.38);
+      ctx.fillText(gameOverReason==='fall' ? t('gameOverFall') : t('gameOverHp'), W/2, H*0.38);
 
       ctx.fillStyle = '#FFFFFF';
       ctx.font = `${Math.round(W*0.06)}px 'Jua', sans-serif`;
-      ctx.fillText('높이: '+Math.floor(height)+'m', W/2, H*0.48);
+      ctx.fillText(t('heightLabel', { h: Math.floor(height) }), W/2, H*0.48);
       ctx.font = `${Math.round(W*0.045)}px 'Jua', sans-serif`;
       ctx.fillStyle = isNewRecord ? '#7CFFB2' : '#FFD93D';
-      ctx.fillText(isNewRecord ? '🏆 신기록! '+Math.floor(sessionBest)+'m' : '역대 최고 기록: '+Math.floor(sessionBest)+'m', W/2, H*0.55);
+      ctx.fillText(isNewRecord ? t('newRecord', { h: Math.floor(sessionBest) }) : t('bestHeight2', { h: Math.floor(sessionBest) }), W/2, H*0.55);
 
       let extraY = H*0.605;
       const extraStep = H*0.055;
@@ -3933,17 +4135,17 @@
         ctx.font = `${Math.round(W*0.036)}px 'Jua', sans-serif`;
         if(height > challengeTarget){
           ctx.fillStyle = '#7CFFB2';
-          ctx.fillText('⚔️ '+challengeFrom+'님을 이겼어요! (+'+Math.floor(height-challengeTarget)+'m)', W/2, extraY);
+          ctx.fillText(t('challengeWon', { name: challengeFrom, diff: Math.floor(height-challengeTarget) }), W/2, extraY);
         } else {
           ctx.fillStyle = '#FF9F9F';
-          ctx.fillText('⚔️ '+challengeFrom+'님 기록에 '+Math.ceil(challengeTarget-height)+'m 부족해요', W/2, extraY);
+          ctx.fillText(t('challengeLost', { name: challengeFrom, diff: Math.ceil(challengeTarget-height) }), W/2, extraY);
         }
         extraY += extraStep;
       }
       if(comboBest >= 2){
         ctx.font = `${Math.round(W*0.036)}px 'Jua', sans-serif`;
         ctx.fillStyle = '#FF9F1C';
-        ctx.fillText('최고 콤보: '+comboBest+'연속', W/2, extraY);
+        ctx.fillText(t('bestComboLabel', { n: comboBest }), W/2, extraY);
         extraY += extraStep;
       }
 
@@ -3951,12 +4153,12 @@
       const restartY = Math.max(extraY+H*0.03, H*0.68);
       ctx.font = `${Math.round(W*0.052)}px 'Jua', sans-serif`;
       ctx.fillStyle = '#FFFFFF';
-      ctx.fillText('탭 / 스페이스바로 다시 시작', W/2, restartY+bob);
+      ctx.fillText(t('restartPrompt'), W/2, restartY+bob);
 
       // lets players change character before restarting (the side arrows work here too)
       ctx.font = `${Math.round(W*0.032)}px 'Jua', sans-serif`;
       ctx.fillStyle = 'rgba(255,255,255,0.8)';
-      ctx.fillText('◀ '+currentSkin().name+' ▶', W/2, restartY+H*0.06);
+      ctx.fillText('◀ '+skinName(currentSkin())+' ▶', W/2, restartY+H*0.06);
     }
   }
 
@@ -3968,11 +4170,11 @@
     ctx.textAlign='center';
     ctx.fillStyle = '#FFFFFF';
     ctx.font = `${Math.round(W*0.09)}px 'Jua', sans-serif`;
-    ctx.fillText('일시정지', W/2, H*0.44);
+    ctx.fillText(t('pausedTitle'), W/2, H*0.44);
     const bob = Math.sin(now/350)*6;
     ctx.font = `${Math.round(W*0.045)}px 'Jua', sans-serif`;
     ctx.fillStyle = '#FFD93D';
-    ctx.fillText('탭하면 계속하기', W/2, H*0.52+bob);
+    ctx.fillText(t('pausedHint'), W/2, H*0.52+bob);
     ctx.restore();
   }
 
@@ -3986,7 +4188,7 @@
     ctx.textAlign = 'center';
     ctx.fillStyle = '#FFD93D';
     ctx.font = `${Math.round(W*0.07)}px 'Jua', sans-serif`;
-    ctx.fillText(missionsTab==='missions' ? '🎯 일일 미션' : '🏅 업적', W/2, H*0.26);
+    ctx.fillText(missionsTab==='missions' ? t('dailyMissionsTitle') : t('achievementsTitle'), W/2, H*0.26);
 
     const rowH = H*0.075;
     if(missionsTab==='missions'){
@@ -3998,19 +4200,19 @@
         const y = H*0.36 + i*rowH;
         ctx.font = `${Math.round(W*0.04)}px 'Jua', sans-serif`;
         ctx.fillStyle = done ? '#7CFFB2' : 'rgba(255,255,255,0.9)';
-        ctx.fillText((done?'✅ ':m.icon+' ')+m.desc, W/2, y);
+        ctx.fillText((done?'✅ ':m.icon+' ')+missionDesc(m), W/2, y);
         ctx.font = `${Math.round(W*0.03)}px 'Jua', sans-serif`;
         ctx.fillStyle = 'rgba(255,255,255,0.6)';
         ctx.fillText(Math.min(p,m.target)+' / '+m.target, W/2, y+H*0.032);
       }
       ctx.font = `${Math.round(W*0.03)}px 'Jua', sans-serif`;
       ctx.fillStyle = 'rgba(255,255,255,0.5)';
-      ctx.fillText('매일 자정에 새 미션으로 바뀌어요', W/2, H*0.36+3*rowH+H*0.02);
+      ctx.fillText(t('missionsReset'), W/2, H*0.36+3*rowH+H*0.02);
     } else {
       const earnedCount = ACHIEVEMENTS.reduce(function(n,a){ return n+(earnedAchievements.has(a.id)?1:0); }, 0);
       ctx.font = `${Math.round(W*0.032)}px 'Jua', sans-serif`;
       ctx.fillStyle = 'rgba(255,255,255,0.7)';
-      ctx.fillText(earnedCount+' / '+ACHIEVEMENTS.length+' 달성', W/2, H*0.31);
+      ctx.fillText(t('achEarnedOf', { n: earnedCount, total: ACHIEVEMENTS.length }), W/2, H*0.31);
       const achRowH = Math.min(H*0.054, H*0.52/ACHIEVEMENTS.length);
       for(let i=0;i<ACHIEVEMENTS.length;i++){
         const a = ACHIEVEMENTS[i];
@@ -4018,12 +4220,12 @@
         const y = H*0.37 + i*achRowH;
         ctx.font = `${Math.round(W*0.034)}px 'Jua', sans-serif`;
         ctx.fillStyle = earned ? '#FFD93D' : 'rgba(255,255,255,0.4)';
-        ctx.fillText((earned?a.icon:'🔒')+' '+a.name, W/2, y);
+        ctx.fillText((earned?a.icon:'🔒')+' '+achName(a), W/2, y);
       }
     }
     ctx.font = `${Math.round(W*0.028)}px 'Jua', sans-serif`;
     ctx.fillStyle = 'rgba(255,255,255,0.5)';
-    ctx.fillText('빈 곳을 탭하면 닫혀요', W/2, H*0.92);
+    ctx.fillText(t('tapEmptyToClose'), W/2, H*0.92);
     ctx.restore();
   }
 
@@ -4034,19 +4236,19 @@
     ctx.textAlign = 'center';
     ctx.fillStyle = '#FFD93D';
     ctx.font = `${Math.round(W*0.07)}px 'Jua', sans-serif`;
-    ctx.fillText('🎀 복장', W/2, H*0.22);
+    ctx.fillText(t('costumeTitle'), W/2, H*0.22);
 
     drawCharacter(W/2, H*0.4, 1, 0, now);
 
     const c = currentCostume();
     ctx.font = `${Math.round(W*0.045)}px 'Jua', sans-serif`;
     ctx.fillStyle = '#FFFFFF';
-    ctx.fillText('◀ '+c.name+' ▶', W/2, H*0.5);
+    ctx.fillText('◀ '+costumeName(c)+' ▶', W/2, H*0.5);
 
     const unlockedCount = COSTUMES.reduce((n,_,i)=>n+(isCostumeUnlocked(i)?1:0),0);
     ctx.font = `${Math.round(W*0.032)}px 'Jua', sans-serif`;
     ctx.fillStyle = 'rgba(255,255,255,0.6)';
-    ctx.fillText(unlockedCount+' / '+COSTUMES.length+' 해금', W/2, H*0.55);
+    ctx.fillText(t('costumeUnlockedOf', { n: unlockedCount, total: COSTUMES.length }), W/2, H*0.55);
 
     const rowH = H*0.032;
     const startY = H*0.6;
@@ -4056,13 +4258,13 @@
       const y = startY + i*rowH;
       ctx.font = `${Math.round(W*0.028)}px 'Jua', sans-serif`;
       ctx.fillStyle = i===selectedCostumeIndex ? '#FFD93D' : (unlocked ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.35)');
-      const label = unlocked ? (cc.emoji||'⬜')+' '+cc.name : '🔒 '+cc.name+' ('+cc.unlockHeight+'m)';
+      const label = unlocked ? (cc.emoji||'⬜')+' '+costumeName(cc) : t('costumeLocked', { name: costumeName(cc), h: cc.unlockHeight });
       ctx.fillText(label, W/2, y);
     }
 
     ctx.font = `${Math.round(W*0.028)}px 'Jua', sans-serif`;
     ctx.fillStyle = 'rgba(255,255,255,0.5)';
-    ctx.fillText('빈 곳을 탭하면 닫혀요', W/2, H*0.94);
+    ctx.fillText(t('tapEmptyToClose'), W/2, H*0.94);
     ctx.restore();
   }
 
@@ -4073,10 +4275,10 @@
     ctx.textAlign='center';
     ctx.fillStyle = '#FFD93D';
     ctx.font = `${Math.round(W*0.07)}px 'Jua', sans-serif`;
-    ctx.fillText('⚙️ 설정', W/2, H*0.26);
+    ctx.fillText(t('settingsTitle'), W/2, H*0.26);
     ctx.font = `${Math.round(W*0.03)}px 'Jua', sans-serif`;
     ctx.fillStyle = 'rgba(255,255,255,0.6)';
-    ctx.fillText('빈 곳을 탭하면 닫혀요', W/2, H*0.34);
+    ctx.fillText(t('tapEmptyToClose'), W/2, H*0.34);
     ctx.restore();
   }
 
@@ -4090,12 +4292,12 @@
     ctx.textAlign='center';
     ctx.fillStyle = '#FF5A8C';
     ctx.font = `${Math.round(W*0.07)}px 'Jua', sans-serif`;
-    ctx.fillText('📺 광고 시청 중...', W/2, H*0.34);
+    ctx.fillText(t('adWatching'), W/2, H*0.34);
 
     ctx.font = `${Math.round(W*0.045)}px 'Jua', sans-serif`;
     ctx.fillStyle = '#FFFFFF';
-    const targetName = adUnlockTargetIndex>=0 ? SKINS[adUnlockTargetIndex].name : '';
-    ctx.fillText(targetName+' 캐릭터 해금까지', W/2, H*0.44);
+    const targetName = adUnlockTargetIndex>=0 ? skinName(SKINS[adUnlockTargetIndex]) : '';
+    ctx.fillText(t('adUnlockUntil', { name: targetName }), W/2, H*0.44);
 
     // progress bar
     const barW = W*0.6, barH = H*0.028, barX = W/2-barW/2, barY = H*0.5;
@@ -4110,7 +4312,7 @@
 
     ctx.font = `${Math.round(W*0.032)}px 'Jua', sans-serif`;
     ctx.fillStyle = 'rgba(255,255,255,0.6)';
-    ctx.fillText('(실제 광고 네트워크 연동 전 임시 화면입니다)', W/2, H*0.68);
+    ctx.fillText(t('adPlaceholderNote'), W/2, H*0.68);
     ctx.restore();
   }
 
@@ -4121,7 +4323,7 @@
     ctx.textAlign='center';
     ctx.fillStyle = '#FFD93D';
     ctx.font = `${Math.round(W*0.07)}px 'Jua', sans-serif`;
-    ctx.fillText(leaderboardTab==='global' ? '🌍 전체 랭킹' : leaderboardTab==='stats' ? '📊 내 통계' : '🏆 내 TOP '+LEADERBOARD_SIZE, W/2, H*0.26);
+    ctx.fillText(leaderboardTab==='global' ? t('lbGlobalTitle') : leaderboardTab==='stats' ? t('lbStatsTitle') : t('lbLocalTitle', { n: LEADERBOARD_SIZE }), W/2, H*0.26);
 
     ctx.font = `${Math.round(W*0.042)}px 'Jua', sans-serif`;
     ctx.textAlign = 'center';
@@ -4131,7 +4333,7 @@
     if(leaderboardTab==='local'){
       if(!leaderboard.length){
         ctx.fillStyle = 'rgba(255,255,255,0.75)';
-        ctx.fillText('아직 기록이 없어요', W/2, H*0.4);
+        ctx.fillText(t('lbEmpty'), W/2, H*0.4);
       } else {
         for(let i=0;i<leaderboard.length;i++){
           const y = H*0.36 + i*rowH;
@@ -4142,33 +4344,33 @@
     } else if(leaderboardTab==='global'){
       if(globalLoadState==='loading'){
         ctx.fillStyle = 'rgba(255,255,255,0.75)';
-        ctx.fillText('불러오는 중...', W/2, H*0.4);
+        ctx.fillText(t('lbLoading'), W/2, H*0.4);
       } else if(globalLoadState==='error'){
         ctx.fillStyle = 'rgba(255,150,150,0.85)';
-        ctx.fillText('랭킹을 불러올 수 없어요', W/2, H*0.4);
+        ctx.fillText(t('lbError'), W/2, H*0.4);
         ctx.font = `${Math.round(W*0.032)}px 'Jua', sans-serif`;
         ctx.fillStyle = 'rgba(255,255,255,0.6)';
-        ctx.fillText('인터넷 연결을 확인해주세요', W/2, H*0.44);
+        ctx.fillText(t('lbErrorHint'), W/2, H*0.44);
       } else if(!globalLeaderboard || !globalLeaderboard.length){
         ctx.fillStyle = 'rgba(255,255,255,0.75)';
-        ctx.fillText('아직 등록된 기록이 없어요', W/2, H*0.4);
+        ctx.fillText(t('lbGlobalEmpty'), W/2, H*0.4);
       } else {
         for(let i=0;i<globalLeaderboard.length;i++){
           const row = globalLeaderboard[i];
           const y = H*0.36 + i*rowH;
           const isMe = row.nickname===myNickname && row.score===Math.floor(globalBestSubmitted);
           ctx.fillStyle = i<3 ? '#FFD93D' : 'rgba(255,255,255,0.85)';
-          ctx.fillText((medals[i]||(i+1)+'.')+' '+row.nickname+' - '+row.score+'m'+(isMe?' (나)':''), W/2, y);
+          ctx.fillText((medals[i]||(i+1)+'.')+' '+row.nickname+' - '+row.score+'m'+(isMe?t('lbMeSuffix'):''), W/2, y);
         }
       }
     } else { // stats
       const rows = [
-        ['🎮 총 플레이', lifeStats.plays+'회'],
-        ['📏 누적 이동거리', lifeStats.distance+'m'],
-        ['🦶 총 착지', lifeStats.landings+'회'],
-        ['🔥 역대 최고 콤보', lifeStats.bestCombo+'연속'],
-        ['💥 추락 종료', lifeStats.falls+'회'],
-        ['💔 체력 소진 종료', lifeStats.hpDeaths+'회']
+        [t('statPlays'), lifeStats.plays+t('unitTimes')],
+        [t('statDistance'), lifeStats.distance+'m'],
+        [t('statLandings'), lifeStats.landings+t('unitTimes')],
+        [t('statBestCombo'), lifeStats.bestCombo+t('unitCombo')],
+        [t('statFalls'), lifeStats.falls+t('unitTimes')],
+        [t('statHpDeaths'), lifeStats.hpDeaths+t('unitTimes')]
       ];
       ctx.textAlign = 'left';
       const labelX = W*0.5-W*0.34, valueX = W*0.5+W*0.34;
@@ -4307,6 +4509,7 @@
   });
   btnCostumePrev.addEventListener('click', function(e){ e.stopPropagation(); cycleCostume(-1); });
   btnCostumeNext.addEventListener('click', function(e){ e.stopPropagation(); cycleCostume(1); });
+  btnLang.addEventListener('click', function(e){ e.stopPropagation(); setLang(lang==='ko' ? 'en' : 'ko'); });
   btnVibCycle.addEventListener('click', function(e){ e.stopPropagation(); cycleVibrationLevel(); });
   btnColorblind.addEventListener('click', function(e){ e.stopPropagation(); toggleColorblindMode(); });
   btnLbClose.addEventListener('click', function(e){
@@ -4341,6 +4544,8 @@
   });
 
   // ---------- init ----------
+  document.title = t('gameTitle');
+  applyAdSlideLang();
   resize();
   resetGame();
   syncUiButtons();
