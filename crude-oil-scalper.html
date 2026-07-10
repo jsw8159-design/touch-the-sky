@@ -17,7 +17,7 @@
 *{-webkit-tap-highlight-color:transparent;box-sizing:border-box;}
 html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:var(--bg);
   font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',sans-serif;overscroll-behavior:none;color:var(--text);}
-#outer{width:100vw;height:100dvh;height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);}
+#outer{width:100vw;height:100vh;height:100dvh;height:calc(var(--vh,1vh) * 100);display:flex;align-items:center;justify-content:center;background:var(--bg);}
 #app{position:relative;width:100%;height:100%;max-width:720px;max-height:1000px;margin:0 auto;
   overflow:hidden;background:var(--bg);display:flex;flex-direction:column;box-shadow:0 0 60px rgba(0,0,0,.6);}
 .screen{position:absolute;inset:0;display:none;flex-direction:column;height:100%;}
@@ -914,11 +914,23 @@ $('#btnReset').onclick=()=>{
   }
 };
 
-window.addEventListener('resize', ()=>{
+function setRealVH(){
+  const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+  document.documentElement.style.setProperty('--vh', (h*0.01)+'px');
+}
+function onViewportChange(){
+  setRealVH();
   if(G.scenario && $('#screenGame').classList.contains('active')){
     drawChart(G.scenario, G.revealCount, G.phase==='done'||G.phase==='holding' ? {entryIndex:G.entryIndex, dir:G.playerDir, trade:G.trade, showIdeal:G.phase==='done'} : null);
   }
-});
+}
+setRealVH();
+window.addEventListener('resize', onViewportChange);
+window.addEventListener('orientationchange', onViewportChange);
+if(window.visualViewport){
+  window.visualViewport.addEventListener('resize', onViewportChange);
+  window.visualViewport.addEventListener('scroll', setRealVH);
+}
 
 refreshMuteBtn();
 refreshHomeStats();
