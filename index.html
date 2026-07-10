@@ -154,6 +154,16 @@
   }
   #btnAdUnlock:active { background: rgba(255,90,140,1); }
   #btnSettings { left: 60px; bottom: 10px; font-size: 18px; }
+  #btnMissions { left: 60px; top: 10px; font-size: 18px; }
+  #btnMissionTab, #btnAchTab {
+    top: 13%;
+    width: auto; height: auto; border-radius: 14px;
+    padding: 6px 16px; font-size: 12px; font-family: 'Jua', sans-serif;
+    display: none;
+  }
+  #btnMissionTab { left: 22%; transform: translateX(-50%); }
+  #btnAchTab { left: 78%; transform: translateX(-50%); }
+  #btnMissionTab.lbTabActive, #btnAchTab.lbTabActive { background: rgba(255,140,60,0.9); }
   #btnVibCycle, #btnColorblind {
     left: 50%; transform: translateX(-50%);
     width: auto; height: auto; border-radius: 16px;
@@ -219,6 +229,9 @@
         <button id="btnColorblind" class="uiBtn" type="button">색약 모드: 꺼짐</button>
         <button id="btnPause" class="uiBtn" type="button" aria-label="일시정지">⏸</button>
         <button id="btnLeaderboard" class="uiBtn" type="button" aria-label="리더보드">🏆</button>
+        <button id="btnMissions" class="uiBtn" type="button" aria-label="도전과제">🎯</button>
+        <button id="btnMissionTab" class="uiBtn" type="button">일일 미션</button>
+        <button id="btnAchTab" class="uiBtn" type="button">업적</button>
         <button id="btnSkinPrev" class="uiBtn" type="button" aria-label="이전 캐릭터">‹</button>
         <button id="btnSkinNext" class="uiBtn" type="button" aria-label="다음 캐릭터">›</button>
         <button id="btnLbClose" class="uiBtn" type="button">닫기</button>
@@ -302,6 +315,9 @@
   const btnLbStats = document.getElementById('btnLbStats');
   const btnNickname = document.getElementById('btnNickname');
   const btnAdUnlock = document.getElementById('btnAdUnlock');
+  const btnMissions = document.getElementById('btnMissions');
+  const btnMissionTab = document.getElementById('btnMissionTab');
+  const btnAchTab = document.getElementById('btnAchTab');
   const btnSettings = document.getElementById('btnSettings');
   const btnVibCycle = document.getElementById('btnVibCycle');
   const btnColorblind = document.getElementById('btnColorblind');
@@ -333,6 +349,7 @@
   if(isNaN(vibrationLevel) || vibrationLevel<0 || vibrationLevel>3) vibrationLevel = 2;
   let colorblindMode = lsGet('colorblindMode','0')==='1';
   let showSettings = false;
+  let showMissions = false, missionsTab = 'missions'; // 'missions' | 'achievements'
 
   // ---------- haptic feedback ----------
   function vibrate(pattern){
@@ -584,14 +601,51 @@
   }
 
   // ---------- BGM: procedural chiptune loop (no external audio files) ----------
+  // three presets keyed to how far you've climbed - ground (spring/summer/autumn/winter),
+  // orbit (leaving Earth), and deep space (moon onward) - see applyBgmPreset()/bgmTierForZone()
   let bgmOn = false, bgmGain = null, bgmNextNoteTime = 0, bgmStep = 0, bgmTimerId = null;
-  const BGM_BPM = 132;
-  const BGM_STEP_DUR = 60/BGM_BPM/2; // 8th notes
   const BGM_LOOKAHEAD = 0.15; // seconds of notes to schedule ahead of time
-  const BGM_ROOT = 523.25; // C5
-  // upbeat 16-step riff (semitone offsets from root; null = rest)
-  const BGM_MELODY = [0,null,7,12, 11,null,7,9, 0,null,7,12, 16,14,12,9];
-  const BGM_BASS   = [-12,null,-12,null, -5,null,-5,null, -12,null,-12,null, -7,null,-7,null];
+  const BGM_PRESETS = {
+    ground: {
+      root: 523.25, bpm: 132, // C5, upbeat
+      melody: [0,null,7,12, 11,null,7,9, 0,null,7,12, 16,14,12,9],
+      bass:   [-12,null,-12,null, -5,null,-5,null, -12,null,-12,null, -7,null,-7,null],
+      leadType: 'square', bassType: 'triangle'
+    },
+    orbit: {
+      root: 466.16, bpm: 118, // Bb4, floaty/transitional
+      melody: [0,null,null,7, 10,null,7,null, 0,null,null,7, 12,null,10,7],
+      bass:   [-12,null,null,null, -7,null,null,null, -12,null,null,null, -5,null,null,null],
+      leadType: 'sine', bassType: 'sine'
+    },
+    deepspace: {
+      root: 392.00, bpm: 100, // G4, slow and atmospheric
+      melody: [0,null,null,null, 5,null,null,null, 7,null,null,null, 3,null,null,null],
+      bass:   [-12,null,null,null,null,null,-12,null, -5,null,null,null,null,null,-5,null],
+      leadType: 'sine', bassType: 'square'
+    }
+  };
+  let BGM_ROOT = BGM_PRESETS.ground.root, BGM_BPM = BGM_PRESETS.ground.bpm;
+  let BGM_STEP_DUR = 60/BGM_BPM/2; // 8th notes
+  let BGM_MELODY = BGM_PRESETS.ground.melody, BGM_BASS = BGM_PRESETS.ground.bass;
+  let bgmLeadType = BGM_PRESETS.ground.leadType, bgmBassType = BGM_PRESETS.ground.bassType;
+  let currentBgmTier = 'ground';
+  function bgmTierForZone(zoneIdx){
+    if(zoneIdx<=3) return 'ground';
+    if(zoneIdx===4) return 'orbit';
+    return 'deepspace';
+  }
+  function applyBgmPreset(tier){
+    const p = BGM_PRESETS[tier];
+    BGM_ROOT = p.root; BGM_BPM = p.bpm; BGM_STEP_DUR = 60/BGM_BPM/2;
+    BGM_MELODY = p.melody; BGM_BASS = p.bass;
+    bgmLeadType = p.leadType; bgmBassType = p.bassType;
+    currentBgmTier = tier;
+  }
+  function syncBgmToZone(){
+    const tier = bgmTierForZone(currentZoneIdx(height));
+    if(tier !== currentBgmTier) applyBgmPreset(tier);
+  }
   function bgmSemi(n){ return BGM_ROOT*Math.pow(2,n/12); }
   function ensureBgmGain(){
     if(!actx || bgmGain) return;
@@ -639,9 +693,9 @@
     while(bgmNextNoteTime < actx.currentTime+BGM_LOOKAHEAD){
       const i = bgmStep % 16;
       const mel = BGM_MELODY[i], bass = BGM_BASS[i];
-      if(mel!=null) bgmTone(bgmNextNoteTime, bgmSemi(mel), BGM_STEP_DUR*0.82, 'square', 0.05);
-      if(bass!=null) bgmTone(bgmNextNoteTime, bgmSemi(bass), BGM_STEP_DUR*0.9, 'triangle', 0.075);
-      if(i%4===0) bgmKick(bgmNextNoteTime, 0.16);
+      if(mel!=null) bgmTone(bgmNextNoteTime, bgmSemi(mel), BGM_STEP_DUR*0.82, bgmLeadType, 0.05);
+      if(bass!=null) bgmTone(bgmNextNoteTime, bgmSemi(bass), BGM_STEP_DUR*0.9, bgmBassType, 0.075);
+      if(i%4===0 && currentBgmTier==='ground') bgmKick(bgmNextNoteTime, 0.16);
       bgmHit(bgmNextNoteTime, 0.03, i%2===0?0.02:0.012, i%4===2?7000:9500);
       bgmNextNoteTime += BGM_STEP_DUR;
       bgmStep++;
@@ -709,10 +763,14 @@
 
   // ---------- personal lifetime stats (persisted, shown in the "내 통계" tab) ----------
   let lifeStats = lsGetJSON('lifeStats', { plays:0, distance:0, landings:0, bestCombo:0, falls:0, hpDeaths:0 });
+  // fields added after initial release - backfill for players with an older saved lifeStats blob
+  lifeStats.starsUsedTotal = lifeStats.starsUsedTotal||0;
+  lifeStats.friendsMetTotal = lifeStats.friendsMetTotal||0;
   function saveLifeStats(){ lsSetJSON('lifeStats', lifeStats); }
   function recordPlayStart(){
     lifeStats.plays++;
     saveLifeStats();
+    incDailyCounter('plays', 1);
   }
   function recordGameOverStats(){
     lifeStats.distance += Math.floor(height);
@@ -720,6 +778,102 @@
     if(comboBest > lifeStats.bestCombo) lifeStats.bestCombo = comboBest;
     if(gameOverReason==='fall') lifeStats.falls++; else lifeStats.hpDeaths++;
     saveLifeStats();
+    incDailyCounter('landings', landings);
+    checkAchievements();
+  }
+
+  // ---------- daily missions ----------
+  function dateKeyFor(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+  function todayKey(){ return dateKeyFor(new Date()); }
+  function simpleHash(str){ let h=0; for(let i=0;i<str.length;i++){ h=(h*31+str.charCodeAt(i))>>>0; } return h; }
+  const MISSION_TEMPLATES = [
+    { id:'height300', icon:'📏', desc:'한 판에서 300m 넘기', target:300, key:'maxHeight' },
+    { id:'combo8',     icon:'🔥', desc:'8콤보 달성하기',      target:8,   key:'maxCombo' },
+    { id:'plays2',     icon:'🎮', desc:'2판 플레이하기',      target:2,   key:'plays' },
+    { id:'land15',     icon:'🦶', desc:'15번 착지하기',       target:15,  key:'landings' },
+    { id:'star1',      icon:'⭐', desc:'무적 별 1번 먹기',    target:1,   key:'starsUsed' },
+    { id:'friend1',    icon:'🐧', desc:'친구 1번 만나기',     target:1,   key:'friendsMet' }
+  ];
+  function missionById(id){ return MISSION_TEMPLATES.find(function(m){ return m.id===id; }); }
+  function pickDailyMissionIds(dateStr){
+    let seed = simpleHash(dateStr);
+    const idxs = [];
+    while(idxs.length<3){
+      seed = (seed*1103515245+12345)>>>0;
+      const idx = seed % MISSION_TEMPLATES.length;
+      if(idxs.indexOf(idx)<0) idxs.push(idx);
+    }
+    return idxs.map(function(i){ return MISSION_TEMPLATES[i].id; });
+  }
+  let dailyMissions = lsGetJSON('dailyMissions', null);
+  function ensureDailyMissions(){
+    const key = todayKey();
+    if(!dailyMissions || dailyMissions.date !== key){
+      dailyMissions = {
+        date: key,
+        ids: pickDailyMissionIds(key),
+        progress: { maxHeight:0, maxCombo:0, plays:0, landings:0, starsUsed:0, friendsMet:0 },
+        completedShown: {}
+      };
+      lsSetJSON('dailyMissions', dailyMissions);
+    }
+  }
+  ensureDailyMissions();
+  function saveDailyMissions(){ lsSetJSON('dailyMissions', dailyMissions); }
+  function missionProgress(id){ return dailyMissions.progress[missionById(id).key]||0; }
+  function missionDone(id){ return missionProgress(id) >= missionById(id).target; }
+  function checkDailyMissionCompletion(){
+    for(let k=0;k<dailyMissions.ids.length;k++){
+      const id = dailyMissions.ids[k];
+      if(missionDone(id) && !dailyMissions.completedShown[id]){
+        dailyMissions.completedShown[id] = true;
+        const m = missionById(id);
+        unlockToastText = '🎯 미션 완료! '+m.icon+' '+m.desc;
+        unlockToastUntil = performance.now()+2600;
+        sfxMaxHpUp();
+      }
+    }
+  }
+  function bumpDailyMax(key, value){
+    ensureDailyMissions();
+    if(value > dailyMissions.progress[key]) dailyMissions.progress[key] = value;
+    checkDailyMissionCompletion();
+    saveDailyMissions();
+  }
+  function incDailyCounter(key, amount){
+    ensureDailyMissions();
+    dailyMissions.progress[key] = (dailyMissions.progress[key]||0) + amount;
+    checkDailyMissionCompletion();
+    saveDailyMissions();
+  }
+
+  // ---------- achievements ----------
+  const ACHIEVEMENTS = [
+    { id:'first_flight', icon:'🐣', name:'첫 비행',      desc:'게임을 1번 플레이하기',        check:function(){ return lifeStats.plays>=1; } },
+    { id:'landing_100',  icon:'🦶', name:'착지왕',        desc:'누적 100번 착지하기',          check:function(){ return lifeStats.landings>=100; } },
+    { id:'combo_10',     icon:'🔥', name:'콤보 마스터',   desc:'10콤보 달성하기',              check:function(){ return lifeStats.bestCombo>=10; } },
+    { id:'orbit',        icon:'🌍', name:'우주 정복자',   desc:'지구 궤도(2000m)에 도달하기',   check:function(){ return sessionBest>=2000; } },
+    { id:'beyond',       icon:'🌌', name:'태양계 탈출',   desc:'태양계 밖(8500m)에 도달하기',   check:function(){ return sessionBest>=8500; } },
+    { id:'collector',    icon:'🎭', name:'수집가',        desc:'모든 캐릭터 해금하기',          check:function(){ return SKINS.every(function(_,i){ return isSkinUnlocked(i); }); } },
+    { id:'phoenix',      icon:'⭐', name:'불사조',        desc:'무적 별 누적 10번 먹기',        check:function(){ return lifeStats.starsUsedTotal>=10; } },
+    { id:'social',       icon:'🐧', name:'인싸',          desc:'친구 누적 10번 만나기',         check:function(){ return lifeStats.friendsMetTotal>=10; } },
+    { id:'marathon',     icon:'📏', name:'장수 비행',     desc:'누적 10000m 이동하기',          check:function(){ return lifeStats.distance>=10000; } },
+    { id:'veteran',      icon:'🎮', name:'포기란 없다',   desc:'누적 50판 플레이하기',          check:function(){ return lifeStats.plays>=50; } }
+  ];
+  let earnedAchievements = new Set(lsGetJSON('achievements', []));
+  function checkAchievements(){
+    let changed = false;
+    for(let i=0;i<ACHIEVEMENTS.length;i++){
+      const a = ACHIEVEMENTS[i];
+      if(!earnedAchievements.has(a.id) && a.check()){
+        earnedAchievements.add(a.id);
+        changed = true;
+        unlockToastText = '🏅 업적 달성! '+a.icon+' '+a.name;
+        unlockToastUntil = performance.now()+2600;
+        sfxMaxHpUp();
+      }
+    }
+    if(changed) lsSetJSON('achievements', Array.from(earnedAchievements));
   }
 
   // ---------- global online leaderboard (Firestore via window.__ttsCloud) ----------
@@ -816,6 +970,7 @@
     unlockToastText = '🎉 '+SKINS[idx].name+' 해금!'; unlockToastUntil = performance.now()+2400;
     sfxMaxHpUp();
     advanceAdBanner();
+    checkAchievements();
     syncUiButtons();
   }
 
@@ -969,6 +1124,7 @@
     challengeBeatenShoutShown = false;
     lastAnnouncedZoneIdx = 0;
     lastTickAt = 0; lastHeartbeatAt = 0;
+    applyBgmPreset('ground');
     obstacles = []; particles = [];
     obstacleUnlocked = {helmet:false, ad:false, leaf:false, boulder:false, lightning:false, friend:false, hpup:false, star:false};
     helmetLevel = 0;
@@ -1068,6 +1224,11 @@
     btnVibCycle.textContent = '📳 진동: ' + VIB_LABELS[vibrationLevel];
     btnColorblind.style.display = showSettings ? 'flex' : 'none';
     btnColorblind.textContent = '👁️ 색약 모드: ' + (colorblindMode ? '켜짐' : '꺼짐');
+    btnMissions.style.display = (!showLeaderboard && !adUnlockActive && !showSettings) ? 'flex' : 'none';
+    btnMissionTab.style.display = showMissions ? 'flex' : 'none';
+    btnAchTab.style.display = showMissions ? 'flex' : 'none';
+    btnMissionTab.classList.toggle('lbTabActive', missionsTab==='missions');
+    btnAchTab.classList.toggle('lbTabActive', missionsTab==='achievements');
   }
 
   function enterFreefall(fromX, fromY){
@@ -1126,6 +1287,9 @@
     friendVariant = o.variant||0;
     friendPhaseStart = performance.now();
     charState = 'friend_highfive';
+    lifeStats.friendsMetTotal++; saveLifeStats();
+    incDailyCounter('friendsMet', 1);
+    checkAchievements();
   }
 
   function beginJump1(now){
@@ -1292,6 +1456,9 @@
     triggerShout('무적!', '#FFD93D', 1400);
     sfxStarPower();
     vibrate([20,20,20]);
+    lifeStats.starsUsedTotal++; saveLifeStats();
+    incDailyCounter('starsUsed', 1);
+    checkAchievements();
   }
 
   function destroyWithHelmet(o){
@@ -1311,6 +1478,10 @@
     height += climbPerLanding*comboMultiplier;
     if(height > sessionBest){ sessionBest = height; lsSet('bestHeight', String(sessionBest)); }
     checkZoneTransition();
+    syncBgmToZone();
+    bumpDailyMax('maxHeight', Math.floor(height));
+    bumpDailyMax('maxCombo', combo);
+    checkAchievements();
     landTime = performance.now();
     spawnParticles(charX, restY+charRadius*0.6, '#C9A876', 6, [30,90], 0.4);
     sfxLand();
@@ -3168,6 +3339,55 @@
 
   // ---------- local leaderboard overlay ----------
   // placeholder rewarded-ad "watching" screen - see startAdUnlockFlow() for where to swap in a real ad SDK
+  function drawMissionsOverlay(now){
+    ensureDailyMissions(); // catches a midnight rollover while the overlay happens to be open
+    ctx.save();
+    ctx.fillStyle = 'rgba(4,6,20,0.94)';
+    ctx.fillRect(0,0,W,H);
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#FFD93D';
+    ctx.font = `${Math.round(W*0.07)}px 'Jua', sans-serif`;
+    ctx.fillText(missionsTab==='missions' ? '🎯 일일 미션' : '🏅 업적', W/2, H*0.26);
+
+    const rowH = H*0.075;
+    if(missionsTab==='missions'){
+      for(let i=0;i<dailyMissions.ids.length;i++){
+        const id = dailyMissions.ids[i];
+        const m = missionById(id);
+        const p = missionProgress(id);
+        const done = missionDone(id);
+        const y = H*0.36 + i*rowH;
+        ctx.font = `${Math.round(W*0.04)}px 'Jua', sans-serif`;
+        ctx.fillStyle = done ? '#7CFFB2' : 'rgba(255,255,255,0.9)';
+        ctx.fillText((done?'✅ ':m.icon+' ')+m.desc, W/2, y);
+        ctx.font = `${Math.round(W*0.03)}px 'Jua', sans-serif`;
+        ctx.fillStyle = 'rgba(255,255,255,0.6)';
+        ctx.fillText(Math.min(p,m.target)+' / '+m.target, W/2, y+H*0.032);
+      }
+      ctx.font = `${Math.round(W*0.03)}px 'Jua', sans-serif`;
+      ctx.fillStyle = 'rgba(255,255,255,0.5)';
+      ctx.fillText('매일 자정에 새 미션으로 바뀌어요', W/2, H*0.36+3*rowH+H*0.02);
+    } else {
+      const earnedCount = ACHIEVEMENTS.reduce(function(n,a){ return n+(earnedAchievements.has(a.id)?1:0); }, 0);
+      ctx.font = `${Math.round(W*0.032)}px 'Jua', sans-serif`;
+      ctx.fillStyle = 'rgba(255,255,255,0.7)';
+      ctx.fillText(earnedCount+' / '+ACHIEVEMENTS.length+' 달성', W/2, H*0.31);
+      const achRowH = H*0.054;
+      for(let i=0;i<ACHIEVEMENTS.length;i++){
+        const a = ACHIEVEMENTS[i];
+        const earned = earnedAchievements.has(a.id);
+        const y = H*0.37 + i*achRowH;
+        ctx.font = `${Math.round(W*0.034)}px 'Jua', sans-serif`;
+        ctx.fillStyle = earned ? '#FFD93D' : 'rgba(255,255,255,0.4)';
+        ctx.fillText((earned?a.icon:'🔒')+' '+a.name, W/2, y);
+      }
+    }
+    ctx.font = `${Math.round(W*0.028)}px 'Jua', sans-serif`;
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.fillText('빈 곳을 탭하면 닫혀요', W/2, H*0.92);
+    ctx.restore();
+  }
+
   function drawSettingsOverlay(now){
     ctx.save();
     ctx.fillStyle = 'rgba(4,6,20,0.94)';
@@ -3328,6 +3548,7 @@
     if(paused) drawPauseOverlay(now);
     if(showLeaderboard) drawLeaderboard(now);
     if(showSettings) drawSettingsOverlay(now);
+    if(showMissions) drawMissionsOverlay(now);
     if(adUnlockActive) drawAdUnlockOverlay(now);
     requestAnimationFrame(loop);
   }
@@ -3338,6 +3559,7 @@
     if(adUnlockActive) return; // "watching an ad" can't be skipped by tapping through it
     if(showLeaderboard){ showLeaderboard=false; syncUiButtons(); return; }
     if(showSettings){ showSettings=false; syncUiButtons(); return; }
+    if(showMissions){ showMissions=false; syncUiButtons(); return; }
     if(paused){ togglePause(); return; }
     tryJump();
   }
@@ -3349,6 +3571,7 @@
       if(adUnlockActive) return;
       if(showLeaderboard){ showLeaderboard=false; syncUiButtons(); return; }
       if(showSettings){ showSettings=false; syncUiButtons(); return; }
+      if(showMissions){ showMissions=false; syncUiButtons(); return; }
       if(paused){ togglePause(); return; }
       tryJump();
     } else if(e.key==='p' || e.key==='P' || e.key==='Escape'){
@@ -3368,6 +3591,7 @@
     e.stopPropagation();
     showLeaderboard = true;
     showSettings = false;
+    showMissions = false;
     leaderboardTab = 'local';
     globalLoadState = 'idle'; // re-fetch fresh standings each time the board is opened
     syncUiButtons();
@@ -3376,8 +3600,19 @@
     e.stopPropagation();
     showSettings = true;
     showLeaderboard = false;
+    showMissions = false;
     syncUiButtons();
   });
+  btnMissions.addEventListener('click', function(e){
+    e.stopPropagation();
+    showMissions = true;
+    showLeaderboard = false;
+    showSettings = false;
+    missionsTab = 'missions';
+    syncUiButtons();
+  });
+  btnMissionTab.addEventListener('click', function(e){ e.stopPropagation(); missionsTab='missions'; syncUiButtons(); });
+  btnAchTab.addEventListener('click', function(e){ e.stopPropagation(); missionsTab='achievements'; syncUiButtons(); });
   btnVibCycle.addEventListener('click', function(e){ e.stopPropagation(); cycleVibrationLevel(); });
   btnColorblind.addEventListener('click', function(e){ e.stopPropagation(); toggleColorblindMode(); });
   btnLbClose.addEventListener('click', function(e){
