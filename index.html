@@ -985,7 +985,8 @@
   let climbPerLanding = 3;
   // combo: consecutive successful landings without taking a hit. boosts height gained per landing.
   let combo=0, comboBest=0, comboMultiplier=1, comboPopAt=-999;
-  function comboMultiplierFor(c){ return 1 + Math.min(c,10)*0.1; } // ramps to x2.0 at a 10-streak
+  // ramps to x2.0 at a 10-streak, then jumps to a flat x3.0 once the max escalation tier (30 combo) is reached
+  function comboMultiplierFor(c){ return c>=30 ? 3 : 1 + Math.min(c,10)*0.1; }
   // escalation tiers at every 5-combo milestone (5,10,...,30), capped at tier 6 - drives
   // the intensifying sfx/bigger combo text/faster fall speed as a streak builds
   function comboTier(){ return Math.min(6, Math.floor(combo/5)); }
