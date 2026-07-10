@@ -45,13 +45,32 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .homeRow{display:flex;gap:10px;width:100%;}
 .iconBtn{width:44px;height:44px;border-radius:12px;background:var(--panel2);border:1px solid var(--border);
   display:flex;align-items:center;justify-content:center;font-size:18px;flex:0 0 auto;}
+.symbolChip{width:100%;display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--border);
+  border-radius:14px;padding:10px 12px;margin-bottom:16px;text-align:left;}
+.symbolChip .icon{font-size:24px;flex:0 0 auto;}
+.symbolChip .txt{flex:1;min-width:0;}
+.symbolChip .txt b{display:block;font-size:13.5px;}
+.symbolChip .txt small{font-size:10.5px;color:var(--text-dim);}
+.symbolChip .arrow{color:var(--text-dim);font-size:18px;flex:0 0 auto;}
+.symbolChip:active{transform:scale(.98);}
 
-/* ===== STAGE SELECT ===== */
-.topbar{flex:0 0 auto;height:52px;display:flex;align-items:center;padding:0 10px;gap:8px;
+/* ===== STAGE SELECT / SYMBOL SELECT ===== */
+.topbar{flex:0 0 auto;min-height:52px;display:flex;align-items:center;padding:8px 10px;gap:8px;
   background:var(--panel);border-bottom:1px solid var(--border);}
 .topbar .ttl{font-size:15px;font-weight:800;flex:1;text-align:center;padding-right:36px;}
-.navBtn{width:36px;height:36px;border-radius:10px;background:var(--panel2);display:flex;align-items:center;justify-content:center;font-size:16px;}
-#screenStage .body{flex:1;overflow-y:auto;padding:14px;}
+.navBtn{width:36px;height:36px;border-radius:10px;background:var(--panel2);display:flex;align-items:center;justify-content:center;font-size:16px;flex:0 0 auto;}
+.screen .body{flex:1;overflow-y:auto;padding:14px;}
+.instrumentTag{font-size:11.5px;color:var(--text-dim);text-align:center;padding:6px 14px 0;}
+.symbolList{display:flex;flex-direction:column;gap:10px;}
+.symbolCard{position:relative;background:var(--panel);border:1px solid var(--border);border-radius:14px;
+  padding:14px;display:flex;align-items:center;gap:12px;}
+.symbolCard.selected{border-color:var(--gold);}
+.symbolCard .icon{font-size:28px;flex:0 0 auto;}
+.symbolCard .txt{flex:1;min-width:0;}
+.symbolCard .txt b{display:block;font-size:14.5px;}
+.symbolCard .txt span{font-size:11px;color:var(--text-dim);}
+.symbolCard .badge{font-size:10.5px;font-weight:800;color:#1a1400;background:var(--gold);padding:3px 8px;border-radius:20px;flex:0 0 auto;white-space:nowrap;}
+.symbolCard:active{transform:scale(.98);}
 .stageGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
 .stageCard{position:relative;background:var(--panel);border:1px solid var(--border);border-radius:14px;
   padding:14px 12px;min-height:118px;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;}
@@ -149,9 +168,14 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
   <!-- HOME -->
   <div id="screenHome" class="screen active">
     <div class="homeWrap">
-      <div class="logo">CRUDE OIL SCALPING TRAINER</div>
-      <div class="h1">오일 스캘퍼 <b>WTI</b></div>
-      <div class="sub">크루드오일 해외선물 차트를 보며<br>단타 매수·매도 타점을 훈련하는 시뮬레이터</div>
+      <div class="logo">MULTI-ASSET SCALPING TRAINER</div>
+      <div class="h1">오일 스캘퍼</div>
+      <div class="sub">원유·지수·금속 등 해외선물 차트를 보며<br>단타 매수·매도 타점을 훈련하는 시뮬레이터</div>
+      <button class="symbolChip" id="homeSymbolChip">
+        <span class="icon" id="homeSymbolIcon">🛢️</span>
+        <span class="txt"><b id="homeSymbolName">WTI 원유</b><small>탭하여 종목 변경 · 종목 특징 보기</small></span>
+        <span class="arrow">›</span>
+      </button>
       <div class="miniStats">
         <div class="miniStat"><div class="v" id="statUnlocked">1/10</div><div class="l">진행 스테이지</div></div>
         <div class="miniStat"><div class="v" id="statAvg">-</div><div class="l">평균 점수</div></div>
@@ -167,9 +191,18 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
     </div>
   </div>
 
+  <!-- SYMBOL SELECT -->
+  <div id="screenSymbol" class="screen">
+    <div class="topbar"><button class="navBtn" id="symbolBack">←</button><div class="ttl">종목 선택</div></div>
+    <div class="body">
+      <div class="symbolList" id="symbolGrid"></div>
+    </div>
+  </div>
+
   <!-- STAGE SELECT -->
   <div id="screenStage" class="screen">
     <div class="topbar"><button class="navBtn" id="stageBack">←</button><div class="ttl">커리큘럼 학습</div></div>
+    <div class="instrumentTag" id="stageInstrumentTag">🛢️ WTI 원유로 학습 중</div>
     <div class="body">
       <div class="freeCard" id="stageFreeCard">
         <div class="icon">🎯</div>
@@ -284,6 +317,27 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
     </div>
   </div>
 
+  <!-- SYMBOL INFO OVERLAY -->
+  <div class="overlay" id="ovSymbolInfo">
+    <div class="modal">
+      <button class="closeX" id="symbolInfoClose">✕</button>
+      <div style="text-align:center;">
+        <div style="font-size:40px;" id="siIcon">🛢️</div>
+        <h2 id="siName">WTI 원유</h2>
+        <div style="font-size:11.5px;color:var(--gold);margin:4px 0 14px;" id="siTag"></div>
+      </div>
+      <div class="helpSec">
+        <h3>종목 특징</h3>
+        <p id="siDesc"></p>
+      </div>
+      <div class="helpSec">
+        <h3>크게 움직이는 재료·이슈</h3>
+        <ul id="siFactors"></ul>
+      </div>
+      <button class="modalBtn" id="siSelectBtn">이 종목으로 시작하기</button>
+    </div>
+  </div>
+
 </div></div>
 
 <script>
@@ -296,6 +350,7 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const rnd=(a,b)=>a+Math.random()*(b-a);
 const fmt$=v=>(v<0?'-$':'$')+Math.abs(v).toFixed(2);
 const fmtSigned=(v,d=2)=>(v>=0?'+':'')+v.toFixed(d);
+const formatPrice=(v,dec)=>'$'+v.toLocaleString('en-US',{minimumFractionDigits:dec,maximumFractionDigits:dec});
 
 /* ================= SOUND ================= */
 let actx=null, muted=false;
@@ -325,13 +380,33 @@ const sfx={
 const SKEY='oilScalperV1';
 function loadProg(){
   try{ const d=JSON.parse(localStorage.getItem(SKEY));
-    if(d && typeof d==='object') return Object.assign({unlocked:1,stageStars:{},stats:{rounds:0,totalScore:0,bestStreak:0},muted:false}, d);
+    if(d && typeof d==='object') return Object.assign({unlocked:1,stageStars:{},stats:{rounds:0,totalScore:0,bestStreak:0},muted:false,instrumentId:'wti'}, d);
   }catch(e){}
-  return {unlocked:1,stageStars:{},stats:{rounds:0,totalScore:0,bestStreak:0},muted:false};
+  return {unlocked:1,stageStars:{},stats:{rounds:0,totalScore:0,bestStreak:0},muted:false,instrumentId:'wti'};
 }
 function saveProg(){ localStorage.setItem(SKEY, JSON.stringify(PROG)); }
 let PROG=loadProg();
 muted=!!PROG.muted;
+
+/* ================= INSTRUMENTS ================= */
+const INSTRUMENTS=[
+  { id:'wti', icon:'🛢️', name:'WTI 원유', tag:'에너지 · 지정학 이슈에 민감', priceMin:64, priceMax:84, decimals:2, volMult:1.0,
+    desc:'서부텍사스산 원유(WTI)는 미국을 대표하는 원유 선물이에요. 산유국들의 생산량 결정과 지정학적 리스크에 따라 변동성이 크게 나타나는 대표적인 원자재예요.',
+    factors:['OPEC+ 감산·증산 결정','미국 EIA/API 원유재고 발표','중동 등 산유 지역의 지정학적 리스크(전쟁·제재)','글로벌 경기 둔화 및 원유 수요 전망','달러 인덱스(DXY) 강세·약세'] },
+  { id:'sp500', icon:'📊', name:'S&P500 선물', tag:'미국 대표 지수 · 매크로 지표에 민감', priceMin:4900, priceMax:5700, decimals:1, volMult:0.4,
+    desc:'S&P500은 미국 대표 500개 대형주로 구성된 지수예요. 미국 경제 전반의 체력을 보여주는 바로미터로, 거시경제 지표와 연준의 통화정책에 크게 반응해요.',
+    factors:['연준(Fed) 금리 결정 및 파월 의장 발언','고용지표(비농업고용, 실업률)','물가지표(CPI, PCE)','주요 빅테크·기업 실적 발표 시즌','미 국채금리 변화'] },
+  { id:'nasdaq', icon:'💻', name:'나스닥100 선물', tag:'빅테크·성장주 중심 · 고변동성', priceMin:16500, priceMax:19500, decimals:1, volMult:0.7,
+    desc:'나스닥100은 애플, 마이크로소프트, 엔비디아 등 대형 기술주 비중이 높은 지수예요. 성장주는 금리에 민감해서 S&P500보다 변동폭이 더 큰 편이에요.',
+    factors:['빅테크 실적 발표(매그니피센트7)','미 국채금리(특히 장기금리) 변화','AI·반도체 산업 이슈','연준 금리 정책','위험자산 선호·회피 심리'] },
+  { id:'copper', icon:'🔶', name:'구리 선물', tag:'산업금속 대표주자 · 글로벌 경기 바로미터', priceMin:3.6, priceMax:4.6, decimals:3, volMult:0.75,
+    desc:'구리는 건설·전력망·전기차 등 산업 전반에 쓰여 "닥터 코퍼(Dr. Copper)"라 불릴 만큼 글로벌 경기를 잘 반영하는 원자재예요.',
+    factors:['중국 제조업 PMI 및 경기부양책','글로벌 제조업 경기 동향','전기차·재생에너지 관련 수요','주요 광산 공급 차질(파업, 남미 이슈)','달러화 강세·약세'] },
+  { id:'gold', icon:'🥇', name:'금 선물', tag:'대표 안전자산 · 인플레이션 헤지', priceMin:1950, priceMax:2450, decimals:1, volMult:0.45,
+    desc:'금은 대표적인 안전자산으로, 위기 상황에서 자금이 몰리고 인플레이션을 헤지하는 수단으로도 쓰여요. 실질금리와 반대로 움직이는 경향이 있어요.',
+    factors:['미 실질금리(국채금리 - 기대인플레이션)','지정학적 리스크(전쟁·분쟁) 발생 시 안전자산 수요','달러 인덱스(DXY)','각국 중앙은행 금 매입 동향','인플레이션 기대심리'] },
+];
+function getInstrument(){ return INSTRUMENTS.find(x=>x.id===PROG.instrumentId) || INSTRUMENTS[0]; }
 
 /* ================= PATTERN CONFIGS =================
    anchors: [{i, p}] index -> % change from randomized base price
@@ -462,17 +537,18 @@ function computeMA(candles,len){
   }
   return out;
 }
-function buildScenario(patternId){
+function buildScenario(patternId, instrumentId){
   const cfg=PATTERNS.find(p=>p.id===patternId);
-  const base=rnd(64,84);
-  const candles=buildFromAnchors(cfg.anchors,{noise:0.5,wick:0.55});
+  const inst=INSTRUMENTS.find(x=>x.id===instrumentId) || INSTRUMENTS[0];
+  const base=rnd(inst.priceMin, inst.priceMax);
+  const candles=buildFromAnchors(cfg.anchors,{noise:0.5*inst.volMult,wick:0.55*inst.volMult});
   applyTouches(candles, cfg.touches, base);
   for(let i=0;i<candles.length;i++){
     candles[i].o*=base; candles[i].h*=base; candles[i].l*=base; candles[i].c*=base;
   }
   const levels=(cfg.levels||[]).map(l=>({...l, price:base*(1+l.price/100)}));
   return {
-    cfg, candles, levels, base,
+    cfg, candles, levels, base, instrument:inst,
     direction:cfg.direction, idealEntryIndex:cfg.idealEntryIndex,
     ma5:computeMA(candles,5), ma20:computeMA(candles,20),
     title:cfg.title, tf:cfg.tf, tip:cfg.tip, explain:cfg.explain, icon:cfg.icon,
@@ -565,7 +641,7 @@ function drawChart(scenario, revealCount, entryInfo){
   const {w:W,h:H}=fitCanvas();
   ctx.clearRect(0,0,W,H);
   ctx.fillStyle='#0a0d14'; ctx.fillRect(0,0,W,H);
-  const pad={l:6,r:58,t:10,b:8};
+  const pad={l:6,r:68,t:10,b:8};
   const plotW=W-pad.l-pad.r, plotH=H-pad.t-pad.b;
   const candles=scenario.candles, n=candles.length;
   const slot=plotW/n;
@@ -584,7 +660,7 @@ function drawChart(scenario, revealCount, entryInfo){
   for(let g=0; g<=gridN; g++){
     const p=lo+(hi-lo)*g/gridN; const yy=y(p);
     ctx.beginPath(); ctx.moveTo(pad.l,yy); ctx.lineTo(W-pad.r,yy); ctx.stroke();
-    ctx.fillText('$'+p.toFixed(2), W-pad.r+6, yy);
+    ctx.fillText(formatPrice(p, scenario.instrument.decimals), W-pad.r+6, yy);
   }
 
   // level lines (support/resistance/neckline)
@@ -669,10 +745,13 @@ function drawChart(scenario, revealCount, entryInfo){
   // current price line
   if(rc>0){
     const cp=candles[rc-1].c;
+    const cpLabel=formatPrice(cp, scenario.instrument.decimals);
     ctx.save(); ctx.setLineDash([2,3]); ctx.strokeStyle='rgba(230,233,240,0.4)'; ctx.lineWidth=1;
     ctx.beginPath(); ctx.moveTo(pad.l,y(cp)); ctx.lineTo(W-pad.r,y(cp)); ctx.stroke(); ctx.restore();
-    ctx.fillStyle='#e6e9f0'; ctx.fillRect(W-pad.r,y(cp)-8,pad.r-2,16);
-    ctx.fillStyle='#0a0d14'; ctx.font='10px sans-serif'; ctx.fillText('$'+cp.toFixed(2), W-pad.r+3, y(cp));
+    ctx.font='10px sans-serif';
+    const labelW=Math.max(pad.r-2, ctx.measureText(cpLabel).width+8);
+    ctx.fillStyle='#e6e9f0'; ctx.fillRect(W-pad.r,y(cp)-8,labelW,16);
+    ctx.fillStyle='#0a0d14'; ctx.fillText(cpLabel, W-pad.r+3, y(cp));
   }
 }
 
@@ -683,13 +762,13 @@ const G={
   timer:null, speed:1, balance:1000, sessionStars:[], streak:0,
   practiceStats:{rounds:0,total:0,streak:0},
 };
-const REVEAL_MS=270;
+const REVEAL_MS=500;
 
 function startRound(){
   const patternId = G.mode==='curriculum'
     ? PATTERNS[G.stageId-1].id
     : PATTERNS[Math.floor(Math.random()*Math.min(PROG.unlocked,PATTERNS.length))].id;
-  G.scenario=buildScenario(patternId);
+  G.scenario=buildScenario(patternId, PROG.instrumentId);
   G.revealCount=1; G.phase='revealing'; G.playerDir=null; G.entryIndex=null; G.trade=null;
   setActionsEnabled(true);
   updateTopBar();
@@ -728,8 +807,9 @@ function decide(dir){
     G.trade=null;
   } else {
     G.trade=simulateTrade(G.scenario.candles, G.entryIndex, dir);
-    if(dir==='long'){ sfx.enterLong(); showPosToast('매수(롱) 진입 @ $'+G.scenario.candles[G.entryIndex].c.toFixed(2),'long'); }
-    else { sfx.enterShort(); showPosToast('매도(숏) 진입 @ $'+G.scenario.candles[G.entryIndex].c.toFixed(2),'short'); }
+    const epLabel=formatPrice(G.scenario.candles[G.entryIndex].c, G.scenario.instrument.decimals);
+    if(dir==='long'){ sfx.enterLong(); showPosToast('매수(롱) 진입 @ '+epLabel,'long'); }
+    else { sfx.enterShort(); showPosToast('매도(숏) 진입 @ '+epLabel,'short'); }
   }
 }
 function finishRound(){
@@ -759,13 +839,14 @@ function showPosToast(text,cls){
   const t=$('#posToast'); t.textContent=text; t.className='show '+cls;
 }
 function updateTopBar(){
+  const inst=getInstrument();
   if(G.mode==='curriculum'){
     $('#gStageTitle').textContent='STAGE '+G.stageId+' · '+PATTERNS[G.stageId-1].title;
-    $('#gStageSub').textContent='WTI 원유 · '+PATTERNS[G.stageId-1].tf;
+    $('#gStageSub').textContent=inst.icon+' '+inst.name+' · '+PATTERNS[G.stageId-1].tf;
     $('#gRoundInfo').textContent='라운드 '+G.round+'/'+G.roundsPerStage;
   } else {
     $('#gStageTitle').textContent='자유 연습 모드';
-    $('#gStageSub').textContent='WTI 원유 · 랜덤 패턴';
+    $('#gStageSub').textContent=inst.icon+' '+inst.name+' · 랜덤 패턴';
     $('#gRoundInfo').textContent='누적 '+G.practiceStats.rounds+'회';
   }
   const balEl=$('#gBalance');
@@ -845,6 +926,7 @@ function showScreen(id){
 function goHome(){
   clearInterval(G.timer);
   refreshHomeStats();
+  refreshHomeSymbolChip();
   showScreen('screenHome');
 }
 function refreshHomeStats(){
@@ -852,10 +934,51 @@ function refreshHomeStats(){
   $('#statRounds').textContent=PROG.stats.rounds;
   $('#statAvg').textContent = PROG.stats.rounds>0 ? Math.round(PROG.stats.totalScore/PROG.stats.rounds) : '-';
 }
+function refreshHomeSymbolChip(){
+  const inst=getInstrument();
+  $('#homeSymbolIcon').textContent=inst.icon;
+  $('#homeSymbolName').textContent=inst.name;
+}
 function goToStageSelect(){
   renderStageGrid();
+  const inst=getInstrument();
+  $('#stageInstrumentTag').textContent=inst.icon+' '+inst.name+'로 학습 중';
   showScreen('screenStage');
 }
+function renderSymbolGrid(){
+  const grid=$('#symbolGrid');
+  grid.innerHTML=INSTRUMENTS.map(inst=>{
+    const sel=PROG.instrumentId===inst.id;
+    return '<div class="symbolCard'+(sel?' selected':'')+'" data-id="'+inst.id+'">'+
+      '<div class="icon">'+inst.icon+'</div>'+
+      '<div class="txt"><b>'+inst.name+'</b><span>'+inst.tag+'</span></div>'+
+      (sel?'<div class="badge">선택됨</div>':'')+
+      '</div>';
+  }).join('');
+  grid.querySelectorAll('.symbolCard').forEach(el=>{
+    el.onclick=()=>{ sfx.click(); openSymbolInfo(el.dataset.id); };
+  });
+}
+function openSymbolInfo(id){
+  const inst=INSTRUMENTS.find(x=>x.id===id);
+  $('#siIcon').textContent=inst.icon;
+  $('#siName').textContent=inst.name;
+  $('#siTag').textContent=inst.tag;
+  $('#siDesc').textContent=inst.desc;
+  $('#siFactors').innerHTML=inst.factors.map(f=>'<li>'+f+'</li>').join('');
+  $('#siSelectBtn').textContent = PROG.instrumentId===id ? '선택 완료 (닫기)' : '이 종목으로 시작하기';
+  $('#siSelectBtn').onclick=()=>{
+    sfx.click();
+    PROG.instrumentId=id; saveProg();
+    $('#ovSymbolInfo').classList.remove('show');
+    renderSymbolGrid();
+    refreshHomeSymbolChip();
+  };
+  $('#ovSymbolInfo').classList.add('show');
+}
+$('#homeSymbolChip').onclick=()=>{ sfx.click(); renderSymbolGrid(); showScreen('screenSymbol'); };
+$('#symbolBack').onclick=()=>{ sfx.click(); goHome(); };
+$('#symbolInfoClose').onclick=()=>{ sfx.click(); $('#ovSymbolInfo').classList.remove('show'); };
 function renderStageGrid(){
   const grid=$('#stageGrid');
   grid.innerHTML=PATTERNS.map((p,idx)=>{
@@ -909,8 +1032,8 @@ function refreshMuteBtn(){ $('#btnMute').textContent = muted ? '🔇' : '🔊'; 
 $('#btnMute').onclick=()=>{ muted=!muted; PROG.muted=muted; saveProg(); refreshMuteBtn(); sfx.click(); };
 $('#btnReset').onclick=()=>{
   if(confirm('모든 진행 상황(스테이지 잠금 해제, 별점, 기록)을 초기화할까요?')){
-    PROG={unlocked:1,stageStars:{},stats:{rounds:0,totalScore:0,bestStreak:0},muted:muted};
-    saveProg(); refreshHomeStats();
+    PROG={unlocked:1,stageStars:{},stats:{rounds:0,totalScore:0,bestStreak:0},muted:muted,instrumentId:PROG.instrumentId||'wti'};
+    saveProg(); refreshHomeStats(); refreshHomeSymbolChip();
   }
 };
 
@@ -934,6 +1057,7 @@ if(window.visualViewport){
 
 refreshMuteBtn();
 refreshHomeStats();
+refreshHomeSymbolChip();
 })();
 </script>
 </body>
