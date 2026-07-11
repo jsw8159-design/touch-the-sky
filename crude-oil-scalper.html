@@ -202,6 +202,9 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .introList li{font-size:12.5px;line-height:1.7;color:var(--text-dim);margin-bottom:8px;padding-left:14px;position:relative;}
 .introList li::before{content:'—';position:absolute;left:0;color:var(--gold);}
 .introList li b{color:var(--text);}
+.introSubList{margin:6px 0 0;padding-left:0;list-style:none;}
+.introSubList li{font-size:12px;line-height:1.65;color:var(--text-dim2);margin-bottom:5px;padding-left:14px;position:relative;}
+.introSubList li::before{content:'·';position:absolute;left:2px;color:var(--text-dim);}
 .introTableWrap{overflow-x:auto;margin:10px 0;}
 .introTable{width:100%;border-collapse:collapse;font-size:11.5px;min-width:460px;}
 .introTable th{background:var(--panel2);color:var(--gold);padding:7px 8px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;}
@@ -297,6 +300,40 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
           <li>사자(강자)들이 세팅을 끝내고 방향성을 터뜨린 뒤 손을 털고 나면, 그 남은 찌꺼기를 두고 하이에나와 원시인(개인 투자자)들이 피를 흘리며 싸우는 것이 시장의 본질입니다.</li>
         </ul>
         <p class="introP">특히 해외선물 시장은 매일 새로운 세팅과 방향성 분출, 소강상태가 반복되며 양방향(상승/하락) 배팅이 가능하기 때문에 단타 트레이더들에게 가장 유리한 사냥터가 됩니다.</p>
+
+        <div class="introH1">🔑 기준마디, 매물대의 개념과 이해</div>
+        <p class="introP">선물거래에서 기준마디는 과거 거래가 집중된 가격대이므로 심리적·기술적 지지·저항 역할을 하며, 매물대는 본전 심리와 대기 물량 때문에 가격이 일시적으로 멈추거나 밀리는 구간입니다. 즉, 기준마디 도달 시 방향이 마무리되는 것은 시장 참여자들의 매수·매도 심리가 응축된 자리이기 때문입니다.</p>
+
+        <div class="introH2">📌 기준마디 도달 후 방향이 마무리되는 이유</div>
+        <ul class="introList">
+          <li><b>기술적 마디값</b>: 특정 가격대에서 과거 거래가 집중된 지점으로, 시장 참여자들의 심리가 강하게 작용합니다.</li>
+          <li><b>지지 역할</b>: 하락 시 해당 가격대에 도달하면, 과거에 매수하지 못한 투자자와 저가 매수세가 유입되어 반등을 유도합니다.</li>
+          <li><b>저항 역할</b>: 상승 시 해당 가격대에 도달하면, 본전 회복을 원하는 매도세와 이익 실현 매도가 쏟아져 상승이 멈추거나 반전됩니다.</li>
+          <li><b>결론</b>: 기준마디는 단순한 숫자가 아니라 거래 에너지의 응축 지점으로, 방향 전환이나 추세 마무리의 신호가 되기 쉽습니다.</li>
+        </ul>
+
+        <div class="introH2">📊 매물대에 다가가면 주춤거리는 이유</div>
+        <ul class="introList">
+          <li><b>매물대</b>: 가격대별 거래량 분포를 보여주는 지표로, 거래가 많이 쌓인 구간은 강한 지지·저항으로 작용합니다.</li>
+          <li><b>본전 심리</b>:
+            <ul class="introSubList">
+              <li>가격이 위에서 내려올 때 → "내 평단이다, 추가 매수하자" → 지지 발생</li>
+              <li>가격이 아래에서 올라올 때 → "드디어 본전이다, 탈출하자" → 매도 물량 증가 → 저항 발생</li>
+            </ul>
+          </li>
+          <li><b>매물대 공백</b>: 거래가 적은 구간에서는 지지·저항이 약해 가격이 빠르게 통과하는 경향이 있습니다.</li>
+          <li><b>결론</b>: 매물대는 시장 참여자들의 본전 심리와 대기 물량 때문에 가격이 멈추거나 밀리는 구간이며, 공백 구간에서는 오히려 가속도가 붙습니다.</li>
+        </ul>
+
+        <div class="introH2">🔑 핵심 비교</div>
+        <div class="introTableWrap">
+          <table class="introTable">
+            <tr><th>개념</th><th>의미</th><th>가격 반응</th></tr>
+            <tr><td><b>기준마디</b></td><td>과거 거래가 집중된 핵심 가격대</td><td>방향 전환·추세 마무리</td></tr>
+            <tr><td><b>매물대</b></td><td>가격대별 거래량 분포 (POC·VA)</td><td>지지·저항·일시적 주춤</td></tr>
+            <tr><td><b>매물대 공백</b></td><td>거래량이 적은 구간</td><td>빠른 돌파·급등·급락</td></tr>
+          </table>
+        </div>
 
         <div class="introFooterNote">본 프로그램의 심화 과정에서는 앞서 언급한 세 가지 기본기(기준마디, 매물대, 차트세팅에 대한 이해)를 바탕으로 한 본격적인 차트 훈련과 함께, <b>'매매가 잘 되는 것 같음에도 계좌에 돈이 모이지 않는 숨은 비밀'</b>을 다루며 완결됩니다. 꾸준한 수익 능력을 장착하고 싶다면 심화 과정을 학습하시기 바랍니다.</div>
 
