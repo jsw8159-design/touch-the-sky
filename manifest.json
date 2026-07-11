@@ -1,0 +1,15 @@
+{
+  "name": "하늘에 닿고 싶어 - Touch the Sky",
+  "short_name": "하늘에 닿고 싶어",
+  "description": "기둥을 넘나들며 끝없이 솟아오르는 캐주얼 점프 게임",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#8FD8FF",
+  "theme_color": "#FFC947",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

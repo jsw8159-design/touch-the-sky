@@ -4,9 +4,38 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>하늘에 닿고 싶어</title>
-<link rel="icon" href="data:,">
+<meta name="description" content="기둥을 넘나들며 끝없이 솟아오르는 캐주얼 점프 게임. 실시간 랭킹, 11종 캐릭터, 친구 도전장까지 - 한국어와 English 모두 지원합니다.">
+<meta name="theme-color" content="#FFC947">
+
+<!-- Open Graph / KakaoTalk / Discord 등 링크 공유 미리보기 -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://jsw8159-design.github.io/touch-the-sky/">
+<meta property="og:title" content="하늘에 닿고 싶어 - Touch the Sky">
+<meta property="og:description" content="기둥을 넘나들며 끝없이 솟아오르는 캐주얼 점프 게임. 실시간 랭킹, 11종 캐릭터, 친구 도전장까지!">
+<meta property="og:image" content="https://jsw8159-design.github.io/touch-the-sky/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+
+<!-- Twitter/X Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="하늘에 닿고 싶어 - Touch the Sky">
+<meta name="twitter:description" content="기둥을 넘나들며 끝없이 솟아오르는 캐주얼 점프 게임. 실시간 랭킹, 11종 캐릭터, 친구 도전장까지!">
+<meta name="twitter:image" content="https://jsw8159-design.github.io/touch-the-sky/og-image.png">
+
+<!-- favicon / home-screen icons -->
+<link rel="icon" href="favicon-32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="icon-192.png" sizes="192x192" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.json">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- loaded non-render-blocking: if fonts.googleapis.com is slow, blocked (e.g. mainland China),
+     or unreachable, the game still paints immediately using the sans-serif fallback below
+     instead of showing a blank screen until this resource resolves -->
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Jua&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&display=swap" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&display=swap"></noscript>
 <style>
   * { -webkit-tap-highlight-color: transparent; }
   html, body {
@@ -4329,14 +4358,19 @@
       ctx.font = `${Math.round(W*0.032)}px 'Jua', sans-serif`;
       ctx.fillStyle = 'rgba(255,255,255,0.7)';
       ctx.fillText(tr('achEarnedOf', { n: earnedCount, total: ACHIEVEMENTS.length }), W/2, H*0.31);
-      const achRowH = Math.min(H*0.054, H*0.52/ACHIEVEMENTS.length);
+      const achRowH = Math.min(H*0.052, H*0.5/ACHIEVEMENTS.length);
       for(let i=0;i<ACHIEVEMENTS.length;i++){
         const a = ACHIEVEMENTS[i];
         const earned = earnedAchievements.has(a.id);
-        const y = H*0.37 + i*achRowH;
-        ctx.font = `${Math.round(W*0.034)}px 'Jua', sans-serif`;
-        ctx.fillStyle = earned ? '#FFD93D' : 'rgba(255,255,255,0.4)';
+        const y = H*0.36 + i*achRowH;
+        ctx.font = `${Math.round(W*0.032)}px 'Jua', sans-serif`;
+        ctx.fillStyle = earned ? '#FFD93D' : 'rgba(255,255,255,0.55)';
         ctx.fillText((earned?a.icon:'🔒')+' '+achName(a), W/2, y);
+        // description stays visible even after earning it, so the list still reads
+        // as a coherent goal list rather than losing context once achieved
+        ctx.font = `${Math.round(W*0.022)}px 'Jua', sans-serif`;
+        ctx.fillStyle = earned ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.32)';
+        ctx.fillText(achDesc(a), W/2, y+achRowH*0.42);
       }
     }
     ctx.font = `${Math.round(W*0.028)}px 'Jua', sans-serif`;
