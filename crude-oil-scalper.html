@@ -227,6 +227,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
       <div class="h1">선물차트 공략법</div>
       <div class="sub">매물대(횡보 구간)와 전고점·전저점,<br>두 가지 핵심 공략 포인트를 직접 찾아보는 트레이닝</div>
       <button class="introLinkBtn" id="btnIntro">📖 프로그램 소개 및 개발 취지 보기</button>
+      <button class="introLinkBtn" id="btnAdvanced">🎓 심화 과정 — 계좌가 안 자라는 이유</button>
       <button class="symbolChip" id="homeSymbolChip">
         <span class="icon" id="homeSymbolIcon">🛢️</span>
         <span class="txt"><b id="homeSymbolName">WTI 원유</b><small>탭하여 종목 변경 · 종목 특징 보기</small></span>
@@ -338,6 +339,81 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
         <div class="introFooterNote">본 프로그램의 심화 과정에서는 앞서 언급한 세 가지 기본기(기준마디, 매물대, 차트세팅에 대한 이해)를 바탕으로 한 본격적인 차트 훈련과 함께, <b>'매매가 잘 되는 것 같음에도 계좌에 돈이 모이지 않는 숨은 비밀'</b>을 다루며 완결됩니다. 꾸준한 수익 능력을 장착하고 싶다면 심화 과정을 학습하시기 바랍니다.</div>
 
         <button class="modalBtn" id="introContinueBtn" style="margin-top:20px;">확인했습니다, 시작하기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADVANCED COURSE -->
+  <div id="screenAdvanced" class="screen">
+    <div class="topbar"><button class="navBtn" id="advBack">←</button><div class="ttl">심화 과정</div></div>
+    <div class="body">
+      <div class="introBody">
+
+        <div class="introH1">🎓 심화 과정: 왜 매매는 잘 되는데 계좌에 돈이 안 모일까</div>
+        <p class="introP">기준마디와 매물대로 좋은 타점을 찾아내는 능력은 '확률적 우위'를 만들어줄 뿐입니다. 그 우위를 실제 수익으로 바꾸는 것은 전혀 다른 능력, 바로 손익비와 리스크를 관리하는 힘입니다. 이 과정에서는 많은 트레이더들이 놓치는 네 가지 숨은 비밀을 다룹니다.</p>
+
+        <div class="introH1">🔍 첫 번째 비밀 — 승률은 실력이 아니다</div>
+        <div class="introH2">"짧은 익절, 긴 손절"의 함정</div>
+        <p class="introP">초보 트레이더의 전형적인 습관은 조금만 이익이 나도 불안해서 서둘러 청산하고, 손실이 나면 "곧 돌아오겠지"라며 손절을 미루는 것입니다. 이 습관을 오래 유지하면 승률은 높아 보여도 계좌는 서서히 줄어듭니다.</p>
+        <div class="introTableWrap">
+          <table class="introTable">
+            <tr><th>구분</th><th>승률</th><th>평균 손익비</th><th>10회 매매 결과</th></tr>
+            <tr><td><b>A: 승률에 집착</b></td><td>70% (7승 3패)</td><td>익절 +0.5R · 손절 −2R</td><td>7×0.5 − 3×2 = −2.5R</td></tr>
+            <tr><td><b>B: 손익비 관리</b></td><td>40% (4승 6패)</td><td>익절 +2R · 손절 −1R</td><td>4×2 − 6×1 = +2R</td></tr>
+          </table>
+        </div>
+        <div class="introQuote">
+          <span class="lead">결론</span>
+          승률이 아니라 손익비가 계좌를 지킵니다. 같은 10번의 매매에서 승률이 훨씬 낮은 B가 오히려 플러스를 기록합니다. 실전 매매 훈련 결과창에 '승률'과 함께 'R배수'를 같이 보여주는 이유가 바로 여기에 있습니다.
+        </div>
+
+        <div class="introH1">📉 두 번째 비밀 — 손실은 산수가 아니라 기하학이다</div>
+        <p class="introP">손실은 원금 대비 비율로 계산되기 때문에, 손실이 커질수록 원금을 회복하는 데 필요한 수익률은 훨씬 더 가파르게 커집니다.</p>
+        <div class="introTableWrap">
+          <table class="introTable">
+            <tr><th>손실률</th><th>원금 회복에 필요한 수익률</th></tr>
+            <tr><td><b>−10%</b></td><td>+11%</td></tr>
+            <tr><td><b>−20%</b></td><td>+25%</td></tr>
+            <tr><td><b>−30%</b></td><td>+43%</td></tr>
+            <tr><td><b>−50%</b></td><td>+100%</td></tr>
+            <tr><td><b>−80%</b></td><td>+400%</td></tr>
+          </table>
+        </div>
+        <p class="introP">−50% 손실은 원금의 절반을 잃은 것처럼 보이지만, 다시 원금을 만들려면 남은 절반으로 100%를 벌어야 합니다. −80%까지 손실이 커지면 400%, 즉 원금의 5배를 벌어야 겨우 본전입니다.</p>
+        <div class="introQuote">
+          <span class="lead">결론</span>
+          큰 손실 한 번이 그동안 쌓아온 여러 번의 작은 이익을 통째로 무너뜨립니다. 손절 라인을 지키는 이유는 겁이 많아서가 아니라, 수학적으로 계좌를 지키기 위해서입니다.
+        </div>
+
+        <div class="introH1">🧲 세 번째 비밀 — 물타기(평단 낮추기)의 함정</div>
+        <p class="introP">앞서 배운 '본전 심리'가 실전에서 가장 위험하게 나타나는 형태가 바로 물타기입니다. 손실 중인 포지션에 계속 추가로 진입해서 평균 단가를 낮추는 행위인데, 얼핏 합리적으로 보이지만 세 가지 문제를 낳습니다.</p>
+        <ul class="introList">
+          <li><b>리스크 확대</b>: 포지션이 커질수록 같은 가격 변동에도 손실 금액이 기하급수적으로 커집니다.</li>
+          <li><b>손절 라인 붕괴</b>: 진입할 때마다 내가 버틸 수 있는 손실 범위가 달라져서, 결국 손절 자체를 못 하게 됩니다.</li>
+          <li><b>기회비용</b>: 물린 자금이 묶여 있는 동안, 정작 좋은 자리가 나와도 진입할 계약이 남아있지 않습니다.</li>
+        </ul>
+        <div class="introQuote">
+          이 프로그램에서 계약 수를 최대 2개로 제한해 둔 것도 같은 이유입니다. 물타기로 한없이 키울 수 없도록, 리스크의 상한선을 미리 정해두는 습관을 몸에 익히기 위해서입니다.
+        </div>
+
+        <div class="introH1">🔁 네 번째 비밀 — 과매매(오버트레이딩)</div>
+        <p class="introP">스프레드나 수수료는 한 번은 작아 보여도, 확신 없는 자리에 습관적으로 진입하는 매매가 쌓이면 무시할 수 없는 비용이 됩니다. '심심해서', '뭔가 하고 싶어서' 진입하는 매매는 대부분 손익비도 나쁘고 승률도 낮습니다.</p>
+        <div class="introQuote">
+          계좌를 키우는 것은 매매 횟수가 아니라 매매의 질입니다. 기준마디와 매물대가 겹치는, 확률이 높은 자리에서만 계약을 쓰는 절제가 필요합니다.
+        </div>
+
+        <div class="introH1">📋 심화 과정 핵심 체크리스트</div>
+        <ul class="introList">
+          <li>진입 전에 손절 라인부터 정한다 (진입 이후에 정하지 않는다)</li>
+          <li>익절 목표는 최소 손절폭의 1.5~2배 이상으로 잡는다</li>
+          <li>손실 포지션에 물타기(추가 진입)를 하지 않는다</li>
+          <li>확신이 없는 자리에서는 관망도 전략이다</li>
+          <li>매매를 마친 뒤에는 승률이 아니라 총 R배수 합계로 스스로를 평가한다</li>
+        </ul>
+
+        <div class="introFooterNote">기준마디와 매물대로 좋은 타점을 찾는 것이 '공격'이라면, 손익비와 리스크 관리는 '방어'입니다. 공격과 방어가 함께 있어야 계좌가 실제로 자랍니다. 공략 포인트 찾기와 실전 매매 훈련을 반복하면서, 이 체크리스트를 실전에 적용해보세요.</div>
+
+        <button class="modalBtn" id="advDoneBtn" style="margin-top:20px;">확인했습니다</button>
       </div>
     </div>
   </div>
@@ -1910,6 +1986,9 @@ $('#btnHelp').onclick=()=>{ sfx.click(); $('#ovHelp').classList.add('show'); };
 $('#btnIntro').onclick=()=>{ sfx.click(); showScreen('screenIntro'); };
 $('#introBack').onclick=()=>{ sfx.click(); goHome(); };
 $('#introContinueBtn').onclick=()=>{ sfx.click(); PROG.introSeen=true; saveProg(); goHome(); };
+$('#btnAdvanced').onclick=()=>{ sfx.click(); showScreen('screenAdvanced'); };
+$('#advBack').onclick=()=>{ sfx.click(); goHome(); };
+$('#advDoneBtn').onclick=()=>{ sfx.click(); goHome(); };
 
 /* mute / reset */
 function refreshMuteBtn(){ $('#btnMute').textContent = muted ? '🔇' : '🔊'; }
