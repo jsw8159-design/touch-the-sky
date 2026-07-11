@@ -1464,6 +1464,36 @@
   let landTime=-999;
   let invincibleUntil=0;
   let blinkAt=0, blinking=false, blinkUntil=0;
+  // flame afterimage trail (30+ combo): fading fire-tinted ghosts along the jump path
+  let charAfterimages = [];
+  let lastAfterimageAt = 0;
+  const AFTERIMAGE_LIFE = 260;
+  function spawnCharAfterimage(now){
+    if(comboTier()<6) return;
+    if(now-lastAfterimageAt<50) return;
+    lastAfterimageAt = now;
+    charAfterimages.push({ x:charX, y:charY, rot:charRot, scale:charScale, born:now });
+    if(charAfterimages.length>8) charAfterimages.shift();
+  }
+  function drawCharAfterimages(now){
+    if(!charAfterimages.length) return;
+    charAfterimages = charAfterimages.filter(function(a){ return now-a.born < AFTERIMAGE_LIFE; });
+    for(const a of charAfterimages){
+      const p = clamp((now-a.born)/AFTERIMAGE_LIFE, 0, 1);
+      const r = charRadius*a.scale*(1-p*0.15);
+      ctx.save();
+      ctx.globalAlpha = (1-p)*0.55;
+      ctx.translate(a.x, a.y);
+      ctx.rotate(a.rot);
+      const grad = ctx.createRadialGradient(0,0,0,0,0,r*1.3);
+      grad.addColorStop(0, '#FFD93D');
+      grad.addColorStop(0.5, '#FF7A3D');
+      grad.addColorStop(1, 'rgba(255,60,30,0)');
+      ctx.fillStyle = grad;
+      ctx.beginPath(); ctx.arc(0,0,r*1.3,0,Math.PI*2); ctx.fill();
+      ctx.restore();
+    }
+  }
   let obstacles=[], particles=[];
   let nextSpawnAt=0;
   let bgScrollOffset=0;
@@ -1529,7 +1559,7 @@
     lastAnnouncedZoneIdx = 0;
     lastTickAt = 0; lastHeartbeatAt = 0;
     applyBgmPreset('ground');
-    obstacles = []; particles = [];
+    obstacles = []; particles = []; charAfterimages = [];
     obstacleUnlocked = {helmet:false, ad:false, leaf:false, boulder:false, lightning:false, friend:false, hpup:false, star:false};
     helmetLevel = 0;
     charSide = 'left'; charState='resting';
@@ -1718,10 +1748,6 @@
     checkAchievements();
   }
 
-  // matches comboMultiplierFor()'s x3.0 height-score jump at 30 combo with a visually
-  // taller jump arc, capped so it can never leap off the top of the screen
-  function comboJumpBoost(){ return combo>=30 ? 3 : 1; }
-
   function beginJump1(now){
     const fromX = charSide==='left' ? currentLeftX() : currentRightX();
     const dirSign = charSide==='left' ? 1 : -1;
@@ -1732,7 +1758,7 @@
     segFromX=fromX; segFromY=restY; segToX=toX; segToY=restY;
     segStart=now;
     segDuration = clamp(dist/(W*0.95)*1000, 260, 900);
-    segPeak = Math.min(jumpPeak*comboJumpBoost(), H*0.45);
+    segPeak = jumpPeak;
     travelDir = dirSign;
     charState = 'jump1';
     sfxJump();
@@ -1744,7 +1770,7 @@
     segFromX=charX; segFromY=charY; segToX=targetX; segToY=restY;
     segStart=now;
     segDuration = clamp(dist/(W*0.95)*1000, 220, 900);
-    segPeak = Math.min(jumpPeak*clamp(dist/(gapWidth*0.5), 0.5, 1.4)*comboJumpBoost(), H*0.45);
+    segPeak = jumpPeak*clamp(dist/(gapWidth*0.5), 0.5, 1.4);
     travelDir = targetX>charX ? 1 : -1;
     charState = 'jump2';
     sfxJump();
@@ -1917,7 +1943,7 @@
     sfxLand();
     if(combo>=5 && combo%5===0){
       triggerShout(t('shoutCombo', { combo: combo }), '#FF9F1C', 800);
-      playComboSfx(comboTier());
+      if(combo<=30) playComboSfx(comboTier()); // escalation sfx caps out at 30 - beyond that, just keep counting
       vibrate([25,30,25,30,60].map(v=>Math.round(v*(1+comboTier()*0.1))));
     }
     if(challengeTarget!=null && !challengeBeatenShoutShown && height > challengeTarget){
@@ -2018,6 +2044,7 @@
         charRot = Math.sin(t*Math.PI)*0.32*travelDir;
         charScale = 1 + Math.sin(t*Math.PI)*0.06;
         spawnJumpTrail();
+        spawnCharAfterimage(now);
         if(t>=1){
           enterFreefall(segToX, restY);
         }
@@ -2038,6 +2065,7 @@
         charRot = Math.sin(t*Math.PI)*0.32*travelDir;
         charScale = 1 + Math.sin(t*Math.PI)*0.06;
         spawnJumpTrail();
+        spawnCharAfterimage(now);
         if(t>=1){
           charSide = targetSideAfterJump;
           charX = charSide==='left' ? currentLeftX() : currentRightX();
@@ -4495,6 +4523,7 @@
       if(charState==='friend_highfive' || charState==='friend_ascend'){
         drawFriendCharacter(friendX, friendY, friendVariant);
       }
+      drawCharAfterimages(now);
       drawCharacter(charX, charY, charScale, charRot, now);
       drawShout(now);
     }
