@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>냥냥 레이싱</title>
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<style>
+  * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; user-select: none; }
+  html, body {
+    margin: 0; padding: 0; width: 100%; height: 100%;
+    overflow: hidden; background: #000;
+    font-family: 'Jua', sans-serif;
+    overscroll-behavior: none;
+  }
+  #outer {
+    width: 100vw; height: 100dvh; height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    background: #000;
+  }
+  #gameContainer {
+    position: relative;
+    background: #05061a;
+    overflow: hidden;
+    box-shadow: 0 0 60px rgba(0,0,0,0.7);
+  }
+  #gameCanvas { position: absolute; top: 0; left: 0; display: block; touch-action: none; }
+
+  /* ---------- rotate overlay ---------- */
+  #rotateOverlay {
+    position: fixed; inset: 0; z-index: 999;
+    background: #05061a; color: #eaf0ff;
+    display: none; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; gap: 14px;
+  }
+  #rotateOverlay .icon { font-size: 54px; animation: rotatePhone 1.6s ease-in-out infinite; }
+  @keyframes rotatePhone {
+    0%,100% { transform: rotate(0deg); }
+    50% { transform: rotate(90deg); }
+  }
+  #rotateOverlay .msg { font-size: 18px; color: #cfd8f5; padding: 0 20px; }
+  @media (orientation: landscape) { #rotateOverlay { display: none !important; } }
+  @media (orientation: portrait) { #rotateOverlay { display: flex; } }
+
+  /* ---------- generic screen overlay ---------- */
+  .screen {
+    position: absolute; inset: 0; z-index: 50;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: radial-gradient(ellipse at 50% 30%, rgba(30,36,70,0.96), rgba(4,6,20,0.98));
+    color: #eaf0ff; text-align: center; gap: 10px; padding: 12px;
+  }
+  .screen.hidden { display: none; }
+  .titleLogo { font-size: clamp(28px,6vw,52px); color: #ffd35c; text-shadow: 0 0 18px rgba(255,211,92,0.6), 0 3px 0 #7a4a00; letter-spacing: 2px; }
+  .subtitle { font-size: clamp(12px,2.2vw,16px); color: #9fb0e0; margin-bottom: 6px; }
+  .bigBtn {
+    font-family: 'Jua', sans-serif;
+    font-size: clamp(15px,2.6vw,20px);
+    padding: 12px 34px;
+    border-radius: 40px;
+    border: none;
+    background: linear-gradient(180deg,#ffd35c,#ff9d2e);
+    color: #3a2200;
+    box-shadow: 0 6px 0 #a05e00, 0 8px 18px rgba(0,0,0,0.4);
+    cursor: pointer;
+  }
+  .bigBtn:active { transform: translateY(4px); box-shadow: 0 2px 0 #a05e00; }
+  .smallBtn {
+    font-family: 'Jua', sans-serif;
+    font-size: clamp(11px,2vw,14px);
+    padding: 8px 18px;
+    border-radius: 30px;
+    border: 2px solid rgba(255,255,255,0.35);
+    background: rgba(255,255,255,0.08);
+    color: #eaf0ff;
+    cursor: pointer;
+  }
+  .smallBtn:active { background: rgba(255,255,255,0.2); }
+  .row { display: flex; gap: 10px; align-items: center; justify-content: center; flex-wrap: wrap; }
+
+  /* ---------- info panel ---------- */
+  #infoPanel {
+    position: absolute; inset: 0; z-index: 60;
+    background: rgba(4,6,20,0.95); color: #eaf0ff;
+    display: none; flex-direction: column; align-items: center; justify-content: center;
+    text-align: left; gap: 8px; padding: 16px;
+  }
+  #infoPanel.show { display: flex; }
+  #infoPanel .box { max-width: 480px; font-size: clamp(11px,2vw,14px); line-height: 1.7; color: #cfd8f5; }
+  #infoPanel h3 { color: #ffd35c; margin: 0 0 6px 0; font-size: clamp(14px,2.4vw,18px); }
+
+  /* ---------- select screen ---------- */
+  #catCarousel { display: flex; align-items: center; gap: 6px; }
+  #catCardWrap { width: clamp(180px,32vw,260px); }
+  .catCard {
+    background: rgba(255,255,255,0.06);
+    border: 2px solid rgba(255,255,255,0.18);
+    border-radius: 18px;
+    padding: 10px 14px;
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+  }
+  .catCard .catName { font-size: clamp(15px,2.6vw,20px); color: #ffd35c; }
+  .catCard .catDesc { font-size: clamp(10px,1.8vw,12px); color: #9fb0e0; min-height: 28px; }
+  .statRow { display: flex; align-items: center; gap: 6px; width: 100%; font-size: 11px; color: #cfd8f5; }
+  .statRow .label { width: 62px; text-align: right; flex-shrink: 0; }
+  .pips { display: flex; gap: 2px; }
+  .pip { width: 9px; height: 9px; border-radius: 2px; background: rgba(255,255,255,0.15); }
+  .pip.on { background: #ffd35c; }
+  .arrowBtn {
+    width: 38px; height: 38px; border-radius: 50%; border: none;
+    background: rgba(255,255,255,0.12); color: #eaf0ff; font-size: 18px; cursor: pointer;
+  }
+  .arrowBtn:active { background: rgba(255,255,255,0.28); }
+
+  /* ---------- HUD ---------- */
+  #hud { position: absolute; inset: 0; z-index: 20; pointer-events: none; }
+  #progressWrap {
+    position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
+    width: 56%; max-width: 420px; height: 12px; background: rgba(255,255,255,0.15);
+    border-radius: 8px; overflow: hidden; border: 1px solid rgba(255,255,255,0.25);
+  }
+  #progressFill { height: 100%; width: 0%; background: linear-gradient(90deg,#ffd35c,#ff6b6b); }
+  #rankBadge {
+    position: absolute; top: 6px; right: 8px;
+    background: rgba(0,0,0,0.5); color: #ffd35c; border: 1px solid rgba(255,211,92,0.5);
+    border-radius: 10px; padding: 3px 10px; font-size: clamp(11px,2vw,14px);
+  }
+  #pauseBtn {
+    position: absolute; top: 6px; left: 8px; pointer-events: auto;
+    width: 34px; height: 34px; border-radius: 50%; border: none;
+    background: rgba(0,0,0,0.5); color: #eaf0ff; font-size: 15px; cursor: pointer;
+  }
+  #speedGauge {
+    position: absolute; left: 10px; bottom: 10px;
+    width: clamp(64px,11vw,88px); height: clamp(44px,7.5vw,60px);
+  }
+  #speedNum {
+    position: absolute; left: 10px; bottom: 2px;
+    width: clamp(64px,11vw,88px); text-align: center;
+    color: #eaf0ff; font-size: clamp(12px,2.2vw,15px);
+    text-shadow: 0 0 6px rgba(0,0,0,0.8);
+  }
+  #controls { position: absolute; inset: 0; pointer-events: none; }
+  .ctrlBtn {
+    position: absolute; bottom: 10px; pointer-events: auto;
+    width: clamp(56px,11vw,78px); height: clamp(56px,11vw,78px);
+    border-radius: 50%; border: 2px solid rgba(255,255,255,0.4);
+    background: rgba(255,255,255,0.12); color: #eaf0ff;
+    font-size: clamp(20px,4vw,28px); display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+  }
+  .ctrlBtn:active { background: rgba(255,255,255,0.32); }
+  #btnLeft { left: clamp(96px,17vw,140px); }
+  #btnRight { right: 14px; }
+
+  /* ---------- countdown ---------- */
+  #countdownOverlay {
+    position: absolute; inset: 0; z-index: 70;
+    display: none; align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.25);
+  }
+  #countdownOverlay.show { display: flex; }
+  #countdownNum {
+    font-size: clamp(60px,14vw,120px); color: #ffd35c;
+    text-shadow: 0 0 30px rgba(255,211,92,0.8);
+  }
+
+  /* ---------- result ---------- */
+  .resultRank { font-size: clamp(30px,6vw,50px); color: #ffd35c; text-shadow: 0 0 16px rgba(255,211,92,0.6); }
+  .resultDetail { font-size: clamp(12px,2.2vw,16px); color: #cfd8f5; }
+  .newRecord { color: #6bff9d; font-size: clamp(12px,2.2vw,15px); }
+
+  .heartTag { font-size: 11px; color: #64708f; margin-top: 6px; }
+</style>
+</head>
+<body>
+<div id="outer">
+  <div id="gameContainer">
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- Title -->
+    <div id="screenTitle" class="screen">
+      <div class="titleLogo">🐾 냥냥 레이싱 🐾</div>
+      <div class="subtitle">거리를 질주하는 고양이들의 레인 추월 레이스!</div>
+      <div class="row">
+        <button class="bigBtn" id="btnStart">시작하기</button>
+        <button class="smallBtn" id="btnHowTo">게임 방법</button>
+      </div>
+      <div class="heartTag">최고 기록은 자동 저장됩니다</div>
+    </div>
+
+    <!-- Select -->
+    <div id="screenSelect" class="screen hidden">
+      <div class="subtitle">달릴 고양이를 선택하세요</div>
+      <div id="catCarousel">
+        <button class="arrowBtn" id="btnCatPrev">◀</button>
+        <div id="catCardWrap">
+          <div class="catCard">
+            <div class="catName" id="catName"></div>
+            <div class="catDesc" id="catDesc"></div>
+            <div class="statRow"><div class="label">최고속도</div><div class="pips" id="pipSpeed"></div></div>
+            <div class="statRow"><div class="label">가속력</div><div class="pips" id="pipAccel"></div></div>
+            <div class="statRow"><div class="label">부스터</div><div class="pips" id="pipBoost"></div></div>
+            <div class="heartTag" id="catBest"></div>
+          </div>
+        </div>
+        <button class="arrowBtn" id="btnCatNext">▶</button>
+      </div>
+      <div class="row" style="margin-top:10px;">
+        <button class="smallBtn" id="btnSelectBack">뒤로</button>
+        <button class="bigBtn" id="btnSelectGo">레이스 시작!</button>
+      </div>
+    </div>
+
+    <!-- Result -->
+    <div id="screenResult" class="screen hidden">
+      <div class="subtitle" id="resultTitle">결승 도착!</div>
+      <div class="resultRank" id="resultRank">1등 / 6</div>
+      <div class="resultDetail" id="resultTime">기록: 00.00초</div>
+      <div class="newRecord" id="resultRecord" style="visibility:hidden;">🎉 신기록 달성!</div>
+      <div class="row" style="margin-top:10px;">
+        <button class="smallBtn" id="btnResultSelect">캐릭터 선택</button>
+        <button class="bigBtn" id="btnResultRetry">다시 달리기</button>
+      </div>
+    </div>
+
+    <!-- Pause -->
+    <div id="screenPause" class="screen hidden">
+      <div class="titleLogo" style="font-size:clamp(22px,4.5vw,34px);">일시정지</div>
+      <div class="row" style="margin-top:8px;">
+        <button class="smallBtn" id="btnPauseMenu">캐릭터 선택</button>
+        <button class="bigBtn" id="btnPauseResume">계속하기</button>
+      </div>
+    </div>
+
+    <!-- Info panel -->
+    <div id="infoPanel">
+      <div class="box">
+        <h3>게임 방법</h3>
+        고양이를 선택해 레이스에 참가하세요. 레인은 화면 아래에서 위로 펼쳐지며,
+        앞서 달리는 다른 동물들을 왼쪽·오른쪽으로 피해 추월해서 결승선에 먼저 도착해야 합니다.<br><br>
+        화면 왼쪽 아래 버튼(◀)으로 왼쪽 레인, 오른쪽 아래 버튼(▶)으로 오른쪽 레인으로 이동합니다.
+        화면 왼쪽 아래에는 현재 시속을 보여주는 게이지가 있어요.<br><br>
+        레인 위의 물고기 아이템을 먹으면 부스터가 발동되어 일시적으로 속도가 크게 올라갑니다.
+        다른 동물과 부딪히면 속도가 줄어드니 조심하세요!<br><br>
+        📱 이 게임은 <b>가로 모드</b>에서 플레이하도록 만들어졌습니다. 기기를 가로로 돌려주세요.
+      </div>
+      <button class="bigBtn" id="btnInfoClose" style="margin-top:14px;">확인</button>
+    </div>
+
+    <!-- HUD -->
+    <div id="hud">
+      <div id="progressWrap"><div id="progressFill"></div></div>
+      <div id="rankBadge">1 / 6</div>
+      <button id="pauseBtn">⏸</button>
+      <canvas id="speedGauge"></canvas>
+      <div id="speedNum">0 km/h</div>
+    </div>
+    <div id="countdownOverlay"><div id="countdownNum">3</div></div>
+    <div id="controls">
+      <button class="ctrlBtn" id="btnLeft">◀</button>
+      <button class="ctrlBtn" id="btnRight">▶</button>
+    </div>
+  </div>
+</div>
+<div id="rotateOverlay">
+  <div class="icon">📱</div>
+  <div class="msg">기기를 <b>가로</b>로 돌려주세요<br>냥냥 레이싱은 가로 모드 전용입니다</div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  const LS_PREFIX = "catRacing_";
+  function lsGet(key, fb){ try{ const v = localStorage.getItem(LS_PREFIX+key); return v===null? fb : v; }catch(e){ return fb; } }
+  function lsSet(key, v){ try{ localStorage.setItem(LS_PREFIX+key, v); }catch(e){} }
+  function lsGetJSON(key, fb){ try{ const v = localStorage.getItem(LS_PREFIX+key); return v===null? fb : JSON.parse(v); }catch(e){ return fb; } }
+  function lsSetJSON(key, v){ try{ localStorage.setItem(LS_PREFIX+key, JSON.stringify(v)); }catch(e){} }
+
+  function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
+  function lerp(a,b,t){ return a+(b-a)*t; }
+  function rand(a,b){ return a+Math.random()*(b-a); }
+
+  // ================= DOM refs =================
+  const outer = document.getElementById('outer');
+  const gameContainer = document.getElementById('gameContainer');
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+  const gaugeCanvas = document.getElementById('speedGauge');
+  const gctx = gaugeCanvas.getContext('2d');
+
+  const screenTitle = document.getElementById('screenTitle');
+  const screenSelect = document.getElementById('screenSelect');
+  const screenResult = document.getElementById('screenResult');
+  const screenPause = document.getElementById('screenPause');
+  const infoPanel = document.getElementById('infoPanel');
+  const hud = document.getElementById('hud');
+  const controls = document.getElementById('controls');
+  const countdownOverlay = document.getElementById('countdownOverlay');
+  const countdownNum = document.getElementById('countdownNum');
+  const progressFill = document.getElementById('progressFill');
+  const rankBadge = document.getElementById('rankBadge');
+  const speedNum = document.getElementById('speedNum');
+  const rotateOverlay = document.getElementById('rotateOverlay');
+
+  const catNameEl = document.getElementById('catName');
+  const catDescEl = document.getElementById('catDesc');
+  const catBestEl = document.getElementById('catBest');
+  const pipSpeedEl = document.getElementById('pipSpeed');
+  const pipAccelEl = document.getElementById('pipAccel');
+  const pipBoostEl = document.getElementById('pipBoost');
+
+  const resultRankEl = document.getElementById('resultRank');
+  const resultTimeEl = document.getElementById('resultTime');
+  const resultRecordEl = document.getElementById('resultRecord');
+  const resultTitleEl = document.getElementById('resultTitle');
+
+  // ================= data =================
+  const CATS = [
+    { id:'cheese', name:'치즈냥이', color:'#f0a94e', stripe:'#c97f2e', desc:'무엇이든 무난하게 잘하는 균형파', topSpeed:150, accel:70, boostMult:1.4, boostDur:2.0, pips:{speed:3,accel:3,boost:3} },
+    { id:'black',  name:'까망이',   color:'#33333c', stripe:'#4c4c58', desc:'최고 속도가 압도적인 스피드광', topSpeed:182, accel:44, boostMult:1.3, boostDur:1.8, pips:{speed:5,accel:1,boost:2} },
+    { id:'yellow', name:'노랑이',   color:'#f5d76e', stripe:'#dcb43a', desc:'출발이 번개같은 순발력 요정', topSpeed:128, accel:104, boostMult:1.3, boostDur:1.8, pips:{speed:1,accel:5,boost:2} },
+    { id:'persian',name:'페르시안', color:'#f4f1ec', stripe:'#cfc6b3', desc:'부스터 효율이 뛰어난 마스터', topSpeed:140, accel:58, boostMult:1.75, boostDur:3.0, pips:{speed:2,accel:2,boost:5} },
+  ];
+  const RIVAL_TEMPLATE = [
+    { species:'dog',      name:'댕댕이',   color:'#c98a4b', ear:'floppy'  },
+    { species:'rabbit',   name:'토실이',   color:'#e9e5e1', ear:'long'    },
+    { species:'cat',      name:'라이벌냥', color:'#8a8a94', ear:'triangle'},
+    { species:'fox',      name:'여우',     color:'#e07a3e', ear:'pointy' },
+    { species:'squirrel', name:'다람이',   color:'#a56b3c', ear:'small', tailBig:true },
+  ];
+  const LANES = 4;
+  const TRACK_LENGTH = 1500; // meters
+  const PX_PER_M = 2.3;
+
+  let selectedCatIndex = parseInt(lsGet('lastCat','0'),10) || 0;
+
+  // ================= layout =================
+  let W=0,H=0, trackX0=0, trackW=0, laneW=0, playerScreenY=0, dpr=1;
+  function resize(){
+    const w = window.innerWidth, h = window.innerHeight;
+    const minR = 1.25, maxR = 2.3;
+    let tw = w, th = h;
+    const ratio = w/Math.max(h,1);
+    if(ratio > maxR){ th = h; tw = h*maxR; }
+    else if(ratio < minR){ tw = w; th = w/minR; }
+    gameContainer.style.width = tw+'px';
+    gameContainer.style.height = th+'px';
+    dpr = Math.min(window.devicePixelRatio||1, 2);
+    W = tw; H = th;
+    canvas.width = Math.round(W*dpr); canvas.height = Math.round(H*dpr);
+    canvas.style.width = W+'px'; canvas.style.height = H+'px';
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+
+    gaugeCanvas.width = Math.round(gaugeCanvas.clientWidth*dpr);
+    gaugeCanvas.height = Math.round(gaugeCanvas.clientHeight*dpr);
+    gctx.setTransform(dpr,0,0,dpr,0,0);
+
+    trackW = W*0.62;
+    trackX0 = (W-trackW)/2;
+    laneW = trackW/LANES;
+    playerScreenY = H*0.74;
+  }
+  function laneX(li){ return trackX0 + laneW*li + laneW/2; }
+
+  function checkOrientation(){
+    const portrait = window.innerHeight > window.innerWidth;
+    rotateOverlay.style.display = portrait ? 'flex' : 'none';
+  }
+  window.addEventListener('resize', ()=>{ resize(); checkOrientation(); });
+  window.addEventListener('orientationchange', ()=>setTimeout(()=>{ resize(); checkOrientation(); },80));
+
+  // ================= audio =================
+  let actx=null;
+  function ensureAudio(){ if(!actx){ try{ actx = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } if(actx && actx.state==='suspended') actx.resume(); }
+  function beep(freq,dur,type,vol,delay){
+    if(!actx) return;
+    const t0 = actx.currentTime + (delay||0);
+    const o = actx.createOscillator(); const g = actx.createGain();
+    o.type = type||'sine'; o.frequency.setValueAtTime(freq,t0);
+    g.gain.setValueAtTime(0.0001,t0);
+    g.gain.exponentialRampToValueAtTime(Math.max(vol||0.1,0.0002), t0+0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0+(dur||0.15));
+    o.connect(g); g.connect(actx.destination);
+    o.start(t0); o.stop(t0+(dur||0.15)+0.02);
+  }
+  function noiseBurst(dur,vol,delay,filterFreq){
+    if(!actx) return;
+    const t0 = actx.currentTime+(delay||0);
+    const bufSize = Math.floor(actx.sampleRate*(dur||0.2));
+    const buf = actx.createBuffer(1,bufSize,actx.sampleRate);
+    const d = buf.getChannelData(0);
+    for(let i=0;i<bufSize;i++) d[i] = (Math.random()*2-1)*(1-i/bufSize);
+    const src = actx.createBufferSource(); src.buffer = buf;
+    const g = actx.createGain(); g.gain.setValueAtTime(vol||0.15,t0); g.gain.exponentialRampToValueAtTime(0.0001,t0+(dur||0.2));
+    const f = actx.createBiquadFilter(); f.type='lowpass'; f.frequency.setValueAtTime(filterFreq||2000,t0);
+    src.connect(f); f.connect(g); g.connect(actx.destination);
+    src.start(t0);
+  }
+  function sfxClick(){ beep(520,0.06,'square',0.08); }
+  function sfxCountdown(){ beep(440,0.1,'square',0.12); }
+  function sfxGo(){ beep(660,0.08,'square',0.14); beep(880,0.14,'square',0.14,0.09); }
+  function sfxLaneTick(){ beep(700,0.045,'triangle',0.07); }
+  function sfxBoost(){ noiseBurst(0.28,0.16,0,3400); beep(500,0.1,'sawtooth',0.12); beep(900,0.12,'sawtooth',0.1,0.06); }
+  function sfxBump(){ noiseBurst(0.16,0.2,0,900); beep(120,0.14,'square',0.14); }
+  function sfxFinish(){ beep(660,0.1,'triangle',0.13); beep(880,0.1,'triangle',0.13,0.1); beep(1100,0.16,'triangle',0.14,0.2); }
+  function sfxRecord(){ beep(880,0.09,'square',0.12); beep(1180,0.09,'square',0.12,0.08); beep(1480,0.16,'square',0.13,0.16); }
+  function sfxStep(vol){ beep(rand(180,220),0.035,'triangle', vol||0.035); }
+
+  // ================= state machine =================
+  let gameState = 'title'; // title | select | countdown | racing | paused | result
+  function showScreen(name){
+    [screenTitle,screenSelect,screenResult,screenPause].forEach(s=>s.classList.add('hidden'));
+    hud.style.display = 'none'; controls.style.display = 'none';
+    if(name==='title') screenTitle.classList.remove('hidden');
+    else if(name==='select') screenSelect.classList.remove('hidden');
+    else if(name==='result') screenResult.classList.remove('hidden');
+    else if(name==='pause') screenPause.classList.remove('hidden');
+    else if(name==='race'){ hud.style.display='block'; controls.style.display='block'; }
+  }
+
+  // ---- title ----
+  document.getElementById('btnStart').addEventListener('click', ()=>{ ensureAudio(); sfxClick(); openSelect(); });
+  document.getElementById('btnHowTo').addEventListener('click', ()=>{ ensureAudio(); sfxClick(); infoPanel.classList.add('show'); });
+  document.getElementById('btnInfoClose').addEventListener('click', ()=>{ sfxClick(); infoPanel.classList.remove('show'); });
+
+  function openSelect(){ gameState='select'; showScreen('select'); refreshCatCard(); }
+  function refreshCatCard(){
+    const c = CATS[selectedCatIndex];
+    catNameEl.textContent = c.name;
+    catDescEl.textContent = c.desc;
+    fillPips(pipSpeedEl, c.pips.speed);
+    fillPips(pipAccelEl, c.pips.accel);
+    fillPips(pipBoostEl, c.pips.boost);
+    const best = lsGetJSON('best_'+c.id, null);
+    catBestEl.textContent = best ? ('내 최고 기록: '+best.time.toFixed(2)+'초 ('+best.rank+'등)') : '아직 기록이 없습니다';
+  }
+  function fillPips(el, n){
+    el.innerHTML='';
+    for(let i=0;i<5;i++){ const d=document.createElement('div'); d.className='pip'+(i<n?' on':''); el.appendChild(d); }
+  }
+  document.getElementById('btnCatPrev').addEventListener('click', ()=>{ sfxClick(); selectedCatIndex=(selectedCatIndex+CATS.length-1)%CATS.length; refreshCatCard(); });
+  document.getElementById('btnCatNext').addEventListener('click', ()=>{ sfxClick(); selectedCatIndex=(selectedCatIndex+1)%CATS.length; refreshCatCard(); });
+  document.getElementById('btnSelectBack').addEventListener('click', ()=>{ sfxClick(); gameState='title'; showScreen('title'); });
+  document.getElementById('btnSelectGo').addEventListener('click', ()=>{ sfxClick(); lsSet('lastCat', String(selectedCatIndex)); startRaceFlow(); });
+
+  // ---- pause ----
+  document.getElementById('pauseBtn').addEventListener('click', ()=>{
+    if(gameState!=='racing') return;
+    gameState='paused'; showScreen('pause'); hud.style.display='block';
+  });
+  document.getElementById('btnPauseResume').addEventListener('click', ()=>{ sfxClick(); gameState='racing'; showScreen('race'); });
+  document.getElementById('btnPauseMenu').addEventListener('click', ()=>{ sfxClick(); gameState='select'; showScreen('select'); refreshCatCard(); });
+
+  // ---- result ----
+  document.getElementById('btnResultSelect').addEventListener('click', ()=>{ sfxClick(); gameState='select'; showScreen('select'); refreshCatCard(); });
+  document.getElementById('btnResultRetry').addEventListener('click', ()=>{ sfxClick(); startRaceFlow(); });
+
+  // ================= race object =================
+  let race = null;
+
+  function buildRace(catIdx){
+    const cat = CATS[catIdx];
+    const player = {
+      isPlayer:true, cat, lane:1, laneTarget:1,
+      worldDistance:0, speed:0,
+      topSpeed:cat.topSpeed, accel:cat.accel,
+      boostMult:cat.boostMult, boostDurBase:cat.boostDur,
+      boostTimer:0, bumpCooldown:0, finished:false, finishTime:0,
+      runPhase:0, tilt:0, x:laneX(1)
+    };
+    const rivals = RIVAL_TEMPLATE.map((r,i)=>{
+      const lane = i % LANES;
+      const startOffset = -rand(6,26) - i*4;
+      return Object.assign({}, r, {
+        isPlayer:false, lane, laneTarget:lane, laneVisual:lane,
+        worldDistance:startOffset, baseSpeed: rand(110,150),
+        phase: rand(0,Math.PI*2), boostChanceTimer: rand(2,5),
+        speed:0, finished:false, finishTime:0, runPhase:Math.random(), x:laneX(lane)
+      });
+    });
+    const items = [];
+    let d = rand(120,200);
+    while(d < TRACK_LENGTH-80){
+      items.push({ lane: Math.floor(rand(0,LANES)), worldDistance:d, collected:false });
+      d += rand(150,260);
+    }
+    return { player, rivals, items, elapsed:0, particles:[], shake:0, finishedAt:null };
+  }
+
+  function startRaceFlow(){
+    race = buildRace(selectedCatIndex);
+    gameState='countdown';
+    showScreen('race');
+    runCountdown();
+  }
+
+  function runCountdown(){
+    ensureAudio();
+    countdownOverlay.classList.add('show');
+    const seq = ['3','2','1','GO!'];
+    let i=0;
+    function step(){
+      countdownNum.textContent = seq[i];
+      if(seq[i]==='GO!') sfxGo(); else sfxCountdown();
+      i++;
+      if(i<seq.length) setTimeout(step, 700);
+      else setTimeout(()=>{ countdownOverlay.classList.remove('show'); gameState='racing'; }, 550);
+    }
+    step();
+  }
+
+  // ================= input =================
+  function moveLane(dir){
+    if(gameState!=='racing' || !race) return;
+    const p = race.player;
+    p.laneTarget = clamp(p.laneTarget+dir, 0, LANES-1);
+    sfxLaneTick();
+  }
+  function bindHold(el, fn){
+    el.addEventListener('pointerdown', (e)=>{ e.preventDefault(); ensureAudio(); fn(); });
+  }
+  bindHold(document.getElementById('btnLeft'), ()=>moveLane(-1));
+  bindHold(document.getElementById('btnRight'), ()=>moveLane(1));
+  window.addEventListener('keydown', (e)=>{
+    if(e.key==='ArrowLeft'||e.key==='a'||e.key==='A') moveLane(-1);
+    else if(e.key==='ArrowRight'||e.key==='d'||e.key==='D') moveLane(1);
+  });
+
+  // ================= physics =================
+  function updateRacer(r, dt, isPlayer){
+    if(r.finished) return;
+    // lane smoothing
+    const key = isPlayer ? 'lane' : 'laneVisual';
+    r[key] = lerp(r[key], r.laneTarget, Math.min(1, dt*8));
+    if(Math.abs(r[key]-r.laneTarget)<0.01) r[key]=r.laneTarget;
+
+    if(isPlayer){
+      if(r.boostTimer>0) r.boostTimer = Math.max(0, r.boostTimer-dt);
+      const target = r.topSpeed * (r.boostTimer>0 ? r.boostMult : 1);
+      if(r.speed < target) r.speed = Math.min(target, r.speed + r.accel*dt);
+      else r.speed = Math.max(target, r.speed - r.accel*1.6*dt);
+      if(r.bumpCooldown>0) r.bumpCooldown -= dt;
+    } else {
+      r.phase += dt;
+      r.boostChanceTimer -= dt;
+      let mult = 1;
+      if(r.boostChanceTimer<=0){
+        r.boostChanceTimer = rand(3,6);
+        r._rivalBoostT = rand(0.8,1.6);
+      }
+      if(r._rivalBoostT>0){ r._rivalBoostT-=dt; mult=1.22; }
+      const wobble = Math.sin(r.phase*0.6)*6;
+      r.speed = r.baseSpeed*mult + wobble;
+    }
+    r.worldDistance += (r.speed/3.6)*dt;
+    r.runPhase += dt * (2 + r.speed/60);
+    if(r.worldDistance >= TRACK_LENGTH && !r.finished){
+      r.finished = true; r.finishTime = race.elapsed;
+      r.worldDistance = TRACK_LENGTH;
+    }
+  }
+
+  function checkItems(dt){
+    const p = race.player;
+    for(const it of race.items){
+      if(it.collected) continue;
+      if(Math.round(p.lane)===it.lane && Math.abs(p.worldDistance-it.worldDistance) < 5){
+        it.collected = true;
+        p.boostTimer = p.boostDurBase;
+        sfxBoost();
+        spawnParticles(p.x, playerScreenY, '#7fd8ff', 10);
+      }
+    }
+  }
+  function checkBumps(dt){
+    const p = race.player;
+    if(p.bumpCooldown>0) return;
+    for(const r of race.rivals){
+      if(r.finished) continue;
+      if(Math.round(p.lane)===Math.round(r.laneVisual) && Math.abs(p.worldDistance-r.worldDistance) < 3.2){
+        p.speed *= 0.8;
+        p.worldDistance = Math.max(0, p.worldDistance - 4.5);
+        p.bumpCooldown = 0.9;
+        race.shake = 0.25;
+        sfxBump();
+        spawnParticles(p.x, playerScreenY, '#ffd35c', 8);
+        break;
+      }
+    }
+  }
+  function spawnParticles(x,y,color,n){
+    for(let i=0;i<n;i++){
+      race.particles.push({ x, y, vx:rand(-70,70), vy:rand(-120,-20), life:rand(0.3,0.6), maxLife:0.6, color });
+    }
+  }
+  function updateParticles(dt){
+    for(let i=race.particles.length-1;i>=0;i--){
+      const pt = race.particles[i];
+      pt.x += pt.vx*dt; pt.y += pt.vy*dt; pt.vy += 220*dt;
+      pt.life -= dt;
+      if(pt.life<=0) race.particles.splice(i,1);
+    }
+  }
+
+  let stepAccum = 0;
+  function updateRace(dt){
+    if(!race) return;
+    race.elapsed += dt;
+    if(race.shake>0) race.shake = Math.max(0, race.shake-dt*1.5);
+
+    updateRacer(race.player, dt, true);
+    for(const r of race.rivals) updateRacer(r, dt, false);
+    checkItems(dt);
+    checkBumps(dt);
+    updateParticles(dt);
+
+    stepAccum += dt * (1 + race.player.speed/40);
+    if(stepAccum > 0.32){ stepAccum = 0; if(race.player.speed>20) sfxStep(0.03); }
+
+    if(race.player.finished && !race.finishedAt){
+      race.finishedAt = race.elapsed;
+      finishRace();
+    }
+  }
+
+  function finishRace(){
+    const total = race.rivals.length+1;
+    let ahead = 0;
+    for(const r of race.rivals) if(r.worldDistance >= TRACK_LENGTH) ahead++;
+    const rank = ahead+1;
+    gameState='result';
+    setTimeout(()=>{ showResult(rank, total, race.player.finishTime); }, 500);
+    sfxFinish();
+  }
+
+  function showResult(rank, total, time){
+    showScreen('result');
+    resultTitleEl.textContent = rank===1 ? '결승 도착! 1등입니다!' : '결승 도착!';
+    resultRankEl.textContent = rank+'등 / '+total;
+    resultTimeEl.textContent = '기록: '+time.toFixed(2)+'초';
+    const cat = CATS[selectedCatIndex];
+    const best = lsGetJSON('best_'+cat.id, null);
+    const isRecord = !best || time < best.time;
+    if(isRecord) lsSetJSON('best_'+cat.id, { time, rank });
+    resultRecordEl.style.visibility = isRecord ? 'visible' : 'hidden';
+    if(isRecord) sfxRecord();
+  }
+
+  // ================= drawing =================
+  function drawGauge(kmh){
+    const w = gaugeCanvas.clientWidth, h = gaugeCanvas.clientHeight;
+    gctx.clearRect(0,0,w,h);
+    const cx = w/2, cy = h*0.95, r = Math.min(w,h*2)*0.46;
+    const startA = Math.PI, endA = Math.PI*2;
+    gctx.lineWidth = Math.max(4, r*0.22);
+    gctx.strokeStyle = 'rgba(255,255,255,0.18)';
+    gctx.beginPath(); gctx.arc(cx,cy,r,startA,endA); gctx.stroke();
+
+    const maxKmh = 200;
+    const frac = clamp(kmh/maxKmh,0,1);
+    const grad = gctx.createLinearGradient(cx-r,0,cx+r,0);
+    grad.addColorStop(0,'#4dd8ff'); grad.addColorStop(0.6,'#ffd35c'); grad.addColorStop(1,'#ff5c5c');
+    gctx.strokeStyle = grad;
+    gctx.beginPath(); gctx.arc(cx,cy,r,startA,startA+(endA-startA)*frac); gctx.stroke();
+
+    const needleA = startA + (endA-startA)*frac;
+    gctx.strokeStyle = '#fff'; gctx.lineWidth = Math.max(2, r*0.09);
+    gctx.beginPath(); gctx.moveTo(cx,cy); gctx.lineTo(cx+Math.cos(needleA)*r*0.8, cy+Math.sin(needleA)*r*0.8); gctx.stroke();
+    gctx.fillStyle = '#fff'; gctx.beginPath(); gctx.arc(cx,cy,Math.max(2,r*0.12),0,Math.PI*2); gctx.fill();
+  }
+
+  function screenYFor(worldDist){
+    if(!race) return playerScreenY;
+    return playerScreenY - (worldDist - race.player.worldDistance)*PX_PER_M;
+  }
+
+  let bgOffset = 0;
+  function drawBackground(dt){
+    ctx.clearRect(0,0,W,H);
+    const sky = ctx.createLinearGradient(0,0,0,H);
+    sky.addColorStop(0,'#161a3a'); sky.addColorStop(0.55,'#22284f'); sky.addColorStop(1,'#2c3560');
+    ctx.fillStyle = sky; ctx.fillRect(0,0,W,H);
+
+    // stars
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    for(let i=0;i<40;i++){
+      const sx = (i*97 % W); const sy = (i*53 % (H*0.5));
+      ctx.globalAlpha = 0.3+((i*37)%10)/20;
+      ctx.fillRect(sx, sy, 2, 2);
+    }
+    ctx.globalAlpha = 1;
+
+    const speed = race ? race.player.speed : 0;
+    bgOffset += speed*0.09*dt;
+
+    // side buildings (left)
+    drawSkyline(0, trackX0, bgOffset, true);
+    drawSkyline(trackX0+trackW, W-(trackX0+trackW), bgOffset, false);
+
+    // road base
+    ctx.fillStyle = '#33384f';
+    ctx.fillRect(trackX0, 0, trackW, H);
+    // lane dividers
+    ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+    ctx.lineWidth = 3;
+    ctx.setLineDash([22,20]);
+    const dashScroll = race ? (race.player.worldDistance*PX_PER_M) % 42 : 0;
+    ctx.lineDashOffset = -dashScroll;
+    for(let i=1;i<LANES;i++){
+      const x = trackX0 + laneW*i;
+      ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke();
+    }
+    ctx.setLineDash([]);
+    // edge lines
+    ctx.strokeStyle = 'rgba(255,215,90,0.85)'; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.moveTo(trackX0,0); ctx.lineTo(trackX0,H); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(trackX0+trackW,0); ctx.lineTo(trackX0+trackW,H); ctx.stroke();
+  }
+
+  function drawSkyline(x0, w, offset, leftSide){
+    if(w<=0) return;
+    ctx.save();
+    ctx.beginPath(); ctx.rect(x0,0,w,H); ctx.clip();
+    const period = 140;
+    const shift = offset % period;
+    ctx.fillStyle = '#1b2040';
+    for(let i=-1;i<Math.ceil(H/period)+1;i++){
+      const by = i*period - shift;
+      const bw = w*0.7, bh = period*0.8;
+      const bx = leftSide ? x0+w*0.15 : x0+w*0.15;
+      ctx.fillRect(bx, by, bw, bh);
+      ctx.fillStyle = 'rgba(255,211,92,0.5)';
+      for(let wy=0; wy<bh; wy+=16){
+        for(let wx=0; wx<bw; wx+=14){
+          if(((i+wx+wy)%3)===0) ctx.fillRect(bx+wx+3, by+wy+4, 5,7);
+        }
+      }
+      ctx.fillStyle = '#1b2040';
+    }
+    ctx.restore();
+  }
+
+  function drawCritterBack(x, y, scale, opts){
+    const { color, stripe, ear, tailBig, runPhase, boosting, tilt, isPlayer, name } = opts;
+    ctx.save();
+    ctx.translate(x,y);
+    ctx.rotate((tilt||0)*0.25);
+    ctx.scale(scale, scale);
+
+    const legSwing = Math.sin(runPhase*Math.PI*2)*10;
+    // shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.35)';
+    ctx.beginPath(); ctx.ellipse(0, 30, 20, 6, 0,0,Math.PI*2); ctx.fill();
+
+    // boost flame trail
+    if(boosting){
+      ctx.fillStyle = 'rgba(255,150,60,0.55)';
+      ctx.beginPath(); ctx.ellipse(0, 26, 10, 18+Math.random()*6, 0,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle = 'rgba(255,220,90,0.6)';
+      ctx.beginPath(); ctx.ellipse(0, 30, 6, 10+Math.random()*4, 0,0,Math.PI*2); ctx.fill();
+    }
+
+    // legs
+    ctx.fillStyle = shade(color,-30);
+    ctx.beginPath(); ctx.ellipse(-9, 20+legSwing*0.3, 5, 9, 0,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(9, 20-legSwing*0.3, 5, 9, 0,0,Math.PI*2); ctx.fill();
+
+    // tail
+    ctx.strokeStyle = color; ctx.lineWidth = 7; ctx.lineCap='round';
+    ctx.beginPath();
+    ctx.moveTo(0,16);
+    const tailWag = Math.sin(runPhase*Math.PI*2*0.7)* (tailBig?14:8);
+    ctx.quadraticCurveTo(14+tailWag, 6, 10+tailWag*1.4, -6-(tailBig?6:0));
+    ctx.stroke();
+
+    // body
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.ellipse(0,6,15,18,0,0,Math.PI*2); ctx.fill();
+    if(stripe){
+      ctx.strokeStyle = stripe; ctx.lineWidth=3;
+      ctx.beginPath(); ctx.moveTo(-9,-4); ctx.lineTo(-9,16); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0,-8); ctx.lineTo(0,18); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(9,-4); ctx.lineTo(9,16); ctx.stroke();
+    }
+
+    // head
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.arc(0,-14,13,0,Math.PI*2); ctx.fill();
+
+    // ears
+    ctx.fillStyle = color;
+    if(ear==='floppy'){
+      ctx.beginPath(); ctx.ellipse(-10,-16,5,9,-0.3,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(10,-16,5,9,0.3,0,Math.PI*2); ctx.fill();
+    } else if(ear==='long'){
+      ctx.beginPath(); ctx.ellipse(-6,-30,4,14,0,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(6,-30,4,14,0,0,Math.PI*2); ctx.fill();
+    } else if(ear==='small'){
+      ctx.beginPath(); ctx.moveTo(-11,-22); ctx.lineTo(-6,-30); ctx.lineTo(-3,-21); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(11,-22); ctx.lineTo(6,-30); ctx.lineTo(3,-21); ctx.fill();
+    } else if(ear==='pointy'){
+      ctx.beginPath(); ctx.moveTo(-12,-20); ctx.lineTo(-4,-34); ctx.lineTo(-1,-19); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(12,-20); ctx.lineTo(4,-34); ctx.lineTo(1,-19); ctx.fill();
+    } else { // triangle
+      ctx.beginPath(); ctx.moveTo(-11,-21); ctx.lineTo(-5,-32); ctx.lineTo(-1,-20); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(11,-21); ctx.lineTo(5,-32); ctx.lineTo(1,-20); ctx.fill();
+    }
+
+    if(isPlayer){
+      ctx.fillStyle = '#ffd35c';
+      ctx.beginPath();
+      ctx.moveTo(-6,-27); ctx.lineTo(-3,-33); ctx.lineTo(0,-28); ctx.lineTo(3,-33); ctx.lineTo(6,-27);
+      ctx.closePath(); ctx.fill();
+    }
+
+    ctx.restore();
+
+    if(name){
+      ctx.font = '10px Jua, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = 'rgba(255,255,255,0.85)';
+      ctx.fillText(name, x, y-46*scale);
+    }
+  }
+
+  function shade(hex, amt){
+    const n = parseInt(hex.slice(1),16);
+    let r = (n>>16)+amt, g=((n>>8)&0xff)+amt, b=(n&0xff)+amt;
+    r=clamp(r,0,255); g=clamp(g,0,255); b=clamp(b,0,255);
+    return 'rgb('+r+','+g+','+b+')';
+  }
+
+  function drawFish(x,y,t){
+    ctx.save();
+    ctx.translate(x, y+Math.sin(t*4)*4);
+    ctx.fillStyle = '#7fd8ff';
+    ctx.beginPath(); ctx.ellipse(0,0,11,6,0,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(9,0); ctx.lineTo(16,-6); ctx.lineTo(16,6); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.7)';
+    ctx.beginPath(); ctx.arc(-6,-1,2,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+
+  function drawFinishLine(){
+    const y = screenYFor(TRACK_LENGTH);
+    if(y < -20 || y > H+20) return;
+    const rows=2, cols=10;
+    const cw = trackW/cols;
+    for(let r2=0;r2<rows;r2++){
+      for(let c=0;c<cols;c++){
+        ctx.fillStyle = ((r2+c)%2===0) ? '#fff' : '#222';
+        ctx.fillRect(trackX0+c*cw, y+r2*10-10, cw, 10);
+      }
+    }
+  }
+
+  function drawScene(dt, t){
+    drawBackground(dt);
+    if(race){
+      ctx.save();
+      if(race.shake>0){ ctx.translate(rand(-4,4)*race.shake, rand(-4,4)*race.shake); }
+
+      drawFinishLine();
+
+      for(const it of race.items){
+        if(it.collected) continue;
+        const y = screenYFor(it.worldDistance);
+        if(y<-20||y>H+20) continue;
+        drawFish(laneX(it.lane), y, t+it.worldDistance);
+      }
+
+      const drawList = race.rivals.map(r=>({ r, y: screenYFor(r.worldDistance), isPlayer:false }));
+      drawList.push({ r: race.player, y: playerScreenY, isPlayer:true });
+      drawList.sort((a,b)=>a.y-b.y);
+
+      for(const item of drawList){
+        const r = item.r;
+        const y = item.y;
+        if(y < -50 || y > H+50) continue;
+        const x = item.isPlayer ? laneX(r.lane) : laneX(r.laneVisual);
+        const scale = clamp(1 - (playerScreenY-y)/(H*2.2), 0.55, 1.15);
+        drawCritterBack(x, y, scale, {
+          color: item.isPlayer ? r.cat.color : r.color,
+          stripe: item.isPlayer ? r.cat.stripe : null,
+          ear: item.isPlayer ? 'triangle' : r.ear,
+          tailBig:r.tailBig, runPhase:r.runPhase||0,
+          boosting: item.isPlayer && race.player.boostTimer>0,
+          tilt: item.isPlayer ? (r.laneTarget-r.lane) : 0,
+          isPlayer: item.isPlayer,
+          name: item.isPlayer ? null : r.name
+        });
+      }
+
+      for(const pt of race.particles){
+        ctx.globalAlpha = clamp(pt.life/pt.maxLife,0,1);
+        ctx.fillStyle = pt.color;
+        ctx.beginPath(); ctx.arc(pt.x,pt.y,3,0,Math.PI*2); ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+      ctx.restore();
+    }
+  }
+
+  function updateHUD(){
+    if(!race) return;
+    const frac = clamp(race.player.worldDistance/TRACK_LENGTH,0,1);
+    progressFill.style.width = (frac*100)+'%';
+    let ahead=1;
+    for(const r of race.rivals) if(r.worldDistance > race.player.worldDistance) ahead++;
+    rankBadge.textContent = ahead+' / '+(race.rivals.length+1);
+    drawGauge(Math.round(race.player.speed));
+    speedNum.textContent = Math.round(race.player.speed)+' km/h';
+  }
+
+  // ================= main loop =================
+  let lastT = performance.now();
+  function frame(now){
+    let dt = (now-lastT)/1000;
+    lastT = now;
+    dt = Math.min(dt, 0.05);
+
+    if(gameState==='racing') updateRace(dt);
+    drawScene(dt, now/1000);
+    if(gameState==='racing' || gameState==='paused') updateHUD();
+
+    requestAnimationFrame(frame);
+  }
+
+  resize(); checkOrientation();
+  showScreen('title');
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
