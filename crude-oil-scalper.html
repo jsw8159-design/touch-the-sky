@@ -184,6 +184,32 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .helpSec h3{font-size:12.5px;color:var(--gold);margin:0 0 6px;}
 .helpSec p,.helpSec li{font-size:12px;color:var(--text-dim);line-height:1.6;}
 .helpSec ul{margin:0;padding-left:18px;}
+
+/* ===== INTRO / 프로그램 소개 ===== */
+.introLinkBtn{width:100%;padding:10px;margin-bottom:14px;border-radius:10px;background:transparent;
+  border:1px solid var(--border);color:var(--gold);font-size:12.5px;font-weight:700;text-align:center;}
+.introLinkBtn:active{transform:scale(.98);}
+.introBody{padding:16px;}
+.introH1{font-size:16px;font-weight:800;color:var(--gold);margin:26px 0 10px;padding-top:16px;border-top:1px solid var(--border);}
+.introH1:first-child{border-top:none;padding-top:0;margin-top:0;}
+.introH2{font-size:13.5px;font-weight:700;color:var(--text);margin:16px 0 6px;}
+.introP{font-size:12.5px;line-height:1.75;color:var(--text-dim);margin:0 0 10px;}
+.introP b{color:var(--text);font-weight:700;}
+.introQuote{background:var(--panel2);border-left:3px solid var(--gold);border-radius:8px;
+  padding:13px 15px;margin:12px 0;font-size:13px;line-height:1.7;color:var(--text);}
+.introQuote .lead{color:var(--gold);font-weight:700;display:block;margin-bottom:4px;}
+.introList{margin:0 0 10px;padding-left:0;list-style:none;}
+.introList li{font-size:12.5px;line-height:1.7;color:var(--text-dim);margin-bottom:8px;padding-left:14px;position:relative;}
+.introList li::before{content:'—';position:absolute;left:0;color:var(--gold);}
+.introList li b{color:var(--text);}
+.introTableWrap{overflow-x:auto;margin:10px 0;}
+.introTable{width:100%;border-collapse:collapse;font-size:11.5px;min-width:460px;}
+.introTable th{background:var(--panel2);color:var(--gold);padding:7px 8px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;}
+.introTable td{padding:7px 8px;border-bottom:1px solid var(--border);color:var(--text-dim);vertical-align:top;}
+.introTable td b{color:var(--text);}
+.introFooterNote{font-size:12px;line-height:1.7;color:var(--text-dim);font-style:italic;
+  margin-top:18px;padding-top:14px;border-top:1px solid var(--border);}
+.introFooterNote b{color:var(--gold);font-style:normal;}
 .legendDot{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle;}
 .closeX{position:absolute;top:14px;right:14px;font-size:18px;color:var(--text-dim);}
 </style>
@@ -197,6 +223,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
       <div class="logo">FUTURES CHART STRATEGY</div>
       <div class="h1">선물차트 공략법</div>
       <div class="sub">매물대(횡보 구간)와 전고점·전저점,<br>두 가지 핵심 공략 포인트를 직접 찾아보는 트레이닝</div>
+      <button class="introLinkBtn" id="btnIntro">📖 프로그램 소개 및 개발 취지 보기</button>
       <button class="symbolChip" id="homeSymbolChip">
         <span class="icon" id="homeSymbolIcon">🛢️</span>
         <span class="txt"><b id="homeSymbolName">WTI 원유</b><small>탭하여 종목 변경 · 종목 특징 보기</small></span>
@@ -215,6 +242,65 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
         <button class="iconBtn" id="btnHelp">❓</button>
         <button class="iconBtn" id="btnMute">🔊</button>
         <button class="iconBtn" id="btnReset">🗑️</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROGRAM INTRO -->
+  <div id="screenIntro" class="screen">
+    <div class="topbar"><button class="navBtn" id="introBack">←</button><div class="ttl">프로그램 소개</div></div>
+    <div class="body">
+      <div class="introBody">
+
+        <div class="introH1">💡 프로그램 개발 취지</div>
+        <p class="introP">많은 사람들이 주식과 선물 거래에 뛰어들지만, 대부분은 막연한 두려움 속에서 고점 대비 가격이 싸다는 주관적 착각이나 증권사 전망에 의존합니다.</p>
+        <p class="introP">가장 이상적인 공부는 고수 밑에서 배우는 도제식 교육이지만, 현실적으로 그런 기회를 얻을 수 있는 사람은 극소수입니다. 시장에서 돈을 원 없이 버는 고수들이 굳이 자기 시간과 에너지를 들여 누군가를 가르칠 이유가 없기 때문입니다.</p>
+        <div class="introQuote">
+          <span class="lead">"예측 불가능한 시장에서 스스로 살아남는 법"</span>
+          이 프로그램은 매매에 뜻이 있는 사람들이 고수 없이도 스스로 학습하고 훈련하여 실전 능력을 장착할 수 있도록 개발되었습니다. 원리도 모른 채 차트만 들여다보는 무의미한 모의·실전거래를 멈추게 하는 것이 이 프로그램의 목적입니다.
+        </div>
+
+        <div class="introH1">⚠️ 시장을 바라보는 냉정한 현실 (흔한 착각들)</div>
+        <div class="introH2">1. 운에 기인한 행운을 능력으로 포장하는 자들</div>
+        <p class="introP">시대의 흐름(비트코인, AI 반도체 등)이나 일시적 폭락 후 복구 타이밍이 맞아떨어져 돈을 번 사람들은 그럴듯한 이유를 대지만, 이는 반복되지 않는 순전한 우연입니다. 결국 이들도 '언제 팔 것인가'라는 기준 앞에서는 무너집니다.</p>
+        <div class="introH2">2. "쌀 때 사서 비쌀 때 판다"는 허구</div>
+        <p class="introP">지당한 말 같지만 가장 터무니없는 소리입니다. 얼마가 싸고 얼마가 비싼지는 지극히 주관적인 감정일 뿐입니다. 근거 없는 확증편향에 귀를 기울이며 시간과 에너지를 낭비해서는 안 됩니다.</p>
+        <div class="introQuote">
+          <span class="lead">📌 본 프로그램의 핵심 명제</span>
+          주가의 장기적 움직임은 뉴턴조차 맞추지 못했을 만큼 그 누구도 예측할 수 없습니다. 하지만 예측 확률이 극대화되는 '일시적 구간'은 분명히 존재합니다. 본 프로그램은 보조지표(이동평균선), 캔들 패턴(망치형, 도지형), 거래량을 배제하고, 오직 '기준마디'와 '매물대' 두 가지만을 참조하여 이 구간을 포착합니다.
+        </div>
+
+        <div class="introH1">🛠 차트 매매 전 반드시 알아야 할 3가지 관점</div>
+        <div class="introH2">(1) 가격 움직임에 대한 관점 (원리)</div>
+        <p class="introP">가격의 움직임은 차트 세팅의 '전'과 '후'로 극명하게 갈립니다.</p>
+        <ul class="introList">
+          <li><b>세팅 전 (기준마디 탈환전)</b>: 세팅이 만들어지는 과정으로, 수많은 기준마디 탈환전이 벌어집니다. 매물대에서 머뭇거리거나 밀리는 등 작은 방향성이 형성되는 단계입니다.</li>
+          <li><b>세팅 후 (강자들의 방향성)</b>: 주요 자금이 유입되면서 주포(강자)들이 원하는 큰 방향이 터집니다. 웬만한 자금으로는 막을 수 없는 흐름이기에, 매물대에서 머뭇거림도 없이 단번에 뚫고 나가며 기준마디에 도달한 후에야 차익매물이 쏟아지며 흐름이 바뀝니다.</li>
+        </ul>
+
+        <div class="introH2">(2) 거래 시간대에 대한 관점</div>
+        <p class="introP">시간대에 대한 이해 없이 기법을 대입하면 필패합니다. 시장의 자금은 시간에 따라 파도의 크기를 달리합니다.</p>
+        <div class="introTableWrap">
+          <table class="introTable">
+            <tr><th>시간대(KST)</th><th>유입 자금</th><th>파도의 규모 및 특징</th></tr>
+            <tr><td><b>10:00 전후</b></td><td>아시아 자금</td><td>잔잔한 밀물과 썰물 — 작은 마디 정도는 달성하나, 완벽한 세팅이나 대형 이슈가 없는 한 큰 마디까지 가기는 매우 드묾.</td></tr>
+            <tr><td><b>16:00 전후</b></td><td>유럽 자금</td><td>중간 규모의 파도 시작 — 어느 정도 넘실거리는 파도가 일며, 중간 규모의 마디를 달성할 힘이 존재함.</td></tr>
+            <tr><td><b>22:00~23:00</b></td><td>미국 자금</td><td>거대한 파도 시작 — 시장 본장이 열리며, 대형 마디도 단번에 도달시킬 강력한 에너지가 집중됨.</td></tr>
+            <tr><td><b>03:00 전후</b></td><td>베일에 가려진 움직임</td><td>예측 불허(절대 기피 구간) — 긴 횡보 속 갑작스러운 대형 지표 발표로 급변 시세가 발생함. 트레이더의 수명을 갉아먹는 구간이므로 무조건 피해야 함.</td></tr>
+          </table>
+        </div>
+
+        <div class="introH2">(3) 차트 세팅을 확인해야 하는 중요한 이유 (News vs Money)</div>
+        <p class="introP">뉴스는 이미 시장에서 벌어진 일을 뒤늦게 짜 맞춘 기사에 불과합니다. 뉴스를 추종하거나 반대 배팅을 하는 것은 결국 확률 반반의 홀짝 게임일 뿐입니다.</p>
+        <p class="introP">시장 속에서 가장 빠른 것은 '돈'입니다. 거대 자금을 쥔 강자들은 뉴스가 터지기 한참 전부터 정보를 접하고 움직입니다. 이 움직임이 차트에 조용히 흔적을 남기는 과정이 바로 '세팅'입니다.</p>
+        <ul class="introList">
+          <li>사자(강자)들이 세팅을 끝내고 방향성을 터뜨린 뒤 손을 털고 나면, 그 남은 찌꺼기를 두고 하이에나와 원시인(개인 투자자)들이 피를 흘리며 싸우는 것이 시장의 본질입니다.</li>
+        </ul>
+        <p class="introP">특히 해외선물 시장은 매일 새로운 세팅과 방향성 분출, 소강상태가 반복되며 양방향(상승/하락) 배팅이 가능하기 때문에 단타 트레이더들에게 가장 유리한 사냥터가 됩니다.</p>
+
+        <div class="introFooterNote">본 프로그램의 심화 과정에서는 앞서 언급한 세 가지 기본기(기준마디, 매물대, 차트세팅에 대한 이해)를 바탕으로 한 본격적인 차트 훈련과 함께, <b>'매매가 잘 되는 것 같음에도 계좌에 돈이 모이지 않는 숨은 비밀'</b>을 다루며 완결됩니다. 꾸준한 수익 능력을 장착하고 싶다면 심화 과정을 학습하시기 바랍니다.</div>
+
+        <button class="modalBtn" id="introContinueBtn" style="margin-top:20px;">확인했습니다, 시작하기</button>
       </div>
     </div>
   </div>
@@ -508,9 +594,9 @@ const sfx={
 const SKEY='oilScalperV1';
 function loadProg(){
   try{ const d=JSON.parse(localStorage.getItem(SKEY));
-    if(d && typeof d==='object') return Object.assign({unlocked:1,stageStars:{},stats:{rounds:0,totalScore:0,bestStreak:0},muted:false,instrumentId:'wti',zoneStars:{},tradeStars:{}}, d);
+    if(d && typeof d==='object') return Object.assign({unlocked:1,stageStars:{},stats:{rounds:0,totalScore:0,bestStreak:0},muted:false,instrumentId:'wti',zoneStars:{},tradeStars:{},introSeen:false}, d);
   }catch(e){}
-  return {unlocked:1,stageStars:{},stats:{rounds:0,totalScore:0,bestStreak:0},muted:false,instrumentId:'wti',zoneStars:{},tradeStars:{}};
+  return {unlocked:1,stageStars:{},stats:{rounds:0,totalScore:0,bestStreak:0},muted:false,instrumentId:'wti',zoneStars:{},tradeStars:{},introSeen:false};
 }
 function saveProg(){ localStorage.setItem(SKEY, JSON.stringify(PROG)); }
 let PROG=loadProg();
@@ -1783,12 +1869,17 @@ $('#gameHelp').onclick=()=>{ sfx.click(); clearInterval(G.timer); $('#ovHelp').c
 $('#helpClose').onclick=()=>{ sfx.click(); $('#ovHelp').classList.remove('show'); if(G.phase!=='done' && $('#screenGame').classList.contains('active')) G.timer=setInterval(tick, REVEAL_MS/G.speed); };
 $('#btnHelp').onclick=()=>{ sfx.click(); $('#ovHelp').classList.add('show'); };
 
+/* intro */
+$('#btnIntro').onclick=()=>{ sfx.click(); showScreen('screenIntro'); };
+$('#introBack').onclick=()=>{ sfx.click(); goHome(); };
+$('#introContinueBtn').onclick=()=>{ sfx.click(); PROG.introSeen=true; saveProg(); goHome(); };
+
 /* mute / reset */
 function refreshMuteBtn(){ $('#btnMute').textContent = muted ? '🔇' : '🔊'; }
 $('#btnMute').onclick=()=>{ muted=!muted; PROG.muted=muted; saveProg(); refreshMuteBtn(); sfx.click(); };
 $('#btnReset').onclick=()=>{
   if(confirm('모든 진행 상황(스테이지 잠금 해제, 별점, 기록)을 초기화할까요?')){
-    PROG={unlocked:1,stageStars:{},stats:{rounds:0,totalScore:0,bestStreak:0},muted:muted,instrumentId:PROG.instrumentId||'wti',zoneStars:{},tradeStars:{}};
+    PROG={unlocked:1,stageStars:{},stats:{rounds:0,totalScore:0,bestStreak:0},muted:muted,instrumentId:PROG.instrumentId||'wti',zoneStars:{},tradeStars:{},introSeen:PROG.introSeen};
     saveProg(); refreshHomeStats(); refreshHomeSymbolChip();
   }
 };
@@ -1820,6 +1911,7 @@ if(window.visualViewport){
 refreshMuteBtn();
 refreshHomeStats();
 refreshHomeSymbolChip();
+if(!PROG.introSeen){ showScreen('screenIntro'); }
 })();
 </script>
 </body>
