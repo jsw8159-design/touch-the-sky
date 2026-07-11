@@ -132,19 +132,22 @@
     width: 34px; height: 34px; border-radius: 50%; border: none;
     background: rgba(0,0,0,0.5); color: #eaf0ff; font-size: 15px; cursor: pointer;
   }
-  #speedGauge {
+  #leftPanel {
     position: absolute; left: 10px; bottom: 10px;
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+    pointer-events: none;
+  }
+  #speedGauge {
     width: clamp(64px,11vw,88px); height: clamp(44px,7.5vw,60px);
   }
   #speedNum {
-    position: absolute; left: 10px; bottom: 2px;
-    width: clamp(64px,11vw,88px); text-align: center;
+    width: clamp(64px,11vw,88px); text-align: center; margin-top: -8px;
     color: #eaf0ff; font-size: clamp(12px,2.2vw,15px);
     text-shadow: 0 0 6px rgba(0,0,0,0.8);
   }
   #controls { position: absolute; inset: 0; pointer-events: none; }
   .ctrlBtn {
-    position: absolute; bottom: 10px; pointer-events: auto;
+    pointer-events: auto;
     width: clamp(56px,11vw,78px); height: clamp(56px,11vw,78px);
     border-radius: 50%; border: 2px solid rgba(255,255,255,0.4);
     background: rgba(255,255,255,0.12); color: #eaf0ff;
@@ -152,8 +155,8 @@
     cursor: pointer;
   }
   .ctrlBtn:active { background: rgba(255,255,255,0.32); }
-  #btnLeft { left: clamp(96px,17vw,140px); }
-  #btnRight { right: 14px; }
+  #btnLeft { margin-top: 8px; }
+  #btnRight { position: absolute; bottom: 10px; right: 14px; }
 
   /* ---------- countdown ---------- */
   #countdownOverlay {
@@ -255,12 +258,14 @@
       <div id="progressWrap"><div id="progressFill"></div></div>
       <div id="rankBadge">1 / 6</div>
       <button id="pauseBtn">⏸</button>
-      <canvas id="speedGauge"></canvas>
-      <div id="speedNum">0 km/h</div>
+      <div id="leftPanel">
+        <canvas id="speedGauge"></canvas>
+        <div id="speedNum">0 km/h</div>
+        <button class="ctrlBtn" id="btnLeft">◀</button>
+      </div>
     </div>
     <div id="countdownOverlay"><div id="countdownNum">3</div></div>
     <div id="controls">
-      <button class="ctrlBtn" id="btnLeft">◀</button>
       <button class="ctrlBtn" id="btnRight">▶</button>
     </div>
   </div>
@@ -413,7 +418,93 @@
   function sfxBump(){ noiseBurst(0.16,0.2,0,900); beep(120,0.14,'square',0.14); }
   function sfxFinish(){ beep(660,0.1,'triangle',0.13); beep(880,0.1,'triangle',0.13,0.1); beep(1100,0.16,'triangle',0.14,0.2); }
   function sfxRecord(){ beep(880,0.09,'square',0.12); beep(1180,0.09,'square',0.12,0.08); beep(1480,0.16,'square',0.13,0.16); }
-  function sfxStep(vol){ beep(rand(180,220),0.035,'triangle', vol||0.035); }
+  function sfxSlipstream(){ beep(950,0.06,'sine',0.09); beep(1400,0.09,'sine',0.08,0.05); noiseBurst(0.1,0.06,0,5000); }
+  function sfxStep(speed){
+    // pitch/timbre climbs with speed so the pace feels audibly different
+    const s = clamp(speed,0,200);
+    if(s < 60){
+      beep(rand(150,175),0.045,'triangle',0.03);
+    } else if(s < 120){
+      beep(rand(190,230),0.038,'triangle',0.035);
+    } else if(s < 165){
+      beep(rand(260,310),0.03,'square',0.032);
+    } else {
+      beep(rand(340,400),0.026,'square',0.03);
+      noiseBurst(0.05,0.04,0,4000);
+    }
+  }
+  function speakOhYeah(){
+    try{
+      if(!('speechSynthesis' in window)) return;
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance('Oh yeah!');
+      u.rate = 1.2; u.pitch = 1.35; u.volume = 1;
+      window.speechSynthesis.speak(u);
+    }catch(e){}
+  }
+
+  // ---- background music (simple procedural loop) ----
+  let bgmGain=null, bgmPlaying=false, bgmInterval=null, bgmNextTime=0, bgmStep=0;
+  const BGM_BPM = 152;
+  const BGM_STEP_DUR = 60/BGM_BPM/2;
+  const BGM_BASS_PATTERN = [0,0,3,0,0,0,5,3];
+  const BGM_ROOT = 98;
+  function bgmNoteFreq(semi){ return BGM_ROOT*Math.pow(2,semi/12); }
+  function bgmKick(t0){
+    const o = actx.createOscillator(); const g = actx.createGain();
+    o.type='sine'; o.frequency.setValueAtTime(150,t0); o.frequency.exponentialRampToValueAtTime(42,t0+0.12);
+    g.gain.setValueAtTime(0.28,t0); g.gain.exponentialRampToValueAtTime(0.001,t0+0.15);
+    o.connect(g); g.connect(bgmGain); o.start(t0); o.stop(t0+0.16);
+  }
+  function bgmBass(t0, freq){
+    const o = actx.createOscillator(); const g = actx.createGain();
+    o.type='sawtooth'; o.frequency.setValueAtTime(freq,t0);
+    g.gain.setValueAtTime(0.001,t0); g.gain.linearRampToValueAtTime(0.13,t0+0.02);
+    g.gain.exponentialRampToValueAtTime(0.001,t0+BGM_STEP_DUR*0.9);
+    o.connect(g); g.connect(bgmGain); o.start(t0); o.stop(t0+BGM_STEP_DUR);
+  }
+  function bgmHat(t0){
+    const bufSize = Math.floor(actx.sampleRate*0.045);
+    const buf = actx.createBuffer(1,bufSize,actx.sampleRate);
+    const d = buf.getChannelData(0);
+    for(let i=0;i<bufSize;i++) d[i]=(Math.random()*2-1)*(1-i/bufSize);
+    const src = actx.createBufferSource(); src.buffer=buf;
+    const f = actx.createBiquadFilter(); f.type='highpass'; f.frequency.value=6200;
+    const g = actx.createGain(); g.gain.setValueAtTime(0.05,t0); g.gain.exponentialRampToValueAtTime(0.0001,t0+0.045);
+    src.connect(f); f.connect(g); g.connect(bgmGain);
+    src.start(t0);
+  }
+  function bgmScheduleStep(t0, idx){
+    if(idx % 2 === 0) bgmKick(t0);
+    bgmBass(t0, bgmNoteFreq(BGM_BASS_PATTERN[idx % BGM_BASS_PATTERN.length]));
+    if(idx % 2 === 1) bgmHat(t0);
+  }
+  function bgmTick(){
+    if(!bgmPlaying || !actx) return;
+    while(bgmNextTime < actx.currentTime + 0.15){
+      bgmScheduleStep(bgmNextTime, bgmStep);
+      bgmNextTime += BGM_STEP_DUR;
+      bgmStep++;
+    }
+  }
+  function startBGM(){
+    if(!actx || bgmPlaying) return;
+    if(!bgmGain){ bgmGain = actx.createGain(); bgmGain.gain.value = 0.5; bgmGain.connect(actx.destination); }
+    else bgmGain.gain.setValueAtTime(0.5, actx.currentTime);
+    bgmPlaying = true;
+    bgmNextTime = actx.currentTime + 0.05;
+    bgmStep = 0;
+    bgmInterval = setInterval(bgmTick, 25);
+  }
+  function stopBGM(){
+    bgmPlaying = false;
+    if(bgmInterval) clearInterval(bgmInterval);
+    bgmInterval = null;
+  }
+  function muteBGM(muted){
+    if(!bgmGain || !actx) return;
+    bgmGain.gain.setValueAtTime(muted ? 0.0001 : 0.5, actx.currentTime);
+  }
 
   // ================= state machine =================
   let gameState = 'title'; // title | select | countdown | racing | paused | result
@@ -456,12 +547,13 @@
   document.getElementById('pauseBtn').addEventListener('click', ()=>{
     if(gameState!=='racing') return;
     gameState='paused'; showScreen('pause'); hud.style.display='block';
+    muteBGM(true);
   });
-  document.getElementById('btnPauseResume').addEventListener('click', ()=>{ sfxClick(); gameState='racing'; showScreen('race'); });
-  document.getElementById('btnPauseMenu').addEventListener('click', ()=>{ sfxClick(); gameState='select'; showScreen('select'); refreshCatCard(); });
+  document.getElementById('btnPauseResume').addEventListener('click', ()=>{ sfxClick(); gameState='racing'; showScreen('race'); muteBGM(false); });
+  document.getElementById('btnPauseMenu').addEventListener('click', ()=>{ sfxClick(); gameState='select'; showScreen('select'); refreshCatCard(); stopBGM(); });
 
   // ---- result ----
-  document.getElementById('btnResultSelect').addEventListener('click', ()=>{ sfxClick(); gameState='select'; showScreen('select'); refreshCatCard(); });
+  document.getElementById('btnResultSelect').addEventListener('click', ()=>{ sfxClick(); gameState='select'; showScreen('select'); refreshCatCard(); stopBGM(); });
   document.getElementById('btnResultRetry').addEventListener('click', ()=>{ sfxClick(); startRaceFlow(); });
 
   // ================= race object =================
@@ -474,15 +566,19 @@
       worldDistance:0, speed:0,
       topSpeed:cat.topSpeed, accel:cat.accel,
       boostMult:cat.boostMult, boostDurBase:cat.boostDur,
-      boostTimer:0, bumpCooldown:0, finished:false, finishTime:0,
+      boostTimer:0, slipTimer:0, bumpCooldown:0, finished:false, finishTime:0,
       runPhase:0, tilt:0, x:laneX(1)
     };
+    // rivals don't all line up at the start line - they're revealed one or two
+    // at a time as the player advances, spread across the first ~60% of the track
+    const spawnSpread = TRACK_LENGTH * 0.6;
     const rivals = RIVAL_TEMPLATE.map((r,i)=>{
       const lane = i % LANES;
-      const startOffset = -rand(6,26) - i*4;
+      const activation = Math.max(0, (i/RIVAL_TEMPLATE.length)*spawnSpread + rand(-30,30));
       return Object.assign({}, r, {
         isPlayer:false, lane, laneTarget:lane, laneVisual:lane,
-        worldDistance:startOffset, baseSpeed: rand(110,150),
+        activation, active:false, passedClose:false,
+        worldDistance: activation + rand(18,38), baseSpeed: rand(110,150),
         phase: rand(0,Math.PI*2), boostChanceTimer: rand(2,5),
         speed:0, finished:false, finishTime:0, runPhase:Math.random(), x:laneX(lane)
       });
@@ -513,7 +609,7 @@
       if(seq[i]==='GO!') sfxGo(); else sfxCountdown();
       i++;
       if(i<seq.length) setTimeout(step, 700);
-      else setTimeout(()=>{ countdownOverlay.classList.remove('show'); gameState='racing'; }, 550);
+      else setTimeout(()=>{ countdownOverlay.classList.remove('show'); gameState='racing'; startBGM(); }, 550);
     }
     step();
   }
@@ -545,10 +641,13 @@
 
     if(isPlayer){
       if(r.boostTimer>0) r.boostTimer = Math.max(0, r.boostTimer-dt);
-      const target = r.topSpeed * (r.boostTimer>0 ? r.boostMult : 1);
+      if(r.slipTimer>0) r.slipTimer = Math.max(0, r.slipTimer-dt);
+      const mult = r.boostTimer>0 ? r.boostMult : (r.slipTimer>0 ? 1.16 : 1);
+      const target = r.topSpeed * mult;
       if(r.speed < target) r.speed = Math.min(target, r.speed + r.accel*dt);
       else r.speed = Math.max(target, r.speed - r.accel*1.6*dt);
       if(r.bumpCooldown>0) r.bumpCooldown -= dt;
+      r.x = laneX(r.lane);
     } else {
       r.phase += dt;
       r.boostChanceTimer -= dt;
@@ -577,6 +676,8 @@
         it.collected = true;
         p.boostTimer = p.boostDurBase;
         sfxBoost();
+        speakOhYeah();
+        race.exclaim = { text:'Oh yeah!', life:1.0, maxLife:1.0 };
         spawnParticles(p.x, playerScreenY, '#7fd8ff', 10);
       }
     }
@@ -585,7 +686,7 @@
     const p = race.player;
     if(p.bumpCooldown>0) return;
     for(const r of race.rivals){
-      if(r.finished) continue;
+      if(!r.active || r.finished) continue;
       if(Math.round(p.lane)===Math.round(r.laneVisual) && Math.abs(p.worldDistance-r.worldDistance) < 3.2){
         p.speed *= 0.8;
         p.worldDistance = Math.max(0, p.worldDistance - 4.5);
@@ -594,6 +695,21 @@
         sfxBump();
         spawnParticles(p.x, playerScreenY, '#ffd35c', 8);
         break;
+      }
+    }
+  }
+  function checkCloseOvertakes(dt){
+    const p = race.player;
+    for(const r of race.rivals){
+      if(!r.active || r.finished || r.passedClose) continue;
+      const laneDiff = Math.abs(p.lane - r.laneVisual);
+      const distDiff = Math.abs(p.worldDistance - r.worldDistance);
+      if(laneDiff > 0.55 && laneDiff < 1.6 && distDiff < 4.5){
+        r.passedClose = true;
+        p.speed = Math.min(p.topSpeed*1.4, p.speed + 20);
+        p.slipTimer = Math.max(p.slipTimer, 1.1);
+        sfxSlipstream();
+        spawnParticles(p.x, playerScreenY, '#8fffb0', 7);
       }
     }
   }
@@ -616,15 +732,20 @@
     if(!race) return;
     race.elapsed += dt;
     if(race.shake>0) race.shake = Math.max(0, race.shake-dt*1.5);
+    if(race.exclaim){ race.exclaim.life -= dt; if(race.exclaim.life<=0) race.exclaim=null; }
 
     updateRacer(race.player, dt, true);
-    for(const r of race.rivals) updateRacer(r, dt, false);
+    for(const r of race.rivals){
+      if(!r.active && race.player.worldDistance >= r.activation) r.active = true;
+      if(r.active) updateRacer(r, dt, false);
+    }
     checkItems(dt);
     checkBumps(dt);
+    checkCloseOvertakes(dt);
     updateParticles(dt);
 
     stepAccum += dt * (1 + race.player.speed/40);
-    if(stepAccum > 0.32){ stepAccum = 0; if(race.player.speed>20) sfxStep(0.03); }
+    if(stepAccum > 0.32){ stepAccum = 0; if(race.player.speed>20) sfxStep(race.player.speed); }
 
     if(race.player.finished && !race.finishedAt){
       race.finishedAt = race.elapsed;
@@ -635,9 +756,10 @@
   function finishRace(){
     const total = race.rivals.length+1;
     let ahead = 0;
-    for(const r of race.rivals) if(r.worldDistance >= TRACK_LENGTH) ahead++;
+    for(const r of race.rivals) if(r.active && r.worldDistance >= TRACK_LENGTH) ahead++;
     const rank = ahead+1;
     gameState='result';
+    stopBGM();
     setTimeout(()=>{ showResult(rank, total, race.player.finishTime); }, 500);
     sfxFinish();
   }
@@ -878,7 +1000,7 @@
         drawFish(laneX(it.lane), y, t+it.worldDistance);
       }
 
-      const drawList = race.rivals.map(r=>({ r, y: screenYFor(r.worldDistance), isPlayer:false }));
+      const drawList = race.rivals.filter(r=>r.active).map(r=>({ r, y: screenYFor(r.worldDistance), isPlayer:false }));
       drawList.push({ r: race.player, y: playerScreenY, isPlayer:true });
       drawList.sort((a,b)=>a.y-b.y);
 
@@ -906,6 +1028,21 @@
         ctx.beginPath(); ctx.arc(pt.x,pt.y,3,0,Math.PI*2); ctx.fill();
         ctx.globalAlpha = 1;
       }
+
+      if(race.exclaim){
+        const a = clamp(race.exclaim.life/race.exclaim.maxLife,0,1);
+        const ty = playerScreenY - 55 - (1-a)*24;
+        ctx.save();
+        ctx.globalAlpha = a;
+        ctx.font = 'bold 20px Jua, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = 'rgba(0,0,0,0.6)';
+        ctx.strokeText(race.exclaim.text, race.player.x, ty);
+        ctx.fillStyle = '#ffd35c';
+        ctx.fillText(race.exclaim.text, race.player.x, ty);
+        ctx.restore();
+      }
       ctx.restore();
     }
   }
@@ -915,7 +1052,7 @@
     const frac = clamp(race.player.worldDistance/TRACK_LENGTH,0,1);
     progressFill.style.width = (frac*100)+'%';
     let ahead=1;
-    for(const r of race.rivals) if(r.worldDistance > race.player.worldDistance) ahead++;
+    for(const r of race.rivals) if(r.active && r.worldDistance > race.player.worldDistance) ahead++;
     rankBadge.textContent = ahead+' / '+(race.rivals.length+1);
     drawGauge(Math.round(race.player.speed));
     speedNum.textContent = Math.round(race.player.speed)+' km/h';
