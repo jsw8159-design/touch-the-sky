@@ -548,7 +548,7 @@
       adSlide3Title: '🎬 New Trailer Released', adSlide3Size: 'Watch it now'
     }
   };
-  function t(key, vars){
+  function tr(key, vars){
     const dict = I18N[lang] || I18N.ko;
     let s = dict[key]!=null ? dict[key] : (I18N.ko[key]!=null ? I18N.ko[key] : key);
     if(vars){ for(const k in vars){ s = s.split('{'+k+'}').join(String(vars[k])); } }
@@ -557,7 +557,7 @@
   function setLang(l){
     lang = (l==='en') ? 'en' : 'ko';
     lsSet('lang', lang);
-    document.title = t('gameTitle');
+    document.title = tr('gameTitle');
     applyAdSlideLang();
     syncUiButtons();
   }
@@ -602,10 +602,10 @@
     const t1=document.getElementById('adTitle1'), s1=document.getElementById('adSize1');
     const t2=document.getElementById('adTitle2'), s2=document.getElementById('adSize2');
     const t3=document.getElementById('adTitle3'), s3=document.getElementById('adSize3');
-    if(t0) t0.textContent = t('adBannerTitle'); if(s0) s0.textContent = t('adBannerSize');
-    if(t1) t1.textContent = t('adSlide1Title'); if(s1) s1.textContent = t('adSlide1Size');
-    if(t2) t2.textContent = t('adSlide2Title'); if(s2) s2.textContent = t('adSlide2Size');
-    if(t3) t3.textContent = t('adSlide3Title'); if(s3) s3.textContent = t('adSlide3Size');
+    if(t0) t0.textContent = tr('adBannerTitle'); if(s0) s0.textContent = tr('adBannerSize');
+    if(t1) t1.textContent = tr('adSlide1Title'); if(s1) s1.textContent = tr('adSlide1Size');
+    if(t2) t2.textContent = tr('adSlide2Title'); if(s2) s2.textContent = tr('adSlide2Size');
+    if(t3) t3.textContent = tr('adSlide3Title'); if(s3) s3.textContent = tr('adSlide3Size');
   }
   function advanceAdBanner(){
     const slides = document.querySelectorAll('#adRotator .ad-slide');
@@ -1088,7 +1088,7 @@
       if(missionDone(id) && !dailyMissions.completedShown[id]){
         dailyMissions.completedShown[id] = true;
         const m = missionById(id);
-        unlockToastText = t('toastMissionDone', { icon: m.icon, desc: missionDesc(m) });
+        unlockToastText = tr('toastMissionDone', { icon: m.icon, desc: missionDesc(m) });
         unlockToastUntil = performance.now()+2600;
         sfxMaxHpUp();
       }
@@ -1124,7 +1124,7 @@
     lsSet('streakCount', String(streakCount));
     lsSet('streakLastDate', streakLastDate);
     if(streakCount>=2){
-      unlockToastText = t('toastStreakDay', { n: streakCount });
+      unlockToastText = tr('toastStreakDay', { n: streakCount });
       unlockToastUntil = performance.now()+2400;
     }
     checkStreakReward();
@@ -1139,9 +1139,9 @@
         if(idx>=0){
           adUnlockedSkins.add(idx);
           lsSet('adUnlockedSkins', JSON.stringify(Array.from(adUnlockedSkins)));
-          unlockToastText = t('toastStreakRewardSkin', { n: m, name: skinName(SKINS[idx]) });
+          unlockToastText = tr('toastStreakRewardSkin', { n: m, name: skinName(SKINS[idx]) });
         } else {
-          unlockToastText = t('toastStreakReward', { n: m });
+          unlockToastText = tr('toastStreakReward', { n: m });
         }
         unlockToastUntil = performance.now()+2800;
         sfxMaxHpUp();
@@ -1176,7 +1176,7 @@
       if(!earnedAchievements.has(a.id) && a.check()){
         earnedAchievements.add(a.id);
         changed = true;
-        unlockToastText = t('toastAchievement', { icon: a.icon, name: achName(a) });
+        unlockToastText = tr('toastAchievement', { icon: a.icon, name: achName(a) });
         unlockToastUntil = performance.now()+2600;
         sfxMaxHpUp();
       }
@@ -1198,7 +1198,7 @@
   function submitGlobalScoreIfBest(score){
     if(score <= globalBestSubmitted) return;
     if(!window.__ttsCloud) return;
-    const nick = myNickname || t('anonymous');
+    const nick = myNickname || tr('anonymous');
     window.__ttsCloud.submitScore(clientId, nick, score).then(function(ok){
       if(ok){ globalBestSubmitted = score; lsSet('globalBestSubmitted', String(score)); }
     });
@@ -1282,7 +1282,7 @@
     lsSet('adUnlockedSkins', JSON.stringify(Array.from(adUnlockedSkins)));
     adUnlockActive = false;
     selectedSkinIndex = idx; lsSet('skinIndex', String(idx));
-    unlockToastText = t('toastSkinUnlock', { name: skinName(SKINS[idx]) }); unlockToastUntil = performance.now()+2400;
+    unlockToastText = tr('toastSkinUnlock', { name: skinName(SKINS[idx]) }); unlockToastUntil = performance.now()+2400;
     sfxMaxHpUp();
     advanceAdBanner();
     checkAchievements();
@@ -1333,7 +1333,7 @@
   let challengeTarget = urlParams.has('c') ? parseFloat(urlParams.get('c')) : null;
   if(challengeTarget==null || isNaN(challengeTarget) || challengeTarget<0) challengeTarget = null;
   let challengeFrom = urlParams.has('n') ? String(urlParams.get('n')).slice(0,16) : null;
-  if(challengeTarget!=null && !challengeFrom) challengeFrom = t('friendDefault');
+  if(challengeTarget!=null && !challengeFrom) challengeFrom = tr('friendDefault');
   let challengeFromClientId = urlParams.has('r') ? String(urlParams.get('r')).slice(0,64) : null;
   let challengeBeatenShoutShown = false; // avoid re-firing the "beat it!" shout mid-run
 
@@ -1343,20 +1343,20 @@
     // player gets asked again next time instead of being stuck anonymous
     if(!myNickname){
       let input = null;
-      try{ input = prompt(t('nicknamePromptNew'), ''); }catch(e){}
+      try{ input = prompt(tr('nicknamePromptNew'), ''); }catch(e){}
       const trimmed = (input||'').trim().slice(0,12);
       if(trimmed){ myNickname = trimmed; lsSet('nickname', myNickname); }
     }
     syncUiButtons();
-    return myNickname || t('anonymous');
+    return myNickname || tr('anonymous');
   }
 
   function changeNickname(){
     let input = null;
-    try{ input = prompt(t('nicknamePromptChange'), myNickname||''); }catch(e){}
+    try{ input = prompt(tr('nicknamePromptChange'), myNickname||''); }catch(e){}
     if(input==null) return; // cancelled - keep the current nickname as-is
     const trimmed = input.trim().slice(0,12);
-    myNickname = trimmed || t('anonymous');
+    myNickname = trimmed || tr('anonymous');
     lsSet('nickname', myNickname);
     syncUiButtons();
     // already have a global score submitted under the old name - move it to the new one
@@ -1370,7 +1370,7 @@
     const url = new URL(location.href);
     url.hash = '';
     url.searchParams.set('c', Math.floor(score));
-    url.searchParams.set('n', myNickname||t('anonymous'));
+    url.searchParams.set('n', myNickname||tr('anonymous'));
     url.searchParams.set('r', clientId);
     return url.toString();
   }
@@ -1380,19 +1380,19 @@
     const nick = ensureNickname();
     const roundedScore = Math.floor(score);
     const url = buildChallengeUrl(score);
-    const text = t('shareText', { nick: nick, score: roundedScore });
+    const text = tr('shareText', { nick: nick, score: roundedScore });
     if(navigator.share){
       try{
-        await navigator.share({ title:t('shareTitle'), text, url });
+        await navigator.share({ title:tr('shareTitle'), text, url });
         return;
       }catch(e){ /* user cancelled the native share sheet, or it's unsupported here - fall through */ }
     }
     try{
       await navigator.clipboard.writeText(text+'\n'+url);
-      unlockToastText = t('shareCopiedToast'); unlockToastUntil = performance.now()+2200;
+      unlockToastText = tr('shareCopiedToast'); unlockToastUntil = performance.now()+2200;
       sfxUnlock();
     }catch(e){
-      try{ prompt(t('sharePrompt'), text+'\n'+url); }catch(e2){}
+      try{ prompt(tr('sharePrompt'), text+'\n'+url); }catch(e2){}
     }
   }
 
@@ -1405,15 +1405,15 @@
     if(lsGet('referralCredited','0')==='1') return;
     lsSet('referralCredited','1'); // set immediately to avoid double-crediting on repeat runs
     if(window.__ttsCloud){
-      window.__ttsCloud.recordReferral(challengeFromClientId, clientId, myNickname||t('anonymous'));
+      window.__ttsCloud.recordReferral(challengeFromClientId, clientId, myNickname||tr('anonymous'));
     }
     const idx = nextLockedSkinIndex();
     if(idx>=0){
       adUnlockedSkins.add(idx);
       lsSet('adUnlockedSkins', JSON.stringify(Array.from(adUnlockedSkins)));
-      unlockToastText = t('toastInviteBonusSkin', { name: skinName(SKINS[idx]) }); unlockToastUntil = performance.now()+2800;
+      unlockToastText = tr('toastInviteBonusSkin', { name: skinName(SKINS[idx]) }); unlockToastUntil = performance.now()+2800;
     } else {
-      unlockToastText = t('toastInviteBonus'); unlockToastUntil = performance.now()+2400;
+      unlockToastText = tr('toastInviteBonus'); unlockToastUntil = performance.now()+2400;
     }
     sfxMaxHpUp();
     checkAchievements();
@@ -1440,7 +1440,7 @@
       }
       if(grantedAny) lsSet('adUnlockedSkins', JSON.stringify(Array.from(adUnlockedSkins)));
       const names = fresh.map(function(r){ return r.fromNickname; }).slice(0,3).join(', ');
-      unlockToastText = t('toastReferralIn', { names: names });
+      unlockToastText = tr('toastReferralIn', { names: names });
       unlockToastUntil = performance.now()+3000;
       sfxMaxHpUp();
       checkAchievements();
@@ -1635,25 +1635,25 @@
 
   // ---------- UI button visibility ----------
   function syncUiButtons(){
-    btnMute.setAttribute('aria-label', t('muteAria'));
-    btnPause.setAttribute('aria-label', t('pauseAria'));
+    btnMute.setAttribute('aria-label', tr('muteAria'));
+    btnPause.setAttribute('aria-label', tr('pauseAria'));
     btnPause.style.display = (state==='playing' && !showLeaderboard) ? 'flex' : 'none';
     btnPause.textContent = paused ? '▶' : '⏸';
-    btnLeaderboard.setAttribute('aria-label', t('leaderboardAria'));
+    btnLeaderboard.setAttribute('aria-label', tr('leaderboardAria'));
     btnLeaderboard.style.display = ((state==='start' || state==='gameover') && !showLeaderboard) ? 'flex' : 'none';
     const skinPickerVisible = (state==='start' || state==='gameover') && !showLeaderboard && !adUnlockActive;
-    btnSkinPrev.setAttribute('aria-label', t('skinPrevAria'));
-    btnSkinNext.setAttribute('aria-label', t('skinNextAria'));
+    btnSkinPrev.setAttribute('aria-label', tr('skinPrevAria'));
+    btnSkinNext.setAttribute('aria-label', tr('skinNextAria'));
     btnSkinPrev.style.display = skinPickerVisible ? 'flex' : 'none';
     btnSkinNext.style.display = skinPickerVisible ? 'flex' : 'none';
-    btnLbClose.textContent = t('btnClose');
+    btnLbClose.textContent = tr('btnClose');
     btnLbClose.style.display = showLeaderboard ? 'flex' : 'none';
     btnShare.style.display = ((state==='start' || state==='gameover') && !showLeaderboard) ? 'flex' : 'none';
     btnShare.textContent = (state==='gameover' && challengeTarget!=null && height>challengeTarget)
-      ? t('btnShareWin') : t('btnShareDefault');
-    btnLbLocal.textContent = t('btnLbLocal');
-    btnLbGlobal.textContent = t('btnLbGlobal');
-    btnLbStats.textContent = t('btnLbStats');
+      ? tr('btnShareWin') : tr('btnShareDefault');
+    btnLbLocal.textContent = tr('btnLbLocal');
+    btnLbGlobal.textContent = tr('btnLbGlobal');
+    btnLbStats.textContent = tr('btnLbStats');
     btnLbLocal.style.display = showLeaderboard ? 'flex' : 'none';
     btnLbGlobal.style.display = showLeaderboard ? 'flex' : 'none';
     btnLbStats.style.display = showLeaderboard ? 'flex' : 'none';
@@ -1661,27 +1661,27 @@
     btnLbGlobal.classList.toggle('lbTabActive', leaderboardTab==='global');
     btnLbStats.classList.toggle('lbTabActive', leaderboardTab==='stats');
     btnNickname.style.display = showLeaderboard ? 'flex' : 'none';
-    btnNickname.textContent = t('nicknamePrefix') + (myNickname || t('btnNicknameSet'));
-    btnAdUnlock.textContent = t('btnAdUnlock');
+    btnNickname.textContent = tr('nicknamePrefix') + (myNickname || tr('btnNicknameSet'));
+    btnAdUnlock.textContent = tr('btnAdUnlock');
     btnAdUnlock.style.display = (skinPickerVisible && nextLockedSkinIndex()>=0) ? 'flex' : 'none';
-    btnSettings.setAttribute('aria-label', t('settingsAria'));
+    btnSettings.setAttribute('aria-label', tr('settingsAria'));
     btnSettings.style.display = (!showLeaderboard && !adUnlockActive && !showMissions && !showCostume) ? 'flex' : 'none';
     btnVibCycle.style.display = showSettings ? 'flex' : 'none';
-    btnVibCycle.textContent = t('vibPrefix') + t('vibLabels')[vibrationLevel];
+    btnVibCycle.textContent = tr('vibPrefix') + tr('vibLabels')[vibrationLevel];
     btnColorblind.style.display = showSettings ? 'flex' : 'none';
-    btnColorblind.textContent = t('colorblindPrefix') + (colorblindMode ? t('onLabel') : t('offLabel'));
-    btnMissions.setAttribute('aria-label', t('missionsAria'));
+    btnColorblind.textContent = tr('colorblindPrefix') + (colorblindMode ? tr('onLabel') : tr('offLabel'));
+    btnMissions.setAttribute('aria-label', tr('missionsAria'));
     btnMissions.style.display = (!showLeaderboard && !adUnlockActive && !showSettings && !showCostume) ? 'flex' : 'none';
-    btnMissionTab.textContent = t('btnMissionTab');
-    btnAchTab.textContent = t('btnAchTab');
+    btnMissionTab.textContent = tr('btnMissionTab');
+    btnAchTab.textContent = tr('btnAchTab');
     btnMissionTab.style.display = showMissions ? 'flex' : 'none';
     btnAchTab.style.display = showMissions ? 'flex' : 'none';
     btnMissionTab.classList.toggle('lbTabActive', missionsTab==='missions');
     btnAchTab.classList.toggle('lbTabActive', missionsTab==='achievements');
-    btnCostume.setAttribute('aria-label', t('costumeAria'));
+    btnCostume.setAttribute('aria-label', tr('costumeAria'));
     btnCostume.style.display = (!showLeaderboard && !adUnlockActive && !showSettings && !showMissions) ? 'flex' : 'none';
-    btnCostumePrev.textContent = t('btnCostumePrev');
-    btnCostumeNext.textContent = t('btnCostumeNext');
+    btnCostumePrev.textContent = tr('btnCostumePrev');
+    btnCostumeNext.textContent = tr('btnCostumeNext');
     btnCostumePrev.style.display = showCostume ? 'flex' : 'none';
     btnCostumeNext.style.display = showCostume ? 'flex' : 'none';
     btnLang.textContent = lang==='ko' ? '🇺🇸 EN' : '🇰🇷 한글';
@@ -1901,7 +1901,7 @@
     hp = Math.min(hpMax, hp+1);
     spawnParticles(o.x,o.y,'#FF8FA8',12,[60,180],0.55);
     sfxMaxHpUp();
-    unlockToastText = t('toastHpUp'); unlockToastUntil = performance.now()+1600;
+    unlockToastText = tr('toastHpUp'); unlockToastUntil = performance.now()+1600;
   }
 
   const STAR_INVINCIBLE_MS = 3000;
@@ -1909,7 +1909,7 @@
     invincibleUntil = Math.max(invincibleUntil, performance.now()+STAR_INVINCIBLE_MS);
     spawnParticles(o.x,o.y,'#FFD93D',14,[70,220],0.6);
     triggerFlash('#FFF3B0', 260);
-    triggerShout(t('shoutInvincible'), '#FFD93D', 1400);
+    triggerShout(tr('shoutInvincible'), '#FFD93D', 1400);
     sfxStarPower();
     vibrate([20,20,20]);
     lifeStats.starsUsedTotal++; saveLifeStats();
@@ -1942,13 +1942,13 @@
     spawnParticles(charX, restY+charRadius*0.6, '#C9A876', 6, [30,90], 0.4);
     sfxLand();
     if(combo>=5 && combo%5===0){
-      triggerShout(t('shoutCombo', { combo: combo }), '#FF9F1C', 800);
+      triggerShout(tr('shoutCombo', { combo: combo }), '#FF9F1C', 800);
       if(combo<=30) playComboSfx(comboTier()); // escalation sfx caps out at 30 - beyond that, just keep counting
       vibrate([25,30,25,30,60].map(v=>Math.round(v*(1+comboTier()*0.1))));
     }
     if(challengeTarget!=null && !challengeBeatenShoutShown && height > challengeTarget){
       challengeBeatenShoutShown = true;
-      triggerShout(t('shoutChallengeOvertake', { name: challengeFrom }), '#7CFFB2', 1100);
+      triggerShout(tr('shoutChallengeOvertake', { name: challengeFrom }), '#7CFFB2', 1100);
       sfxMaxHpUp();
       vibrate([30,40,30,40,100]);
     }
@@ -1957,42 +1957,42 @@
     }
     if(landings === 3 && !obstacleUnlocked.helmet){
       obstacleUnlocked.helmet = true;
-      unlockToastText = t('toastHelmetUnlock'); unlockToastUntil = performance.now()+2400;
+      unlockToastText = tr('toastHelmetUnlock'); unlockToastUntil = performance.now()+2400;
       sfxUnlock();
     }
     if(landings === 5 && !obstacleUnlocked.ad){
       obstacleUnlocked.ad = true;
-      unlockToastText = t('toastAdUnlock'); unlockToastUntil = performance.now()+2400;
+      unlockToastText = tr('toastAdUnlock'); unlockToastUntil = performance.now()+2400;
       sfxUnlock();
     }
     if(landings === 8 && !obstacleUnlocked.leaf){
       obstacleUnlocked.leaf = true;
-      unlockToastText = t('toastLeafUnlock'); unlockToastUntil = performance.now()+2200;
+      unlockToastText = tr('toastLeafUnlock'); unlockToastUntil = performance.now()+2200;
       sfxUnlock();
     }
     if(landings === 10 && !obstacleUnlocked.friend){
       obstacleUnlocked.friend = true;
-      unlockToastText = t('toastFriendUnlock'); unlockToastUntil = performance.now()+2600;
+      unlockToastText = tr('toastFriendUnlock'); unlockToastUntil = performance.now()+2600;
       sfxUnlock();
     }
     if(landings === 12 && !obstacleUnlocked.lightning){
       obstacleUnlocked.lightning = true;
-      unlockToastText = t('toastLightningUnlock'); unlockToastUntil = performance.now()+2400;
+      unlockToastText = tr('toastLightningUnlock'); unlockToastUntil = performance.now()+2400;
       sfxUnlock();
     }
     if(landings === 15 && !obstacleUnlocked.hpup){
       obstacleUnlocked.hpup = true;
-      unlockToastText = t('toastHpupUnlock'); unlockToastUntil = performance.now()+2400;
+      unlockToastText = tr('toastHpupUnlock'); unlockToastUntil = performance.now()+2400;
       sfxUnlock();
     }
     if(landings === 18 && !obstacleUnlocked.boulder){
       obstacleUnlocked.boulder = true;
-      unlockToastText = t('toastBoulderUnlock'); unlockToastUntil = performance.now()+2200;
+      unlockToastText = tr('toastBoulderUnlock'); unlockToastUntil = performance.now()+2200;
       sfxUnlock();
     }
     if(landings === 22 && !obstacleUnlocked.star){
       obstacleUnlocked.star = true;
-      unlockToastText = t('toastStarUnlock'); unlockToastUntil = performance.now()+2400;
+      unlockToastText = tr('toastStarUnlock'); unlockToastUntil = performance.now()+2400;
       sfxUnlock();
     }
   }
@@ -2122,7 +2122,7 @@
         if(t>=1){
           spawnParticles(charX, charY, '#FFD93D', 12, [60,180], 0.5);
           const fv0 = FRIEND_VARIANTS[friendVariant];
-          triggerShout(t('shoutHighFive', { n: fv0.ascend }), fv0.wing, 700);
+          triggerShout(tr('shoutHighFive', { n: fv0.ascend }), fv0.wing, 700);
           playVoiceLine('friend'+friendVariant, fv0.line, 1.0, 1.05 + friendVariant*0.08);
           sfxFriendGreet();
           charState = 'friend_ascend';
@@ -4142,7 +4142,7 @@
 
     // combo indicator (shown while a streak of 2+ clean landings is active)
     if(combo >= 2){
-      const comboText = t('comboText', { mult: comboMultiplier.toFixed(1), n: combo });
+      const comboText = tr('comboText', { mult: comboMultiplier.toFixed(1), n: combo });
       ctx.font = `${Math.round(W*0.038)}px 'Jua', sans-serif`;
       const comboW = ctx.measureText(comboText).width;
       const by = 38 + hs*1.7;
@@ -4189,40 +4189,40 @@
       ctx.textAlign='center';
       ctx.fillStyle = 'rgba(0,0,0,0.4)';
       ctx.font = `${Math.round(W*0.11)}px 'Jua', sans-serif`;
-      ctx.fillText(t('titleLine1'), W/2+2, H*0.33+2);
-      ctx.fillText(t('titleLine2'), W/2+2, H*0.33+Math.round(W*0.13)+2);
+      ctx.fillText(tr('titleLine1'), W/2+2, H*0.33+2);
+      ctx.fillText(tr('titleLine2'), W/2+2, H*0.33+Math.round(W*0.13)+2);
       ctx.fillStyle = '#FFFFFF';
-      ctx.fillText(t('titleLine1'), W/2, H*0.33);
-      ctx.fillText(t('titleLine2'), W/2, H*0.33+Math.round(W*0.13));
+      ctx.fillText(tr('titleLine1'), W/2, H*0.33);
+      ctx.fillText(tr('titleLine2'), W/2, H*0.33+Math.round(W*0.13));
 
       ctx.font = `${Math.round(W*0.032)}px 'Jua', sans-serif`;
       if(challengeTarget!=null){
         ctx.fillStyle = '#FF6B81';
-        ctx.fillText(t('challengeSubtitle', { name: challengeFrom, h: Math.floor(challengeTarget) }), W/2, H*0.435);
+        ctx.fillText(tr('challengeSubtitle', { name: challengeFrom, h: Math.floor(challengeTarget) }), W/2, H*0.435);
       } else {
         ctx.fillStyle = '#FFD93D';
-        let bestLine = t('bestHeightLabel', { h: Math.floor(sessionBest) });
-        if(streakCount>=2) bestLine += '   ' + t('streakBadge', { n: streakCount });
+        let bestLine = tr('bestHeightLabel', { h: Math.floor(sessionBest) });
+        if(streakCount>=2) bestLine += '   ' + tr('streakBadge', { n: streakCount });
         ctx.fillText(bestLine, W/2, H*0.435);
       }
 
       ctx.font = `${Math.round(W*0.038)}px 'Jua', sans-serif`;
       ctx.fillStyle = 'rgba(255,255,255,0.9)';
       const lh = Math.round(W*0.052);
-      ctx.fillText(t('instr1'), W/2, H*0.485);
-      ctx.fillText(t('instr2'), W/2, H*0.485+lh);
-      ctx.fillText(t('instr3'), W/2, H*0.485+lh*2);
+      ctx.fillText(tr('instr1'), W/2, H*0.485);
+      ctx.fillText(tr('instr2'), W/2, H*0.485+lh);
+      ctx.fillText(tr('instr3'), W/2, H*0.485+lh*2);
 
       const bob = Math.sin(now/350)*6;
       ctx.font = `${Math.round(W*0.055)}px 'Jua', sans-serif`;
       ctx.fillStyle = '#FFD93D';
-      ctx.fillText(t('startPrompt'), W/2, H*0.78+bob);
+      ctx.fillText(tr('startPrompt'), W/2, H*0.78+bob);
 
       // label above the character preview so the side arrows read as a character picker,
       // not just generic navigation
       ctx.font = `${Math.round(W*0.04)}px 'Jua', sans-serif`;
       ctx.fillStyle = '#FFD93D';
-      ctx.fillText(t('selectCharacter'), W/2, H*0.615);
+      ctx.fillText(tr('selectCharacter'), W/2, H*0.615);
 
       drawCharacter(W/2, H*0.655, 1, 0, now);
 
@@ -4236,14 +4236,14 @@
       ctx.textAlign='center';
       ctx.fillStyle = '#FF5C7A';
       ctx.font = `${Math.round(W*0.09)}px 'Jua', sans-serif`;
-      ctx.fillText(gameOverReason==='fall' ? t('gameOverFall') : t('gameOverHp'), W/2, H*0.38);
+      ctx.fillText(gameOverReason==='fall' ? tr('gameOverFall') : tr('gameOverHp'), W/2, H*0.38);
 
       ctx.fillStyle = '#FFFFFF';
       ctx.font = `${Math.round(W*0.06)}px 'Jua', sans-serif`;
-      ctx.fillText(t('heightLabel', { h: Math.floor(height) }), W/2, H*0.48);
+      ctx.fillText(tr('heightLabel', { h: Math.floor(height) }), W/2, H*0.48);
       ctx.font = `${Math.round(W*0.045)}px 'Jua', sans-serif`;
       ctx.fillStyle = isNewRecord ? '#7CFFB2' : '#FFD93D';
-      ctx.fillText(isNewRecord ? t('newRecord', { h: Math.floor(sessionBest) }) : t('bestHeight2', { h: Math.floor(sessionBest) }), W/2, H*0.55);
+      ctx.fillText(isNewRecord ? tr('newRecord', { h: Math.floor(sessionBest) }) : tr('bestHeight2', { h: Math.floor(sessionBest) }), W/2, H*0.55);
 
       let extraY = H*0.605;
       const extraStep = H*0.055;
@@ -4251,17 +4251,17 @@
         ctx.font = `${Math.round(W*0.036)}px 'Jua', sans-serif`;
         if(height > challengeTarget){
           ctx.fillStyle = '#7CFFB2';
-          ctx.fillText(t('challengeWon', { name: challengeFrom, diff: Math.floor(height-challengeTarget) }), W/2, extraY);
+          ctx.fillText(tr('challengeWon', { name: challengeFrom, diff: Math.floor(height-challengeTarget) }), W/2, extraY);
         } else {
           ctx.fillStyle = '#FF9F9F';
-          ctx.fillText(t('challengeLost', { name: challengeFrom, diff: Math.ceil(challengeTarget-height) }), W/2, extraY);
+          ctx.fillText(tr('challengeLost', { name: challengeFrom, diff: Math.ceil(challengeTarget-height) }), W/2, extraY);
         }
         extraY += extraStep;
       }
       if(comboBest >= 2){
         ctx.font = `${Math.round(W*0.036)}px 'Jua', sans-serif`;
         ctx.fillStyle = '#FF9F1C';
-        ctx.fillText(t('bestComboLabel', { n: comboBest }), W/2, extraY);
+        ctx.fillText(tr('bestComboLabel', { n: comboBest }), W/2, extraY);
         extraY += extraStep;
       }
 
@@ -4269,7 +4269,7 @@
       const restartY = Math.max(extraY+H*0.03, H*0.68);
       ctx.font = `${Math.round(W*0.052)}px 'Jua', sans-serif`;
       ctx.fillStyle = '#FFFFFF';
-      ctx.fillText(t('restartPrompt'), W/2, restartY+bob);
+      ctx.fillText(tr('restartPrompt'), W/2, restartY+bob);
 
       // lets players change character before restarting (the side arrows work here too)
       ctx.font = `${Math.round(W*0.032)}px 'Jua', sans-serif`;
@@ -4286,11 +4286,11 @@
     ctx.textAlign='center';
     ctx.fillStyle = '#FFFFFF';
     ctx.font = `${Math.round(W*0.09)}px 'Jua', sans-serif`;
-    ctx.fillText(t('pausedTitle'), W/2, H*0.44);
+    ctx.fillText(tr('pausedTitle'), W/2, H*0.44);
     const bob = Math.sin(now/350)*6;
     ctx.font = `${Math.round(W*0.045)}px 'Jua', sans-serif`;
     ctx.fillStyle = '#FFD93D';
-    ctx.fillText(t('pausedHint'), W/2, H*0.52+bob);
+    ctx.fillText(tr('pausedHint'), W/2, H*0.52+bob);
     ctx.restore();
   }
 
@@ -4304,7 +4304,7 @@
     ctx.textAlign = 'center';
     ctx.fillStyle = '#FFD93D';
     ctx.font = `${Math.round(W*0.07)}px 'Jua', sans-serif`;
-    ctx.fillText(missionsTab==='missions' ? t('dailyMissionsTitle') : t('achievementsTitle'), W/2, H*0.26);
+    ctx.fillText(missionsTab==='missions' ? tr('dailyMissionsTitle') : tr('achievementsTitle'), W/2, H*0.26);
 
     const rowH = H*0.075;
     if(missionsTab==='missions'){
@@ -4323,12 +4323,12 @@
       }
       ctx.font = `${Math.round(W*0.03)}px 'Jua', sans-serif`;
       ctx.fillStyle = 'rgba(255,255,255,0.5)';
-      ctx.fillText(t('missionsReset'), W/2, H*0.36+3*rowH+H*0.02);
+      ctx.fillText(tr('missionsReset'), W/2, H*0.36+3*rowH+H*0.02);
     } else {
       const earnedCount = ACHIEVEMENTS.reduce(function(n,a){ return n+(earnedAchievements.has(a.id)?1:0); }, 0);
       ctx.font = `${Math.round(W*0.032)}px 'Jua', sans-serif`;
       ctx.fillStyle = 'rgba(255,255,255,0.7)';
-      ctx.fillText(t('achEarnedOf', { n: earnedCount, total: ACHIEVEMENTS.length }), W/2, H*0.31);
+      ctx.fillText(tr('achEarnedOf', { n: earnedCount, total: ACHIEVEMENTS.length }), W/2, H*0.31);
       const achRowH = Math.min(H*0.054, H*0.52/ACHIEVEMENTS.length);
       for(let i=0;i<ACHIEVEMENTS.length;i++){
         const a = ACHIEVEMENTS[i];
@@ -4341,7 +4341,7 @@
     }
     ctx.font = `${Math.round(W*0.028)}px 'Jua', sans-serif`;
     ctx.fillStyle = 'rgba(255,255,255,0.5)';
-    ctx.fillText(t('tapEmptyToClose'), W/2, H*0.92);
+    ctx.fillText(tr('tapEmptyToClose'), W/2, H*0.92);
     ctx.restore();
   }
 
@@ -4352,7 +4352,7 @@
     ctx.textAlign = 'center';
     ctx.fillStyle = '#FFD93D';
     ctx.font = `${Math.round(W*0.07)}px 'Jua', sans-serif`;
-    ctx.fillText(t('costumeTitle'), W/2, H*0.22);
+    ctx.fillText(tr('costumeTitle'), W/2, H*0.22);
 
     drawCharacter(W/2, H*0.4, 1, 0, now);
 
@@ -4364,7 +4364,7 @@
     const unlockedCount = COSTUMES.reduce((n,_,i)=>n+(isCostumeUnlocked(i)?1:0),0);
     ctx.font = `${Math.round(W*0.032)}px 'Jua', sans-serif`;
     ctx.fillStyle = 'rgba(255,255,255,0.6)';
-    ctx.fillText(t('costumeUnlockedOf', { n: unlockedCount, total: COSTUMES.length }), W/2, H*0.55);
+    ctx.fillText(tr('costumeUnlockedOf', { n: unlockedCount, total: COSTUMES.length }), W/2, H*0.55);
 
     const rowH = H*0.032;
     const startY = H*0.6;
@@ -4374,13 +4374,13 @@
       const y = startY + i*rowH;
       ctx.font = `${Math.round(W*0.028)}px 'Jua', sans-serif`;
       ctx.fillStyle = i===selectedCostumeIndex ? '#FFD93D' : (unlocked ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.35)');
-      const label = unlocked ? (cc.emoji||'⬜')+' '+costumeName(cc) : t('costumeLocked', { name: costumeName(cc), h: cc.unlockHeight });
+      const label = unlocked ? (cc.emoji||'⬜')+' '+costumeName(cc) : tr('costumeLocked', { name: costumeName(cc), h: cc.unlockHeight });
       ctx.fillText(label, W/2, y);
     }
 
     ctx.font = `${Math.round(W*0.028)}px 'Jua', sans-serif`;
     ctx.fillStyle = 'rgba(255,255,255,0.5)';
-    ctx.fillText(t('tapEmptyToClose'), W/2, H*0.94);
+    ctx.fillText(tr('tapEmptyToClose'), W/2, H*0.94);
     ctx.restore();
   }
 
@@ -4391,10 +4391,10 @@
     ctx.textAlign='center';
     ctx.fillStyle = '#FFD93D';
     ctx.font = `${Math.round(W*0.07)}px 'Jua', sans-serif`;
-    ctx.fillText(t('settingsTitle'), W/2, H*0.26);
+    ctx.fillText(tr('settingsTitle'), W/2, H*0.26);
     ctx.font = `${Math.round(W*0.03)}px 'Jua', sans-serif`;
     ctx.fillStyle = 'rgba(255,255,255,0.6)';
-    ctx.fillText(t('tapEmptyToClose'), W/2, H*0.34);
+    ctx.fillText(tr('tapEmptyToClose'), W/2, H*0.34);
     ctx.restore();
   }
 
@@ -4408,12 +4408,12 @@
     ctx.textAlign='center';
     ctx.fillStyle = '#FF5A8C';
     ctx.font = `${Math.round(W*0.07)}px 'Jua', sans-serif`;
-    ctx.fillText(t('adWatching'), W/2, H*0.34);
+    ctx.fillText(tr('adWatching'), W/2, H*0.34);
 
     ctx.font = `${Math.round(W*0.045)}px 'Jua', sans-serif`;
     ctx.fillStyle = '#FFFFFF';
     const targetName = adUnlockTargetIndex>=0 ? skinName(SKINS[adUnlockTargetIndex]) : '';
-    ctx.fillText(t('adUnlockUntil', { name: targetName }), W/2, H*0.44);
+    ctx.fillText(tr('adUnlockUntil', { name: targetName }), W/2, H*0.44);
 
     // progress bar
     const barW = W*0.6, barH = H*0.028, barX = W/2-barW/2, barY = H*0.5;
@@ -4428,7 +4428,7 @@
 
     ctx.font = `${Math.round(W*0.032)}px 'Jua', sans-serif`;
     ctx.fillStyle = 'rgba(255,255,255,0.6)';
-    ctx.fillText(t('adPlaceholderNote'), W/2, H*0.68);
+    ctx.fillText(tr('adPlaceholderNote'), W/2, H*0.68);
     ctx.restore();
   }
 
@@ -4439,7 +4439,7 @@
     ctx.textAlign='center';
     ctx.fillStyle = '#FFD93D';
     ctx.font = `${Math.round(W*0.07)}px 'Jua', sans-serif`;
-    ctx.fillText(leaderboardTab==='global' ? t('lbGlobalTitle') : leaderboardTab==='stats' ? t('lbStatsTitle') : t('lbLocalTitle', { n: LEADERBOARD_SIZE }), W/2, H*0.26);
+    ctx.fillText(leaderboardTab==='global' ? tr('lbGlobalTitle') : leaderboardTab==='stats' ? tr('lbStatsTitle') : tr('lbLocalTitle', { n: LEADERBOARD_SIZE }), W/2, H*0.26);
 
     ctx.font = `${Math.round(W*0.042)}px 'Jua', sans-serif`;
     ctx.textAlign = 'center';
@@ -4449,7 +4449,7 @@
     if(leaderboardTab==='local'){
       if(!leaderboard.length){
         ctx.fillStyle = 'rgba(255,255,255,0.75)';
-        ctx.fillText(t('lbEmpty'), W/2, H*0.4);
+        ctx.fillText(tr('lbEmpty'), W/2, H*0.4);
       } else {
         for(let i=0;i<leaderboard.length;i++){
           const y = H*0.36 + i*rowH;
@@ -4460,34 +4460,34 @@
     } else if(leaderboardTab==='global'){
       if(globalLoadState==='loading'){
         ctx.fillStyle = 'rgba(255,255,255,0.75)';
-        ctx.fillText(t('lbLoading'), W/2, H*0.4);
+        ctx.fillText(tr('lbLoading'), W/2, H*0.4);
       } else if(globalLoadState==='error'){
         ctx.fillStyle = 'rgba(255,150,150,0.85)';
-        ctx.fillText(t('lbError'), W/2, H*0.4);
+        ctx.fillText(tr('lbError'), W/2, H*0.4);
         ctx.font = `${Math.round(W*0.032)}px 'Jua', sans-serif`;
         ctx.fillStyle = 'rgba(255,255,255,0.6)';
-        ctx.fillText(t('lbErrorHint'), W/2, H*0.44);
+        ctx.fillText(tr('lbErrorHint'), W/2, H*0.44);
       } else if(!globalLeaderboard || !globalLeaderboard.length){
         ctx.fillStyle = 'rgba(255,255,255,0.75)';
-        ctx.fillText(t('lbGlobalEmpty'), W/2, H*0.4);
+        ctx.fillText(tr('lbGlobalEmpty'), W/2, H*0.4);
       } else {
         for(let i=0;i<globalLeaderboard.length;i++){
           const row = globalLeaderboard[i];
           const y = H*0.36 + i*rowH;
           const isMe = row.nickname===myNickname && row.score===Math.floor(globalBestSubmitted);
           ctx.fillStyle = i<3 ? '#FFD93D' : 'rgba(255,255,255,0.85)';
-          ctx.fillText((medals[i]||(i+1)+'.')+' '+row.nickname+' - '+row.score+'m'+(isMe?t('lbMeSuffix'):''), W/2, y);
+          ctx.fillText((medals[i]||(i+1)+'.')+' '+row.nickname+' - '+row.score+'m'+(isMe?tr('lbMeSuffix'):''), W/2, y);
         }
       }
     } else { // stats
       const rows = [
-        [t('statStreak'), streakCount+t('unitDays')],
-        [t('statPlays'), lifeStats.plays+t('unitTimes')],
-        [t('statDistance'), lifeStats.distance+'m'],
-        [t('statLandings'), lifeStats.landings+t('unitTimes')],
-        [t('statBestCombo'), lifeStats.bestCombo+t('unitCombo')],
-        [t('statFalls'), lifeStats.falls+t('unitTimes')],
-        [t('statHpDeaths'), lifeStats.hpDeaths+t('unitTimes')]
+        [tr('statStreak'), streakCount+tr('unitDays')],
+        [tr('statPlays'), lifeStats.plays+tr('unitTimes')],
+        [tr('statDistance'), lifeStats.distance+'m'],
+        [tr('statLandings'), lifeStats.landings+tr('unitTimes')],
+        [tr('statBestCombo'), lifeStats.bestCombo+tr('unitCombo')],
+        [tr('statFalls'), lifeStats.falls+tr('unitTimes')],
+        [tr('statHpDeaths'), lifeStats.hpDeaths+tr('unitTimes')]
       ];
       ctx.textAlign = 'left';
       const labelX = W*0.5-W*0.34, valueX = W*0.5+W*0.34;
@@ -4662,7 +4662,7 @@
   });
 
   // ---------- init ----------
-  document.title = t('gameTitle');
+  document.title = tr('gameTitle');
   applyAdSlideLang();
   resize();
   resetGame();
