@@ -1,0 +1,63 @@
+rules_version = '2';
+
+// Touch the Sky (하늘에 닿고 싶어) - Firestore security rules.
+//
+// SETUP ORDER MATTERS - do these in Firebase Console before/when deploying this file:
+//   1. Authentication -> Sign-in method -> enable "Anonymous".
+//      (The game signs every visitor in anonymously on load; request.auth.uid below is
+//      that anonymous uid. If you paste these rules BEFORE enabling Anonymous auth,
+//      every write will simply fail - the game degrades to local-only mode, it won't
+//      crash, but the global leaderboard/referral rewards will stop working until you
+//      flip that toggle.)
+//   2. Firestore Database -> Rules -> paste this whole file, replacing whatever is there
+//      (a rules file can only contain one `service cloud.firestore { }` block).
+//
+// What changed from the old "test mode" (fully open) rules:
+//   - A doc can now only be created/overwritten by the visitor it belongs to
+//     (request.auth.uid must match the document id), instead of anyone being able to
+//     overwrite anyone else's score/referral record directly via devtools.
+//   - Field shape/type/length/range are validated server-side, not just trusted from
+//     the client (defense in depth - the game's own JS already does this, but that's
+//     trivially bypassable by writing to Firestore directly).
+//   - Deletes are blocked entirely; nothing in this app ever needs to delete a doc.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // top scores - readable by anyone (it's a public leaderboard), but a score doc can
+    // only be written by the visitor it belongs to (doc id == their auth uid)
+    match /scores/{ownerId} {
+      allow read: if true;
+      allow create, update: if request.auth != null
+        && request.auth.uid == ownerId
+        && request.resource.data.keys().hasOnly(['nickname', 'score', 'ts'])
+        && request.resource.data.nickname is string
+        && request.resource.data.nickname.size() <= 20
+        && request.resource.data.score is int
+        && request.resource.data.score >= 0
+        && request.resource.data.score <= 100000000;
+      allow delete: if false;
+    }
+
+    // "friend played my challenge link" records - doc id is the referred friend's own
+    // uid, so each friend can only ever create ONE referral credit (can't be replayed).
+    // Only the inviter it's addressed to (`to`) can read it back to claim their reward.
+    match /referrals/{referredId} {
+      allow read: if request.auth != null && request.auth.uid == resource.data.to;
+      allow create: if request.auth != null
+        && request.auth.uid == referredId
+        && request.resource.data.keys().hasOnly(['to', 'fromNickname', 'ts'])
+        && request.resource.data.to is string
+        && request.resource.data.to != request.auth.uid
+        && request.resource.data.fromNickname is string
+        && request.resource.data.fromNickname.size() <= 20
+        && !exists(/databases/$(database)/documents/referrals/$(referredId));
+      allow update, delete: if false;
+    }
+
+    // deny everything else by default
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

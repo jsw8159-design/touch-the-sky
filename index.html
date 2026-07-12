@@ -302,6 +302,9 @@
   import {
     getFirestore, collection, doc, setDoc, getDocs, query, where, orderBy, limit, serverTimestamp
   } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+  import {
+    getAuth, signInAnonymously, onAuthStateChanged
+  } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyAG7tHoduXzxc_VSNG0izbrIzCJJfnBeQk",
@@ -312,12 +315,32 @@
     appId: "1:736779603701:web:0052e0c6984a918b143fbc"
   };
 
-  let db = null;
+  let db = null, auth = null;
   try {
-    db = getFirestore(initializeApp(firebaseConfig));
+    const app = initializeApp(firebaseConfig);
+    db = getFirestore(app);
+    auth = getAuth(app);
   } catch (e) { console.warn('[touch-the-sky] Firebase init failed', e); }
 
+  // Firestore security rules require request.auth.uid to match the document id being
+  // written (see firestore.rules), so every write needs a signed-in uid first. Anonymous
+  // auth gives each visitor a stable identity with zero sign-in UI. uidPromise resolves to
+  // null (not throws) if auth is unreachable/blocked, matching the rest of this module's
+  // fail-soft design - the main script then just stays in local-only leaderboard mode.
+  let resolveUid;
+  const uidPromise = new Promise((resolve) => { resolveUid = resolve; });
+  if (auth) {
+    onAuthStateChanged(auth, (user) => { if (user) resolveUid(user.uid); });
+    signInAnonymously(auth).catch((e) => {
+      console.warn('[touch-the-sky] anonymous sign-in failed', e);
+      resolveUid(null);
+    });
+  } else {
+    resolveUid(null);
+  }
+
   window.__ttsCloud = {
+    uidPromise,
     async submitScore(clientId, nickname, score) {
       if (!db) return false;
       try {
@@ -1199,10 +1222,20 @@
   }
 
   // ---------- global online leaderboard (Firestore via window.__ttsCloud) ----------
+  // clientId starts as a local fallback id (works offline / while auth is still resolving),
+  // then gets swapped to the real Firebase Anonymous Auth uid once available - the Firestore
+  // rules require request.auth.uid to match the document id, so writes before the swap will
+  // simply fail soft (same as any other Firebase-unreachable case) rather than corrupt data.
   let clientId = lsGet('clientId', '');
   if(!clientId){
     clientId = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : (Date.now()+'-'+Math.random().toString(36).slice(2));
     lsSet('clientId', clientId);
+  }
+  if(window.__ttsCloud && window.__ttsCloud.uidPromise){
+    const authTimeout = new Promise(function(resolve){ setTimeout(function(){ resolve(null); }, 6000); });
+    Promise.race([window.__ttsCloud.uidPromise, authTimeout]).then(function(uid){
+      if(uid){ clientId = uid; lsSet('clientId', clientId); }
+    });
   }
   let globalBestSubmitted = parseFloat(lsGet('globalBestSubmitted','0'))||0;
   let leaderboardTab = 'local'; // 'local' | 'global' | 'stats'
