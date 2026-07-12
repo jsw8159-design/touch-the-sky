@@ -1,0 +1,12 @@
+{
+  "name": "touch-the-sky",
+  "private": true,
+  "version": "1.0.0",
+  "description": "하늘에 닿고 싶어 - Touch the Sky",
+  "scripts": {
+    "test": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.48.0"
+  }
+}
