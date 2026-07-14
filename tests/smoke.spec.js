@@ -127,6 +127,42 @@ test.describe('core gameplay loop', () => {
     expect(errors).toEqual([]);
   });
 
+  test('star invincibility protects the helmet and lasts exactly 3 landings, not a timer', async ({ page }) => {
+    const errors = trackErrors(page);
+    await page.goto('/index.html');
+    await waitForCanvasPainted(page);
+    await page.keyboard.press('Space');
+    await page.waitForTimeout(250);
+
+    await page.evaluate(() => window.__ttsTest.setHelmetLevel(2));
+    await page.evaluate(() => window.__ttsTest.grantStarInvincibility());
+    await page.evaluate(() => window.__ttsTest.setCombo(7));
+
+    await page.keyboard.press('Space'); // airborne
+    await page.waitForTimeout(80);
+    await page.evaluate(() => window.__ttsTest.forceObstacle('drop'));
+    await page.waitForTimeout(150);
+
+    // while invincible, a damaging obstacle must be fully harmless: helmet kept, no hp
+    // loss, no combo reset (regression: helmet used to be consumed even while invincible)
+    let st = await page.evaluate(() => window.__ttsTest.getState());
+    expect(st.helmetLevel).toBe(2);
+    expect(st.hp).toBe(3);
+    expect(st.combo).toBe(7);
+    expect(st.starInvincibleWallsLeft).toBe(3);
+
+    // land 3 times (3 "wall touches") - invincibility should end exactly then, not on a timer
+    for (let i = 0; i < 3; i++) {
+      await page.keyboard.press('Space'); // jump1
+      await page.waitForTimeout(300);
+      await page.keyboard.press('Space'); // jump2 -> lands
+      await page.waitForTimeout(700);
+    }
+    st = await page.evaluate(() => window.__ttsTest.getState());
+    expect(st.starInvincibleWallsLeft).toBe(0);
+    expect(errors).toEqual([]);
+  });
+
   test('game over then restart works, and the run resets cleanly', async ({ page }) => {
     const errors = trackErrors(page);
     await page.goto('/index.html');

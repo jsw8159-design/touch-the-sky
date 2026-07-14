@@ -470,7 +470,8 @@
       toastLightningUnlock: '⚡ 번개 등장! HP-2 주의',
       toastHpupUnlock: '💗 HP 강화 캡슐 등장!',
       toastBoulderUnlock: '🪨 큰 돌덩이 등장!',
-      toastStarUnlock: '⭐ 무적 별 등장! 3초간 무적!',
+      toastStarUnlock: '⭐ 무적 별 등장! 벽에 3번 닿을 때까지 무적!',
+      toastInvincibleEnd: '무적 효과가 끝났어요!',
       toastSkinUnlock: '🎉 {name} 해금!',
       toastInviteBonusSkin: '🎁 초대 보너스! {name} 해금!',
       toastInviteBonus: '🎁 초대 보너스 획득!',
@@ -547,7 +548,8 @@
       toastLightningUnlock: '⚡ Lightning appeared! Watch out, HP-2',
       toastHpupUnlock: '💗 HP Boost Capsule appeared!',
       toastBoulderUnlock: '🪨 Big Boulder appeared!',
-      toastStarUnlock: '⭐ Invincibility Star appeared! 3s invincible!',
+      toastStarUnlock: '⭐ Invincibility Star appeared! Invincible until you land 3 times!',
+      toastInvincibleEnd: 'Invincibility wore off!',
       toastSkinUnlock: '🎉 {name} unlocked!',
       toastInviteBonusSkin: '🎁 Invite bonus! {name} unlocked!',
       toastInviteBonus: '🎁 Invite bonus earned!',
@@ -1610,7 +1612,7 @@
     obstacleUnlocked = {helmet:false, ad:false, leaf:false, boulder:false, lightning:false, friend:false, hpup:false, star:false};
     helmetLevel = 0;
     charSide = 'left'; charState='resting';
-    invincibleUntil = 0; landTime=-999; deathAt=-999; gameOverReason='hp';
+    invincibleUntil = 0; starInvincibleWallsLeft = 0; landTime=-999; deathAt=-999; gameOverReason='hp';
     shoutUntil=0; flashUntil=0;
     gapTarget = (gapWidthMin+gapWidthMax)/2; gapWidth = gapTarget;
     pillarLeftX = (W-gapWidth)/2; pillarRightX = pillarLeftX+gapWidth;
@@ -1951,9 +1953,13 @@
     unlockToastText = tr('toastHpUp'); unlockToastUntil = performance.now()+1600;
   }
 
-  const STAR_INVINCIBLE_MS = 3000;
+  // star invincibility now lasts until 3 pillar landings instead of a fixed timer -
+  // see isInvincible()/landCharacter() (wall-touch decrement) below
+  const STAR_INVINCIBLE_TOUCHES = 3;
+  let starInvincibleWallsLeft = 0;
+  function isInvincible(now){ return now < invincibleUntil || starInvincibleWallsLeft > 0; }
   function grantInvincibility(o){
-    invincibleUntil = Math.max(invincibleUntil, performance.now()+STAR_INVINCIBLE_MS);
+    starInvincibleWallsLeft = Math.max(starInvincibleWallsLeft, STAR_INVINCIBLE_TOUCHES);
     spawnParticles(o.x,o.y,'#FFD93D',14,[70,220],0.6);
     triggerFlash('#FFF3B0', 260);
     triggerShout(tr('shoutInvincible'), '#FFD93D', 1400);
@@ -1988,6 +1994,14 @@
     landTime = performance.now();
     spawnParticles(charX, restY+charRadius*0.6, '#C9A876', 6, [30,90], 0.4);
     sfxLand();
+    if(starInvincibleWallsLeft > 0){
+      starInvincibleWallsLeft--;
+      if(starInvincibleWallsLeft <= 0){
+        unlockToastText = tr('toastInvincibleEnd'); unlockToastUntil = performance.now()+1600;
+      } else {
+        sfxTick(0.12);
+      }
+    }
     if(combo>=5 && combo%5===0){
       triggerShout(tr('shoutCombo', { combo: combo }), '#FF9F1C', 800);
       if(combo<=30) playComboSfx(comboTier()); // escalation sfx caps out at 30 - beyond that, just keep counting
@@ -2272,11 +2286,18 @@
               encounterFriend(o);
               obstacles.splice(i,1);
               continue;
+            } else if(isInvincible(now)){
+              // fully immune while invincible (star or just-hit i-frames) - obstacles
+              // just harmlessly break apart, no HP loss, no combo reset, and critically
+              // no helmet consumption either (checked before the helmet branch on purpose)
+              spawnParticles(o.x,o.y,'#FFF3B0',6,[50,150],0.4);
+              obstacles.splice(i,1);
+              continue;
             } else if(helmetLevel>=1){
               destroyWithHelmet(o);
               obstacles.splice(i,1);
               continue;
-            } else if(now>=invincibleUntil){
+            } else {
               hitObstacle(o, o.type==='lightning'?2:1);
               obstacles.splice(i,1);
               continue;
@@ -2776,7 +2797,7 @@
     if(__charType==='astronaut'){ drawCharacterAstronaut(x,y,scale,rot,now); return; }
     if(__charType==='robot'){ drawCharacterRobot(x,y,scale,rot,now); return; }
     if(__charType==='dinosaur'){ drawCharacterDinosaur(x,y,scale,rot,now); return; }
-    const isFlashing = now < invincibleUntil && Math.floor(now/90)%2===0;
+    const isFlashing = isInvincible(now) && Math.floor(now/90)%2===0;
     const sinceLand = now-landTime;
     let squash = 1, squashY = 1;
     if(sinceLand>=0 && sinceLand<260){
@@ -2930,7 +2951,7 @@
   }
 
   function drawCharacterNinja(x,y,scale,rot,now){
-    const isFlashing = now < invincibleUntil && Math.floor(now/90)%2===0;
+    const isFlashing = isInvincible(now) && Math.floor(now/90)%2===0;
     const sinceLand = now-landTime;
     let squash = 1, squashY = 1;
     if(sinceLand>=0 && sinceLand<260){
@@ -3065,7 +3086,7 @@
   }
 
   function drawCharacterSpider(x,y,scale,rot,now){
-    const isFlashing = now < invincibleUntil && Math.floor(now/90)%2===0;
+    const isFlashing = isInvincible(now) && Math.floor(now/90)%2===0;
     const sinceLand = now-landTime;
     let squash = 1, squashY = 1;
     if(sinceLand>=0 && sinceLand<260){
@@ -3186,7 +3207,7 @@
   }
 
   function drawCharacterTaekwon(x,y,scale,rot,now){
-    const isFlashing = now < invincibleUntil && Math.floor(now/90)%2===0;
+    const isFlashing = isInvincible(now) && Math.floor(now/90)%2===0;
     const sinceLand = now-landTime;
     let squash = 1, squashY = 1;
     if(sinceLand>=0 && sinceLand<260){
@@ -3411,7 +3432,7 @@
     ctx.restore();
   }
   function drawCharacterAstronaut(x,y,scale,rot,now){
-    const isFlashing = now < invincibleUntil && Math.floor(now/90)%2===0;
+    const isFlashing = isInvincible(now) && Math.floor(now/90)%2===0;
     const sinceLand = now-landTime;
     let squash = 1, squashY = 1;
     if(sinceLand>=0 && sinceLand<260){
@@ -3521,7 +3542,7 @@
     ctx.restore();
   }
   function drawCharacterRobot(x,y,scale,rot,now){
-    const isFlashing = now < invincibleUntil && Math.floor(now/90)%2===0;
+    const isFlashing = isInvincible(now) && Math.floor(now/90)%2===0;
     const sinceLand = now-landTime;
     let squash = 1, squashY = 1;
     if(sinceLand>=0 && sinceLand<260){
@@ -3619,7 +3640,7 @@
     ctx.restore();
   }
   function drawCharacterDinosaur(x,y,scale,rot,now){
-    const isFlashing = now < invincibleUntil && Math.floor(now/90)%2===0;
+    const isFlashing = isInvincible(now) && Math.floor(now/90)%2===0;
     const sinceLand = now-landTime;
     let squash = 1, squashY = 1;
     if(sinceLand>=0 && sinceLand<260){
@@ -4724,7 +4745,8 @@
       return {
         state, charState, height, combo, comboBest, hp, hpMax, landings, lang,
         sessionBest, showLeaderboard, showMissions, showCostume, showSettings,
-        adUnlockActive, streakCount, earnedAchievements: Array.from(earnedAchievements)
+        adUnlockActive, streakCount, earnedAchievements: Array.from(earnedAchievements),
+        helmetLevel, starInvincibleWallsLeft
       };
     },
     setHeight: function(h){ height = h; sessionBest = Math.max(sessionBest, h); },
@@ -4732,6 +4754,8 @@
     setLang: function(l){ setLang(l); },
     jump: function(){ tryJump(); },
     isAirborne: function(){ return charState==='jump1' || charState==='jump2' || charState==='freefall'; },
+    setHelmetLevel: function(n){ helmetLevel = n; },
+    grantStarInvincibility: function(){ starInvincibleWallsLeft = STAR_INVINCIBLE_TOUCHES; },
     // spawns a real obstacle at the character's current position - requires the character to
     // already be airborne (isAirborne()) for the normal collision loop to pick it up next frame
     forceObstacle: function(type){
