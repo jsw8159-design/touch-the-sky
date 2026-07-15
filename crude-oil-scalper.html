@@ -213,6 +213,13 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .introFooterNote{font-size:12px;line-height:1.7;color:var(--text-dim);font-style:italic;
   margin-top:18px;padding-top:14px;border-top:1px solid var(--border);}
 .introFooterNote b{color:var(--gold);font-style:normal;}
+.exampleLabel{font-size:11px;color:var(--text-dim);font-weight:700;margin:14px 0 6px;}
+.exampleChartWrap{position:relative;height:180px;background:#0a0d14;border:1px solid var(--border);
+  border-radius:10px 10px 0 0;overflow:hidden;}
+.exampleCanvas{position:absolute;inset:0;width:100%;height:100%;}
+.exampleCaption{font-size:11.5px;line-height:1.6;color:var(--text-dim);background:var(--panel2);
+  border:1px solid var(--border);border-top:none;border-radius:0 0 10px 10px;padding:9px 11px;margin:0 0 16px;}
+.exampleCaption b{color:var(--gold);}
 .legendDot{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle;}
 .closeX{position:absolute;top:14px;right:14px;font-size:18px;color:var(--text-dim);}
 </style>
@@ -336,6 +343,12 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
           </table>
         </div>
 
+        <div class="exampleLabel">📐 그림으로 보는 기준마디·매물대·매물대 공백</div>
+        <div class="exampleChartWrap"><canvas class="exampleCanvas" id="exConcept"></canvas></div>
+        <div class="exampleCaption">
+          하락 후 <b>같은 저가대(초록 점선)</b>를 두 번 지지하며 만들어진 자리가 <b>기준마디</b>입니다. 이후 좁은 가격대에서 옆으로 뭉친 <b>파란 박스</b>가 <b>매물대</b>이고, 그 매물대를 벗어나 캔들 간격이 넓어지며 빠르게 통과한 구간이 <b>매물대 공백</b>입니다. 공백을 지나 도달한 고점(빨간 점선)이 새로운 <b>기준마디</b>가 됩니다.
+        </div>
+
         <div class="introH1">🧭 핵심 관점 — 상승과 하락은 눈앞의 매물을 소화하며 진행된다</div>
         <p class="introP">차트를 보다 보면 캔들이 왜 오르내리는지, 어떤 자리에서는 왜 유독 더 크게 움직이는지 궁금할 때가 있습니다. 이동평균선, 일목균형표의 구름대, 중심선 같은 보조지표에서 이유를 찾으려는 사람들도 있지만, 오래 거래해보면 이런 지표들은 맞을 때도 있고 틀릴 때도 있어서 판단을 오히려 애매하게 만듭니다. 어떤 때는 이평선에서 튕기고, 어떤 때는 이평선을 무시하고 지나가 버립니다.</p>
 
@@ -434,8 +447,32 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
           이 생각은 상당 부분 맞습니다. 오래 관찰하다 보면 시세는 결국 마디와 마디 사이를 오가는 싸움터라는 사실을 깨닫게 됩니다. 하지만 바로 이 지점이 계좌를 마이너스로 이끄는 첫 시발점이 되기 쉽습니다. 가격이 기준마디나 매물대에 도달하지 않고, 새로운 매물대를 만들며 이동해버리는 경우가 있기 때문입니다. <b>기준마디나 매물대에 도달했을 때</b>는 반대 방향으로 튀는 성질이 나타나지만, <b>도달하지 않은 채로</b> 움직이는 경우도 얼마든지 존재합니다. 두 가지 전략을 동시에 욕심내다가, 오히려 원칙도 방향도 잃게 되는 경우가 많습니다.
         </div>
 
+        <div class="exampleLabel">📉 예시 ① — 목표 매물대에 도달하지 못하고 조기 반전</div>
+        <div class="exampleChartWrap"><canvas class="exampleCanvas" id="exReverse1"></canvas></div>
+        <div class="exampleCaption">위쪽 매물대(노란 점선)까지 계속 오를 것으로 보고 <b>선진입(매수)</b>했지만, 가격은 그 자리에 도달하기도 전에 <b>새로운 매물대(파란 박스)</b>를 만들고 반전해버렸습니다. 기다렸던 자리는 끝내 오지 않았습니다.</div>
+
+        <div class="exampleLabel">📈 예시 ② — 반대 방향(숏)에서도 똑같이 나타나는 함정</div>
+        <div class="exampleChartWrap"><canvas class="exampleCanvas" id="exReverse2"></canvas></div>
+        <div class="exampleCaption">아래쪽 지지 매물대까지 하락할 것으로 보고 <b>선진입(매도)</b>했지만, 역시 목표 자리 전에 <b>새로운 매물대</b>가 생기며 위로 튕겨 올라갑니다. 방향이 반대여도 함정의 구조는 동일합니다.</div>
+
+        <div class="exampleLabel">🌀 예시 ③ — 결국 도달은 하지만, 이미 손절당한 뒤</div>
+        <div class="exampleChartWrap"><canvas class="exampleCanvas" id="exReverse3"></canvas></div>
+        <div class="exampleCaption">이번엔 결국 목표했던 매물대(노란 점선)에 도달하긴 합니다. 하지만 그 전에 한 차례 출렁임이 나오면서 <b>선진입 포지션이 먼저 손절</b>당합니다. 방향을 맞혔어도, 먼저 들어간 대가로 정작 그 수익은 놓치게 됩니다.</div>
+
         <div class="introH1">〰️ 여섯 번째 비밀 — 횡보 구간이라는 함정</div>
         <p class="introP">횡보 구간은 위아래 범위가 정해져 있어서 수익 내기 쉽다고 주장하는 사람들도 있습니다. 하지만 횡보는 지나고 나서야 횡보였다는 것을 알 수 있는 경우가 많고, 횡보임을 인지한 순간에도 언제든 추세로 전환될 위험이 있습니다. 게다가 박스수렴, 삼각수렴, 변칙 횡보 등 종류도 다양해서, 추세에서 역방향으로 물타기하다 손실을 보는 것 못지않게 횡보에서 잘못 걸려드는 것도 큰 손실로 이어질 수 있습니다.</p>
+
+        <div class="exampleLabel">📦 예시 ① — 박스권 하단 매수 후 급락</div>
+        <div class="exampleChartWrap"><canvas class="exampleCanvas" id="exRange1"></canvas></div>
+        <div class="exampleCaption">한동안 좁은 박스권(파란 점선)을 오가던 가격이, 박스 하단에서 <b>늘 하던 대로 매수</b>했더니 이번엔 박스를 뚫고 그대로 무너져 내렸습니다. 박스권은 깨지기 전까지만 박스권입니다.</div>
+
+        <div class="exampleLabel">📦 예시 ② — 박스권 상단 매도 후 급등</div>
+        <div class="exampleChartWrap"><canvas class="exampleCanvas" id="exRange2"></canvas></div>
+        <div class="exampleCaption">반대의 경우도 마찬가지입니다. 박스 상단에서 반복적으로 매도가 먹혔다고 해서 이번에도 매도했더니, 박스를 위로 뚫고 급등해버립니다.</div>
+
+        <div class="exampleLabel">🔺 예시 ③ — 변동성이 줄어드는 삼각수렴 후 이탈</div>
+        <div class="exampleChartWrap"><canvas class="exampleCanvas" id="exRange3"></canvas></div>
+        <div class="exampleCaption">고점은 낮아지고 저점은 높아지며 변동성이 점점 줄어드는 <b>삼각수렴</b> 구간입니다. 변동성이 줄었다고 방향을 예단해 진입하면, 수렴이 풀리는 순간 예상과 반대 방향으로 튕겨 나가는 경우가 많습니다.</div>
 
         <div class="introH1">📰 일곱 번째 비밀 — 재료가 터지는 시간대를 피하지 못하는 것</div>
         <p class="introP">재료(지표 발표, 시장의 돌발 호재·악재)가 터지면 기존의 세팅은 무시됩니다. 재료가 기존 세팅과 방향이 맞거나 파급력이 크지 않으면 오히려 기준마디까지 빠르게 도달하기도 하지만, 기존 세팅을 완전히 무너뜨리는 경우도 적지 않습니다. 안정적으로 수익을 쌓으려면 재료가 있는 시간대를 피해서 매매하는 습관을 들여야 합니다.</p>
@@ -1500,6 +1537,164 @@ function drawTradeChart(revealZones){
   }
 }
 
+/* ================= EXAMPLE CHARTS (교육용 예시 도해) ================= */
+function drawExampleChart(canvas, candles, annotations, decimals){
+  const ctx=canvas.getContext('2d');
+  const {w:W,h:H}=fitCanvasEl(canvas,ctx);
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#0a0d14'; ctx.fillRect(0,0,W,H);
+  const pad={l:4,r:52,t:12,b:8};
+  const plotW=W-pad.l-pad.r, plotH=H-pad.t-pad.b;
+  const n=candles.length;
+  const slot=plotW/n;
+  const candleW=Math.max(1.5,slot*0.55);
+  let lo=Infinity,hi=-Infinity;
+  candles.forEach(c=>{ lo=Math.min(lo,c.l); hi=Math.max(hi,c.h); });
+  annotations.forEach(a=>{
+    if(a.price!=null){ lo=Math.min(lo,a.price); hi=Math.max(hi,a.price); }
+    if(a.priceHi!=null){ hi=Math.max(hi,a.priceHi); lo=Math.min(lo,a.priceLo); }
+  });
+  const range=hi-lo||1; lo-=range*0.16; hi+=range*0.16;
+  const y=p=>pad.t+(hi-p)/(hi-lo)*plotH;
+  const x=i=>pad.l+i*slot+slot/2;
+
+  ctx.strokeStyle='rgba(255,255,255,0.05)'; ctx.lineWidth=1;
+  ctx.font='9px -apple-system,sans-serif'; ctx.fillStyle='#5b6478'; ctx.textBaseline='middle';
+  for(let g=0; g<=2; g++){
+    const p=lo+(hi-lo)*g/2; const yy=y(p);
+    ctx.beginPath(); ctx.moveTo(pad.l,yy); ctx.lineTo(W-pad.r,yy); ctx.stroke();
+    ctx.fillText('$'+p.toFixed(decimals), W-pad.r+4, yy);
+  }
+
+  for(let i=0;i<n;i++){
+    const c=candles[i]; const up=c.c>=c.o;
+    const col = up ? '#f5384f' : '#2178f0';
+    const cx=x(i);
+    ctx.strokeStyle=col; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(cx,y(c.h)); ctx.lineTo(cx,y(c.l)); ctx.stroke();
+    ctx.fillStyle=col;
+    const yo=y(c.o), yc=y(c.c);
+    ctx.fillRect(cx-candleW/2, Math.min(yo,yc), candleW, Math.max(1,Math.abs(yc-yo)));
+  }
+
+  annotations.forEach(a=>{
+    if(a.type==='hline'){
+      const yy=y(a.price);
+      ctx.save(); ctx.setLineDash([4,3]); ctx.strokeStyle=a.color; ctx.lineWidth=1.3;
+      ctx.beginPath(); ctx.moveTo(x(a.idx0),yy); ctx.lineTo(x(a.idx1),yy); ctx.stroke(); ctx.restore();
+      if(a.label){ ctx.fillStyle=a.color; ctx.font='9px sans-serif'; ctx.fillText(a.label, x(a.idx0), yy-8); }
+    } else if(a.type==='box'){
+      const x0=x(a.idx0), x1=x(a.idx1), y0=y(a.priceHi), y1=y(a.priceLo);
+      ctx.save(); ctx.setLineDash([4,3]); ctx.strokeStyle=a.color; ctx.lineWidth=1.3;
+      ctx.strokeRect(x0,y0,x1-x0,y1-y0); ctx.restore();
+      if(a.label){ ctx.fillStyle=a.color; ctx.font='9px sans-serif'; ctx.fillText(a.label, x0+2, y0-7); }
+    } else if(a.type==='marker'){
+      const px=x(a.idx), py=y(a.price);
+      ctx.save(); ctx.fillStyle=a.color;
+      ctx.beginPath(); ctx.arc(px,py,3.5,0,Math.PI*2); ctx.fill(); ctx.restore();
+      if(a.text){
+        ctx.save(); ctx.font='9px sans-serif'; ctx.fillStyle=a.color; ctx.textAlign=a.align||'center';
+        ctx.fillText(a.text, px, a.dir==='down'? py+14 : py-9);
+        ctx.restore();
+      }
+    }
+  });
+}
+function buildExampleCandles(anchors, touches, noise, wick, base){
+  const candles=buildFromAnchors(anchors, {noise, wick});
+  applyTouches(candles, touches, base);
+  for(let i=0;i<candles.length;i++){ candles[i].o*=base; candles[i].h*=base; candles[i].l*=base; candles[i].c*=base; }
+  return candles;
+}
+const EX_BASE=75, EX_DEC=2;
+function exConceptScenario(){
+  const anchors=[{i:0,p:0},{i:6,p:-3.5},{i:10,p:-6.0},{i:14,p:-3.0},{i:17,p:-5.9},{i:23,p:0.3},{i:27,p:0.5},{i:31,p:0.2},{i:34,p:0.4},{i:37,p:6.5},{i:39,p:9.0}];
+  const touches=[{i:10,price:-6.0,dir:'down'},{i:17,price:-5.9,dir:'down'}];
+  const candles=buildExampleCandles(anchors,touches,0.35,0.4,EX_BASE);
+  const annotations=[
+    {type:'hline', idx0:8, idx1:19, price:candles[10].c, label:'기준마디(전저점)', color:'#1fbf75'},
+    {type:'box', idx0:25, idx1:35, priceHi:Math.max(candles[27].c,candles[31].c,candles[34].c)*1.006, priceLo:Math.min(candles[27].c,candles[31].c,candles[34].c)*0.994, label:'매물대', color:'#2178f0'},
+    {type:'marker', idx:37, price:(candles[36].c+candles[39].c)/2, text:'매물대 공백', color:'#f0b90b', dir:'up'},
+    {type:'hline', idx0:36, idx1:39, price:candles[39].c, label:'기준마디(전고점)', color:'#f5384f'},
+  ];
+  return {candles, annotations};
+}
+function exReverse1Scenario(){
+  const anchors=[{i:0,p:0},{i:6,p:2.0},{i:10,p:2.2},{i:14,p:3.0},{i:19,p:3.3},{i:23,p:2.9},{i:27,p:1.0},{i:31,p:-1.5},{i:35,p:-3.0}];
+  const candles=buildExampleCandles(anchors,[],0.3,0.4,EX_BASE);
+  const annotations=[
+    {type:'hline', idx0:0, idx1:35, price:candles[0].c*1.07, label:'기대했던 매물대(목표)', color:'#f0b90b'},
+    {type:'marker', idx:14, price:candles[14].c, text:'선진입(매수)', color:'#f5384f', dir:'down'},
+    {type:'box', idx0:18, idx1:25, priceHi:Math.max(candles[19].c,candles[23].c)*1.006, priceLo:Math.min(candles[19].c,candles[23].c)*0.994, label:'새 매물대 형성', color:'#2178f0'},
+    {type:'marker', idx:33, price:candles[33].c, text:'예상과 반대로 반전', color:'#2178f0', dir:'down'},
+  ];
+  return {candles, annotations};
+}
+function exReverse2Scenario(){
+  const anchors=[{i:0,p:0},{i:6,p:-2.0},{i:10,p:-2.3},{i:14,p:-3.0},{i:19,p:-3.3},{i:23,p:-2.8},{i:27,p:-1.0},{i:31,p:1.5},{i:35,p:3.2}];
+  const candles=buildExampleCandles(anchors,[],0.3,0.4,EX_BASE);
+  const annotations=[
+    {type:'hline', idx0:0, idx1:35, price:candles[0].c*0.93, label:'기대했던 매물대(목표)', color:'#f0b90b'},
+    {type:'marker', idx:14, price:candles[14].c, text:'선진입(매도)', color:'#2178f0', dir:'up'},
+    {type:'box', idx0:18, idx1:25, priceHi:Math.max(candles[19].c,candles[23].c)*1.006, priceLo:Math.min(candles[19].c,candles[23].c)*0.994, label:'새 매물대 형성', color:'#2178f0'},
+    {type:'marker', idx:33, price:candles[33].c, text:'예상과 반대로 반전', color:'#f5384f', dir:'up'},
+  ];
+  return {candles, annotations};
+}
+function exReverse3Scenario(){
+  const anchors=[{i:0,p:0},{i:5,p:1.8},{i:10,p:2.0},{i:14,p:1.0},{i:18,p:-1.0},{i:22,p:0.5},{i:27,p:3.0},{i:32,p:5.6}];
+  const candles=buildExampleCandles(anchors,[],0.3,0.4,EX_BASE);
+  const annotations=[
+    {type:'marker', idx:10, price:candles[10].c, text:'선진입(매수)', color:'#f5384f', dir:'down'},
+    {type:'marker', idx:18, price:candles[18].c, text:'흔들림에 손절', color:'#2178f0', dir:'down'},
+    {type:'hline', idx0:27, idx1:32, price:candles[32].c, label:'결국 도달한 매물대', color:'#f0b90b'},
+  ];
+  return {candles, annotations};
+}
+function exRange1Scenario(){
+  const anchors=[{i:0,p:0},{i:5,p:0.2},{i:9,p:-0.3},{i:13,p:0.1},{i:17,p:-0.2},{i:21,p:0.3},{i:24,p:-0.1},{i:28,p:-4.0},{i:32,p:-7.0}];
+  const candles=buildExampleCandles(anchors,[],0.25,0.35,EX_BASE);
+  const boxHi=Math.max(...candles.slice(0,25).map(c=>c.h)), boxLo=Math.min(...candles.slice(0,25).map(c=>c.l));
+  const annotations=[
+    {type:'box', idx0:0, idx1:24, priceHi:boxHi, priceLo:boxLo, label:'박스권 횡보', color:'#2178f0'},
+    {type:'marker', idx:24, price:candles[24].c, text:'박스 하단 매수', color:'#f5384f', dir:'down'},
+    {type:'marker', idx:30, price:candles[30].c, text:'예상 밖 붕괴', color:'#2178f0', dir:'up'},
+  ];
+  return {candles, annotations};
+}
+function exRange2Scenario(){
+  const anchors=[{i:0,p:0},{i:5,p:-0.2},{i:9,p:0.3},{i:13,p:-0.1},{i:17,p:0.2},{i:21,p:-0.3},{i:24,p:0.1},{i:28,p:4.0},{i:32,p:7.0}];
+  const candles=buildExampleCandles(anchors,[],0.25,0.35,EX_BASE);
+  const boxHi=Math.max(...candles.slice(0,25).map(c=>c.h)), boxLo=Math.min(...candles.slice(0,25).map(c=>c.l));
+  const annotations=[
+    {type:'box', idx0:0, idx1:24, priceHi:boxHi, priceLo:boxLo, label:'박스권 횡보', color:'#2178f0'},
+    {type:'marker', idx:24, price:candles[24].c, text:'박스 상단 매도', color:'#2178f0', dir:'up'},
+    {type:'marker', idx:30, price:candles[30].c, text:'예상 밖 급등', color:'#f5384f', dir:'down'},
+  ];
+  return {candles, annotations};
+}
+function exRange3Scenario(){
+  const anchors=[{i:0,p:0},{i:4,p:2.5},{i:8,p:-2.0},{i:12,p:1.8},{i:16,p:-1.3},{i:20,p:1.0},{i:23,p:-0.6},{i:26,p:0.3},{i:30,p:-3.5}];
+  const candles=buildExampleCandles(anchors,[],0.25,0.35,EX_BASE);
+  const annotations=[
+    {type:'marker', idx:14, price:candles[14].c, text:'변동성 축소(삼각수렴)', color:'#f0b90b', dir:'down'},
+    {type:'marker', idx:26, price:candles[26].c, text:'여기서 진입', color:'#f5384f', dir:'down'},
+    {type:'marker', idx:29, price:candles[29].c, text:'반대로 이탈', color:'#2178f0', dir:'up'},
+  ];
+  return {candles, annotations};
+}
+function renderIntroExamples(){
+  const {candles,annotations}=exConceptScenario();
+  drawExampleChart($('#exConcept'), candles, annotations, EX_DEC);
+}
+function renderAdvancedExamples(){
+  [['#exReverse1',exReverse1Scenario],['#exReverse2',exReverse2Scenario],['#exReverse3',exReverse3Scenario],
+   ['#exRange1',exRange1Scenario],['#exRange2',exRange2Scenario],['#exRange3',exRange3Scenario]].forEach(([sel,fn])=>{
+    const {candles,annotations}=fn();
+    drawExampleChart($(sel), candles, annotations, EX_DEC);
+  });
+}
+
 /* ================= GAME STATE ================= */
 const G={
   stageId:1, round:1, roundsPerStage:3,
@@ -2027,10 +2222,10 @@ $('#helpClose').onclick=()=>{ sfx.click(); $('#ovHelp').classList.remove('show')
 $('#btnHelp').onclick=()=>{ sfx.click(); $('#ovHelp').classList.add('show'); };
 
 /* intro */
-$('#btnIntro').onclick=()=>{ sfx.click(); showScreen('screenIntro'); };
+$('#btnIntro').onclick=()=>{ sfx.click(); showScreen('screenIntro'); renderIntroExamples(); };
 $('#introBack').onclick=()=>{ sfx.click(); goHome(); };
 $('#introContinueBtn').onclick=()=>{ sfx.click(); PROG.introSeen=true; saveProg(); goHome(); };
-$('#btnAdvanced').onclick=()=>{ sfx.click(); showScreen('screenAdvanced'); };
+$('#btnAdvanced').onclick=()=>{ sfx.click(); showScreen('screenAdvanced'); renderAdvancedExamples(); };
 $('#advBack').onclick=()=>{ sfx.click(); goHome(); };
 $('#advDoneBtn').onclick=()=>{ sfx.click(); goHome(); };
 
@@ -2059,6 +2254,8 @@ function onViewportChange(){
   if(TG.scenario && $('#screenTrade').classList.contains('active')){
     drawTradeChart(TG.phase==='done');
   }
+  if($('#screenIntro').classList.contains('active')){ renderIntroExamples(); }
+  if($('#screenAdvanced').classList.contains('active')){ renderAdvancedExamples(); }
 }
 setRealVH();
 window.addEventListener('resize', onViewportChange);
@@ -2071,7 +2268,7 @@ if(window.visualViewport){
 refreshMuteBtn();
 refreshHomeStats();
 refreshHomeSymbolChip();
-if(!PROG.introSeen){ showScreen('screenIntro'); }
+if(!PROG.introSeen){ showScreen('screenIntro'); renderIntroExamples(); }
 })();
 </script>
 </body>
